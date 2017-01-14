@@ -1,0 +1,46 @@
+{
+  "manifest_version":2,
+  "version":"0.1.0",
+  "name":"KeePass/MacPass Helper",
+  "description":"Helper extension to find and insert logins and passwords without copying them",
+  "permissions":[
+    "storage",
+    "activeTab",
+    "http://localhost/*"
+  ],
+  "background":{
+    "persistent": false,
+    "scripts":[
+      "sjcl.js",
+      "keepass.js",
+      "background.js"
+    ]
+  },
+  "browser_action": {
+    "default_icon": {
+      "16": "data/icons/16.png",
+      "32": "data/icons/32.png",
+      "64": "data/icons/64.png"
+    }
+  },
+  "icons": {
+    "16": "data/icons/16.png",
+    "32": "data/icons/32.png",
+    "64": "data/icons/64.png",
+    "128": "data/icons/128.png",
+    "256": "data/icons/256.png",
+    "512": "data/icons/512.png"
+  },
+  "web_accessible_resources": [
+    "data/cmd/*"
+  ],
+  "commands": {
+    "open-cmd": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Find matched passwords and display them"
+    }
+  }
+}
