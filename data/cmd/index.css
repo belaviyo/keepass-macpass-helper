@@ -18,6 +18,9 @@ input {
 }
 input[type=button] {
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
 }
 input[type=button]:disabled {
   cursor: default;

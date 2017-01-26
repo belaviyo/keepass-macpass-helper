@@ -1,12 +1,13 @@
 {
   "manifest_version":2,
-  "version":"0.1.0",
-  "name":"KeePass/MacPass Helper",
+  "version":"0.1.2",
+  "name":"KeePassHelper",
   "description":"Helper extension to find and insert logins and passwords without copying them",
   "permissions":[
     "storage",
     "activeTab",
-    "http://localhost/*"
+    "<all_urls>",
+    "contextMenus"
   ],
   "background":{
     "persistent": false,
@@ -34,13 +35,5 @@
   "web_accessible_resources": [
     "data/cmd/*"
   ],
-  "commands": {
-    "open-cmd": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+P",
-        "mac": "Command+Shift+P"
-      },
-      "description": "Find matched passwords and display them"
-    }
-  }
+  "homepage_url": "http://add0n.com/keepass-helper.html"
 }

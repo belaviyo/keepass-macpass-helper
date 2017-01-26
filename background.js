@@ -1,37 +1,33 @@
 /* globals KeePass */
 'use strict';
 
-chrome.commands.onCommand.addListener(() => {
-  chrome.tabs.query({active: true, currentWindow: true}, t => {
-    if (t.length) {
-      chrome.tabs.executeScript(t[0].id, {
-        file: 'data/cmd/inject.js',
-        allFrames: false,
-        runAt: 'document_start'
-      });
-    }
-  });
-});
-chrome.browserAction.onClicked.addListener(tab => {
+function onCommand (tab) {
   chrome.tabs.executeScript(tab.id, {
     file: 'data/cmd/inject.js',
-    allFrames: false,
+    allFrames: true,
+    matchAboutBlank: true,
     runAt: 'document_start'
   });
-});
+}
+chrome.browserAction.onClicked.addListener(onCommand);
 
 chrome.runtime.onMessage.addListener((request, sender, response) => {
-  if (request.cmd === 'close-me' || request.cmd.startsWith('insert-')) {
-    chrome.tabs.executeScript(sender.tab.id, {
+  let id = sender.tab.id;
+  let cmd = request.cmd;
+
+  if (cmd === 'close-me' || request.cmd.startsWith('insert-')) {
+    chrome.tabs.executeScript(id, {
       code: `
         if (iframe) {
           document.body.removeChild(iframe);
         }
       `,
-      runAt: 'document_start'
+      runAt: 'document_start',
+      allFrames: false
     });
   }
-  if (request.cmd === 'logins') {
+
+  if (cmd === 'logins') {
     let keepass = new KeePass();
     keepass.itl({
       url: request.query,
@@ -41,20 +37,37 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     }));
     return true;
   }
-  if (request.cmd.startsWith('insert-')) {
-    chrome.tabs.executeScript(sender.tab.id, {
+  else if (cmd === 'url-is') {
+    chrome.tabs.sendMessage(id, request);
+  }
+  else if (request.cmd.startsWith('insert-')) {
+    chrome.tabs.executeScript(id, {
       code: `
         (function (success) {
-          if (success && ${request.cmd === 'insert-both'}) {
-            let form = window.getSelection().focusNode.closest('form');
+          if (success && ${cmd === 'insert-both'}) {
+            let form = aElement.closest('form');
             if (form) {
               let password = form.querySelector('[type=password]');
               if (password) {
                 password.focus();
                 document.execCommand('selectAll', false, '');
                 let v = document.execCommand('insertText', false, '${request.password}');
-                if (v) {
-                  form.submit();
+                if (v && '${request.detail}' !== 'no-submit') {
+                  // submit
+                  console.error(${request.detail});
+                  let button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
+                  if (button) {
+                    button.click();
+                  }
+                  else {
+                    let onsubmit = form.getAttribute('onsubmit');
+                    if (onsubmit && onsubmit.indexOf('return false') === -1) {
+                      form.onsubmit();
+                    }
+                    else {
+                      form.submit();
+                    }
+                  }
                 }
                 window.focus();
                 password.focus();
@@ -66,19 +79,31 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             window.focus();
           }
         })(
+          aElement &&
           document.execCommand('selectAll', false, '') &&
           document.execCommand(
             'insertText',
             false,
-            '${request.cmd === 'insert-password' ? request.password : request.login}'
+            '${cmd === 'insert-password' ? request.password : request.login}'
           )
         );
         '';
       `,
-      runAt: 'document_start'
+      runAt: 'document_start',
+      allFrames: true,
+      matchAboutBlank: true
     });
   }
 });
+// Context Menu
+chrome.contextMenus.create({
+  id: 'open-commands',
+  title: 'Keyboard Shortcut Settings',
+  contexts: ['browser_action']
+});
+chrome.contextMenus.onClicked.addListener(() => chrome.tabs.create({
+  url: 'chrome://extensions/configureCommands'
+}));
 // FAQs & Feedback
 chrome.storage.local.get('version', prefs => {
   let version = chrome.runtime.getManifest().version;

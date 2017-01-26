@@ -85,11 +85,22 @@ document.addEventListener('change', e => {
 });
 
 document.addEventListener('keydown', e => {
+  console.error(e.metaKey && e.code , e)
   if (e.code === 'Escape') {
     document.querySelector('[data-cmd="close"]').click();
   }
   else if (e.metaKey && e.code === 'KeyB') {
-    document.querySelector('[data-cmd="insert-both"]').click();
+    if (e.shiftKey) {
+      document.querySelector('[data-cmd="insert-both"]').dispatchEvent(
+        new CustomEvent('click', {
+          'detail': 'no-submit',
+          'bubbles': true
+        })
+      );
+    }
+    else {
+      document.querySelector('[data-cmd="insert-both"]').click();
+    }
   }
   else if (e.metaKey && e.code === 'KeyU') {
     document.querySelector('[data-cmd="insert-login"]').click();
@@ -123,6 +134,7 @@ document.addEventListener('click', e => {
     let checked = document.querySelector('#list input:checked').parentNode;
     chrome.runtime.sendMessage({
       cmd,
+      detail: e.detail,
       login: checked.dataset.login,
       password: checked.dataset.password
     });
