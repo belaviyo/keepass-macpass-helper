@@ -1,15 +1,17 @@
 {
-  "manifest_version":2,
-  "version":"0.1.2",
-  "name":"KeePassHelper",
-  "description":"Helper extension to find and insert logins and passwords without copying them",
-  "permissions":[
+  "manifest_version": 2,
+  "version": "0.1.6",
+  "name": "KeePassHelper",
+  "description": "Helper extension to find and insert logins and passwords without copying them",
+  "permissions": [
     "storage",
     "activeTab",
     "<all_urls>",
-    "contextMenus"
+    "contextMenus",
+    "clipboardWrite",
+    "notifications"
   ],
-  "background":{
+  "background": {
     "persistent": false,
     "scripts":[
       "sjcl.js",
@@ -35,5 +37,9 @@
   "web_accessible_resources": [
     "data/cmd/*"
   ],
-  "homepage_url": "http://add0n.com/keepass-helper.html"
+  "homepage_url": "http://add0n.com/keepass-helper.html",
+  "options_ui": {
+    "page": "data/options/index.html",
+    "chrome_style": true
+  }
 }

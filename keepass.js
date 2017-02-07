@@ -35,7 +35,12 @@ KeePass.prototype.post = function (obj, callback) {
   req.onload = () => {
     callback(null, req.response);
   };
-  req.onerror = (e) => callback(e.message);
+  req.ontimeout = () => {
+    callback('Timeout! Try again...');
+  };
+  req.onerror = (e) => {
+    callback(e.message || 'Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+  };
   req.send(data);
 };
 KeePass.prototype.iv = function (len = 16) {
@@ -115,34 +120,37 @@ KeePass.prototype.logins = function ({url, submiturl, realm}, callback) {
     callback(e, r);
   });
 };
+// tl: test -> logins
+KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
+  this.test((e, r) => {
+    if (e) {
+      callback(e);
+    }
+    else if (r && r.Success) {
+      this.logins({url, submiturl, realm}, callback);
+    }
+    else {
+      this.associate((e, r) => {
+        if (e) {
+          callback(e);
+        }
+        else if (r && r.Success) {
+          chrome.storage.local.set({
+            id: r.Id
+          }, () => {
+            this.id = r.Id;
+            this.itl({url, submiturl, realm}, callback);
+          });
+        }
+        else {
+          callback('Communication is rejected');
+        }
+      });
+    }
+  });
+};
+
 // itl: init -> test -> logins
 KeePass.prototype.itl = function ({url, submiturl, realm}, callback) {
-  this.init(() => {
-    this.test((e, r) => {
-      if (e) {
-        callback(e);
-      }
-      else if (r.Success) {
-        this.logins({url, submiturl, realm}, callback);
-      }
-      else {
-        this.associate((e, r) => {
-          if (e) {
-            callback(e);
-          }
-          else if (r && r.Success) {
-            chrome.storage.local.set({
-              id: r.Id
-            }, () => {
-              this.id = r.Id;
-              this.itl({url, submiturl, realm}, callback);
-            });
-          }
-          else {
-            callback('Communication is rejected');
-          }
-        });
-      }
-    });
-  });
+  this.init(() => this.tl({url, submiturl, realm}, callback));
 };

@@ -34,32 +34,24 @@ input[type=search] {
 div {
   background-color: #282828;
 }
-body>div:not(:last-of-type) {
-  margin-bottom: 10px;
-}
-#list {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-#list:empty {
-  background: url('loading.svg') center center no-repeat;
-}
-#list span {
-  display: inline-block;
-  height: 26px;
-  line-height: 26px;
-  cursor: pointer;
-  width: 100%;
-  text-indent: 10px;
-}
-#list input:checked + span {
+
+select {
+  outline: none;
+  background-color: #282828;
   color: #fff;
-  background-color: #f18260;
-  font-weight: bold;
+  border: none;
+  margin: 10px 0;
+  width: 100%;
 }
-#list input {
-  display: none;
+select:empty {
+  background-image: url('loading.svg');
+  background-repeat: no-repeat;
+  background-position: center center;
 }
+option {
+  padding: 5px;
+}
+
 #toolbar {
   display: flex;
   justify-content: space-around;
@@ -68,6 +60,9 @@ body>div:not(:last-of-type) {
 }
 #toolbar input {
   padding: 0 10px;
+}
+#toolbar input:active {
+  opacity: 0.5;
 }
 
 [hbox] {

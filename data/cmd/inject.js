@@ -23,7 +23,7 @@ if (window === window.top) {
     top: 0;
     left: 0;
     right: 0;
-    width: 500px;
+    width: 550px;
     height: 400px;
     max-width: 80%;
     margin-left: auto;
@@ -33,31 +33,40 @@ if (window === window.top) {
   `);
 
   document.body.appendChild(iframe);
-  chrome.runtime.onMessage.addListener(request => {
-    if (request.cmd === 'url-is') {
-      iframe.src = request.url;
-    }
+  (function (callback) {
+    let guesses = [];
+    chrome.runtime.onMessage.addListener(request => {
+      guesses = request.guesses;
+      if (iframe.contentWindow) {
+        callback(guesses);
+      }
+    });
+    iframe.addEventListener('load', () => callback(guesses));
+  })(function (guesses) {
+    iframe.contentWindow.postMessage({
+      cmd: 'guesses',
+      guesses
+    }, '*');
   });
+  iframe.src = chrome.runtime.getURL('data/cmd/index.html') +
+    '?url=' + encodeURIComponent(document.location.href);
 }
 
+// try to find used usernames
 if (aElement) {
-  // try to find filled usernames
   let forms = Array.from(document.querySelectorAll('input[type=password]'))
     .map(p => p.form)
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
-  let usernames = forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
-      .filter(i => (i.type === 'text' || i.type === 'email'))
-  )
-  .reduce((p, c) => p.concat(c), [])
-  .map(e => e && e.value ? e.value : null)
-  .filter(n => n);
-  console.error('sending', usernames)
+
   chrome.runtime.sendMessage({
-    cmd: 'url-is',
-    url: chrome.runtime.getURL('data/cmd/index.html') +
-      '?url=' + encodeURIComponent(document.location.href) +
-      '&usernames=' + JSON.stringify(usernames)
+    cmd: 'guesses',
+    guesses: forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
+      .filter(i => (i.type === 'text' || i.type === 'email'))
+    )
+    .reduce((p, c) => p.concat(c), [])
+    .map(e => e && e.value ? e.value : null)
+    .filter(n => n)
   });
 }
 

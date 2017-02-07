@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>KeePassHelper :: Options</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue",Helvetica,sans-serif;
+        font-size: 13px;
+      }
+      table {
+        width: 100%;
+      }
+      input[type=text] {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+  <table>
+    <colgroup>
+      <col width="220">
+      <col>
+    </colgroup>
+    <tr>
+      <td>Password generation character set</td>
+      <td><input type="text" id="charset"></td>
+    </tr>
+    <tr>
+      <td>Password generation length</td>
+      <td><input type="number" id="length"></td>
+    </tr>
+    <tr>
+      <td>Open FAQs on updates</td>
+      <td><input type="checkbox" id="faqs"></td>
+    </tr>
+  </table>
+  <div>
+    <button id="save">Save</button>
+    <span id="status"></span>
+  </div>
+  <script src="index.js"></script>
+  </body>
+</html>
