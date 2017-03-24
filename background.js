@@ -41,19 +41,24 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     chrome.tabs.sendMessage(id, request);
   }
   else if (request.cmd.startsWith('insert-')) {
-    // escape "\"
-    request.password = (request.password || '').replace(/\\/g, '\\');
-    request.login = (request.login || '').replace(/\\/g, '\\\\');
+    // escape "`", "\" chars
+    request.password = (request.password || '').replace(/([\\`])/g, '${"\\$1"}');
+    request.login = (request.login || '').replace(/([\\`])/g, '${"\\$1"}');
 
     chrome.tabs.executeScript(id, {
       code: `
+        function onChange (e) {
+          e.dispatchEvent(new Event('change', {bubbles: true}));
+          e.dispatchEvent(new Event('input', {bubbles: true}));
+        }
         if (aElement) {
           (function (success) {
             if (!success) {
               try {
-                aElement.value = '${cmd === 'insert-password' ? request.password : request.login}';
+                aElement.value = String.raw\`${cmd === 'insert-password' ? request.password : request.login}\`;
               } catch (e) {}
             }
+            onChange(aElement);
             if (${cmd === 'insert-both'}) {
               let form = aElement.closest('form');
               if (form) {
@@ -61,12 +66,13 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
                 if (password) {
                   password.focus();
                   document.execCommand('selectAll', false, '');
-                  let v = document.execCommand('insertText', false, '${request.password}');
+                  let v = document.execCommand('insertText', false, String.raw\`${request.password}\`);
                   if (!v) {
                     try {
-                      password.value = '${request.password}';
+                      password.value = String.raw\`${request.password}\`;
                     } catch (e) {}
                   }
+                  onChange(password);
                   if ('${request.detail}' !== 'no-submit') {
                     // submit
                     let button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
@@ -97,7 +103,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             document.execCommand(
               'insertText',
               false,
-              '${cmd === 'insert-password' ? request.password : request.login}'
+              String.raw\`${cmd === 'insert-password' ? request.password : request.login}\`
             )
           );
         }
@@ -119,12 +125,18 @@ function notify (message) {
   });
 }
 
-function copy (str) {
-  document.oncopy = (event) => {
-    event.clipboardData.setData('text/plain', str);
-    event.preventDefault();
-  };
-  document.execCommand('Copy', false, null);
+function copy (str, tabId) {
+  chrome.tabs.executeScript(tabId, {
+    allFrames: false,
+    runAt: 'document_start',
+    code: `
+      document.oncopy = (event) => {
+        event.clipboardData.setData('text/plain', \`${str.replace(/([\\`])/g, '${"\\$1"}')}\`);
+        event.preventDefault();
+      };
+      document.execCommand('Copy', false, null);
+    `
+  });
 }
 
 // Context Menu
@@ -139,7 +151,7 @@ chrome.contextMenus.create({
   contexts: ['browser_action']
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'open-keyboards') {
     chrome.tabs.create({
       url: 'chrome://extensions/configureCommands'
@@ -154,7 +166,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
         .map(() => prefs.charset.charAt(Math.floor(Math.random() * prefs.charset.length)))
         .join('');
       // copy to clipboard
-      copy(password);
+      copy(password, tab.id);
       // diplay notification
       notify('Generated password is copied to the clipboard');
     });
