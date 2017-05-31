@@ -7,9 +7,18 @@ function onCommand (tab) {
     allFrames: true,
     matchAboutBlank: true,
     runAt: 'document_start'
-  });
+  }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
 }
 chrome.browserAction.onClicked.addListener(onCommand);
+
+function notify (message) {
+  chrome.notifications.create({
+    title: 'KeePassHelper',
+    type: 'basic',
+    iconUrl: 'data/icons/128.png',
+    message
+  });
+}
 
 chrome.runtime.onMessage.addListener((request, sender, response) => {
   let id = sender.tab.id;
@@ -17,24 +26,41 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 
   if (cmd === 'close-me' || request.cmd.startsWith('insert-')) {
     chrome.tabs.executeScript(id, {
-      code: `
-        if (iframe) {
-          document.body.removeChild(iframe);
-        }
-      `,
+      code: `iframe && document.body.removeChild(iframe) && window.focus()`,
       runAt: 'document_start',
       allFrames: false
     });
+    chrome.tabs.executeScript(id, {
+      code: `typeof aElement !== 'undefined' && aElement && aElement.focus()`,
+      runAt: 'document_start',
+      allFrames: true
+    });
   }
 
-  if (cmd === 'logins') {
-    let keepass = new KeePass();
+  if (cmd === 'notify') {
+    notify(request.message);
+  }
+  else if (cmd === 'logins') {
+    const keepass = new KeePass();
     keepass.itl({
       url: request.query,
     }, (e, r) => response({
       error: e,
       response: r
     }));
+    return true;
+  }
+  else if (cmd === 'save-form') {
+    const keepass = new KeePass();
+    keepass.its(request.data, (e) => {
+      if (e) {
+        notify(e.message || e);
+      }
+      else {
+        notify('Successfully added to KeePass database');
+      }
+      response();
+    });
     return true;
   }
   else if (cmd === 'guesses') {
@@ -55,7 +81,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
           (function (success) {
             if (!success) {
               try {
-                aElement.value = String.raw\`${cmd === 'insert-password' ? request.password : request.login}\`;
+                aElement.value = String.raw\`${cmd === 'insert-password' ? request.password : request.login} \`.slice(0, -1);
               } catch (e) {}
             }
             onChange(aElement);
@@ -66,10 +92,10 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
                 if (password) {
                   password.focus();
                   document.execCommand('selectAll', false, '');
-                  let v = document.execCommand('insertText', false, String.raw\`${request.password}\`);
+                  let v = document.execCommand('insertText', false, String.raw\`${request.password} \`.slice(0, -1));
                   if (!v) {
                     try {
-                      password.value = String.raw\`${request.password}\`;
+                      password.value = String.raw\`${request.password} \`.slice(0, -1);
                     } catch (e) {}
                   }
                   onChange(password);
@@ -103,7 +129,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             document.execCommand(
               'insertText',
               false,
-              String.raw\`${cmd === 'insert-password' ? request.password : request.login}\`
+              String.raw\`${cmd === 'insert-password' ? request.password : request.login} \`.slice(0, -1)
             )
           );
         }
@@ -112,18 +138,9 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       runAt: 'document_start',
       allFrames: true,
       matchAboutBlank: true
-    });
+    }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
   }
 });
-
-function notify (message) {
-  chrome.notifications.create({
-    title: 'KeePassHelper',
-    type: 'basic',
-    iconUrl: 'data/icons/128.png',
-    message
-  });
-}
 
 function copy (str, tabId) {
   chrome.tabs.executeScript(tabId, {
@@ -131,28 +148,52 @@ function copy (str, tabId) {
     runAt: 'document_start',
     code: `
       document.oncopy = (event) => {
-        event.clipboardData.setData('text/plain', \`${str.replace(/([\\`])/g, '${"\\$1"}')}\`);
+        event.clipboardData.setData('text/plain', String.raw\`${str.replace(/([\\`])/g, '${"\\$1"}')}\`);
         event.preventDefault();
       };
+      window.focus();
       document.execCommand('Copy', false, null);
     `
+  }, () => {
+    notify(
+      chrome.runtime.lastError ?
+        'Cannot copy to the clipboard on this page!' :
+        'Generated password is copied to the clipboard'
+    );
   });
 }
 
 // Context Menu
-chrome.contextMenus.create({
-  id: 'open-keyboards',
-  title: 'Keyboard Shortcut Settings',
-  contexts: ['browser_action']
-});
-chrome.contextMenus.create({
-  id: 'generate-password',
-  title: 'Generate a Random Password',
-  contexts: ['browser_action']
+(function (callback) {
+  chrome.runtime.onInstalled.addListener(callback);
+  chrome.runtime.onStartup.addListener(callback);
+})(function () {
+  chrome.contextMenus.create({
+    id: 'open-keyboards',
+    title: 'Keyboard Shortcut Settings',
+    contexts: ['browser_action']
+  });
+  chrome.contextMenus.create({
+    id: 'generate-password',
+    title: 'Generate a Random Password',
+    contexts: ['browser_action']
+  });
+  chrome.contextMenus.create({
+    id: 'save-form',
+    title: 'Save a new login form in KeePass',
+    contexts: ['browser_action']
+  });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'open-keyboards') {
+  if (info.menuItemId === 'save-form') {
+    chrome.tabs.executeScript(tab.id, {
+      file: '/data/save/inject.js',
+      runAt: 'document_start',
+      allFrames: true
+    }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+  }
+  else if (info.menuItemId === 'open-keyboards') {
     chrome.tabs.create({
       url: 'chrome://extensions/configureCommands'
     });
@@ -167,8 +208,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         .join('');
       // copy to clipboard
       copy(password, tab.id);
-      // diplay notification
-      notify('Generated password is copied to the clipboard');
     });
   }
 });

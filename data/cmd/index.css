@@ -50,6 +50,8 @@ select:empty {
 }
 option {
   padding: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #toolbar {

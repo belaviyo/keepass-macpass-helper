@@ -1,5 +1,9 @@
 'use strict';
 
+try {
+  document.body.removeChild(window.iframe);
+}
+catch (e) {}
 var iframe;
 
 function isEditable (el) {
@@ -15,7 +19,39 @@ function isEditable (el) {
 var aElement = document.activeElement; //jshint ignore:line
 aElement = isEditable(aElement) ? aElement : null;
 
+// try to find used usernames
+function inspect () {
+  if (aElement) {
+    const forms = [...document.querySelectorAll('input[type=password]')]
+      .map(p => p.form)
+      .filter(f => f)
+      .filter((f, i, l) => l.indexOf(f) === i);
+
+    const guesses = forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
+        .filter(i => (i.type === 'text' || i.type === 'email'))
+      )
+      .reduce((p, c) => p.concat(c), [])
+      .map(e => e && e.value ? e.value : null)
+      .filter(n => n);
+    console.error(guesses)
+    if (guesses.length !== 0) {
+      chrome.runtime.sendMessage({
+        cmd: 'guesses',
+        guesses
+      });
+    }
+  }
+}
+
 if (window === window.top) {
+  let guesses = [];
+  const observe = request => {
+    if (request.guesses) {
+      guesses = guesses.concat(request.guesses);
+    }
+  };
+  chrome.runtime.onMessage.addListener(observe);
+
   iframe = document.createElement('iframe');
   iframe.setAttribute('style', `
     border: none;
@@ -31,43 +67,20 @@ if (window === window.top) {
     background-color: #414141;
     z-index: 10000000000;
   `);
-
   document.body.appendChild(iframe);
-  (function (callback) {
-    let guesses = [];
-    chrome.runtime.onMessage.addListener(request => {
-      guesses = request.guesses;
-      if (iframe.contentWindow) {
-        callback(guesses);
-      }
-    });
-    iframe.addEventListener('load', () => callback(guesses));
-  })(function (guesses) {
-    iframe.contentWindow.postMessage({
-      cmd: 'guesses',
-      guesses
-    }, '*');
-  });
   iframe.src = chrome.runtime.getURL('data/cmd/index.html') +
     '?url=' + encodeURIComponent(document.location.href);
-}
-
-// try to find used usernames
-if (aElement) {
-  let forms = Array.from(document.querySelectorAll('input[type=password]'))
-    .map(p => p.form)
-    .filter(f => f)
-    .filter((f, i, l) => l.indexOf(f) === i);
-
-  chrome.runtime.sendMessage({
-    cmd: 'guesses',
-    guesses: forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
-      .filter(i => (i.type === 'text' || i.type === 'email'))
-    )
-    .reduce((p, c) => p.concat(c), [])
-    .map(e => e && e.value ? e.value : null)
-    .filter(n => n)
+  iframe.addEventListener('load', () => {
+    chrome.runtime.sendMessage({
+      cmd: 'guesses',
+      guesses
+    });
+    chrome.runtime.onMessage.removeListener(observe);
+    inspect();
   });
+}
+else {
+  inspect();
 }
 
 ''; // jshint ignore:line

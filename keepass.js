@@ -2,16 +2,17 @@
 'use strict';
 
 var KeePass = function () {
-  this.port = null;
+  this.host = null;
   this.key = '';
   this.id = '';
 };
 KeePass.prototype.init = function (callback) {
   chrome.storage.local.get({
-    port: 19455,
+    host: 'http://localhost:19455',
     key: '',
     id: ''
   }, prefs => {
+    this.host = prefs.host;
     this.port = prefs.port;
     this.id = prefs.id;
     if (prefs.key) {
@@ -28,7 +29,7 @@ KeePass.prototype.init = function (callback) {
 };
 KeePass.prototype.post = function (obj, callback) {
   let req = new window.XMLHttpRequest();
-  req.open('POST', 'http://localhost:' + this.port);
+  req.open('POST', this.host);
   let data = JSON.stringify(obj);
   req.responseType = 'json';
   req.setRequestHeader('Content-Type', 'application/json');
@@ -120,6 +121,20 @@ KeePass.prototype.logins = function ({url, submiturl, realm}, callback) {
     callback(e, r);
   });
 };
+KeePass.prototype.set = function ({url, submiturl, login, password}, callback) {
+  let request = {
+    'RequestType': 'set-login',
+  };
+  request = this.verify(request);
+  const iv = request.Nonce;
+  request = Object.assign(request, {
+    'Login': this.encrypt(login, iv),
+    'Password': this.encrypt(password, iv),
+    'Url': this.encrypt(url, iv),
+    'SubmitUrl': this.encrypt(submiturl, iv)
+  });
+  this.post(request, callback);
+};
 // tl: test -> logins
 KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
   this.test((e, r) => {
@@ -153,4 +168,45 @@ KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
 // itl: init -> test -> logins
 KeePass.prototype.itl = function ({url, submiturl, realm}, callback) {
   this.init(() => this.tl({url, submiturl, realm}, callback));
+};
+// is init -> test -> set
+KeePass.prototype.its = function ({url, submiturl, login, password}, callback) {
+  this.init(() => {
+    this.test((e, r) => {
+      if (e) {
+        callback(e);
+      }
+      else if (r && r.Success) {
+        this.set({url, submiturl, login, password}, (e, r) => {
+          if (r && r.Success) {
+            callback();
+          }
+          else if (r) {
+            callback(r.Error || 'something went wrong');
+          }
+          else {
+            callback('Communication is rejected');
+          }
+        });
+      }
+      else {
+        this.associate((e, r) => {
+          if (e) {
+            callback(e);
+          }
+          else if (r && r.Success) {
+            chrome.storage.local.set({
+              id: r.Id
+            }, () => {
+              this.id = r.Id;
+              this.its.apply(this, arguments);
+            });
+          }
+          else {
+            callback('Communication is rejected');
+          }
+        });
+      }
+    });
+  });
 };

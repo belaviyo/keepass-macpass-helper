@@ -3,27 +3,45 @@
 var list = document.getElementById('list');
 var search = document.querySelector('input[type=search]');
 
-var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('=')).reduce((p, c) => {
-  c[1] = decodeURIComponent(c[1]);
-  p[c[0]] = c[1];
-  return p;
-}, {});
+var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('='))
+.reduce((p, c) => Object.assign(p, {
+  [c[0]]: decodeURIComponent(c[1])
+}), {});
+
+var cookie = {
+  get host () {
+    return (new URL(url)).hostname;
+  },
+  get: () => {
+    let key = document.cookie.split(`${cookie.host}=`);
+    if (key.length > 1) {
+      return key[1].split(';')[0];
+    }
+  },
+  set: (value) => {
+    let days = 60;
+    let date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+
+    document.cookie = `${cookie.host}=${value}; expires=${date.toGMTString()}`;
+  }
+};
+
 var usernames = [];
 
 search.value = url;
 
-function add (login, password) {
-  let entry = document.createElement('option');
+function add (login, name, password) {
+  const entry = Object.assign(document.createElement('option'), {
+    textContent: login + (name ? ` - ${name}` : ''),
+    value: login
+  });
   entry.dataset.password = password || '';
-  entry.textContent = entry.dataset.login = login;
-  if (usernames.indexOf(login) !== -1) {
-    entry.selected = true;
-  }
   list.appendChild(entry);
 }
 
 function submit () {
-  let query = search.value || url;
+  const query = search.value || url;
   search.value = query;
   list.textContent = '';
   [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
@@ -40,25 +58,24 @@ function submit () {
       return add(error);
     }
     response.Entries = response.Entries || [];
-    response.Entries.forEach((e) => add(e.Login, e.Password));
+    response.Entries.forEach(e => add(e.Login, e.Name, e.Password));
     if (response.Success === 'false') {
       return add('Something went wrong!');
     }
+
     if (response.Entries.length === 0) {
       add('No match!');
     }
-    else {
-      // if no username is detected, select the first one
-      let checked = document.querySelector('#list :checked');
-      if (!checked) {
-        checked = document.querySelector('option');
-        checked.selected = true;
-      }
-      checked.dispatchEvent(new Event('change', {
+    else {// select an item
+      const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
+        cookie.get() ||
+        response.Entries[0].Login;
+      list.value = username;
+      window.focus();
+      list.focus();
+      list.dispatchEvent(new Event('change', {
         bubbles: true
       }));
-      window.focus();
-      document.querySelector('select').focus();
     }
   });
 }
@@ -71,14 +88,13 @@ function copy (str) {
   document.execCommand('Copy', false, null);
 }
 
-window.addEventListener('message', e => {
-  if (e.data.cmd === 'guesses') {
-    usernames = e.data.guesses;
-    [...list.querySelectorAll('label')].forEach(entry => {
-      if (usernames.indexOf(entry.dataset.login) !== -1) {
-        entry.querySelector('input').checked = true;
-      }
-    });
+chrome.runtime.onMessage.addListener(request => {
+  console.error(request);
+  if (request.cmd === 'guesses') {
+    usernames = usernames.concat(request.guesses);
+    [...list.querySelectorAll('option')].map(o => o.value)
+      .filter(u => request.guesses.indexOf(u) !== -1)
+      .forEach(u => list.value = u);
   }
 });
 
@@ -86,19 +102,17 @@ submit();
 document.addEventListener('search', submit);
 
 document.addEventListener('change', e => {
-  let target = e.target;
-  if (target.nodeName === 'OPTION') {
-    let disabled = !target.dataset.password;
-    [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
-      if (input.dataset.cmd !== 'close') {
-        input.disabled = disabled;
-      }
-    });
+  const target = e.target;
+  if (target.nodeName === 'SELECT') {
+    const disabled = target.selectedOptions.length === 0 || !target.selectedOptions[0].dataset.password;
+    [...document.getElementById('toolbar').querySelectorAll('input')]
+      .filter(input => input.dataset.cmd !== 'close')
+      .forEach(input => input.disabled = disabled);
   }
 });
 
 document.addEventListener('keydown', e => {
-  let metaKey = e.metaKey || e.altKey;
+  const metaKey = e.metaKey || e.altKey || e.ctrlKey;
   if (e.code === 'Escape') {
     document.querySelector('[data-cmd="close"]').click();
     e.preventDefault();
@@ -138,18 +152,6 @@ document.addEventListener('keydown', e => {
     document.querySelector('[data-cmd="insert-password"]').click();
     e.preventDefault();
   }
-  else if (e.code === 'ArrowDown') {
-    let boundary = document.querySelector('#list :checked:last-child');
-    if (boundary) {
-      e.preventDefault();
-    }
-  }
-  else if (e.code === 'ArrowUp') {
-    let boundary = document.querySelector('#list :checked:first-child');
-    if (boundary) {
-      e.preventDefault();
-    }
-  }
   else if (metaKey && e.code === 'KeyF') {
     search.focus();
     e.preventDefault();
@@ -162,22 +164,39 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
-  let target = e.target;
-  let cmd = target.dataset.cmd;
+  const target = e.target;
+  const cmd = target.dataset.cmd;
+  // cache
+  if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
+    cookie.set(list.value);
+  }
+  //
   if (cmd && cmd.startsWith('insert-')) {
-    let checked = document.querySelector('#list :checked');
+    const checked = list.selectedOptions[0];
     chrome.runtime.sendMessage({
       cmd,
       detail: e.detail,
-      login: checked.dataset.login,
+      login: list.value,
       password: checked.dataset.password
     });
   }
   else if (cmd && cmd.startsWith('copy')) {
-    let checked = document.querySelector('#list :checked');
-    copy(checked.dataset[e.detail === 'password' ? 'password' : 'login']);
+    if (e.detail === 'password') {
+      const checked = list.selectedOptions[0];
+      copy(checked.dataset.password);
+    }
+    else {
+      copy(list.value);
+    }
+    chrome.runtime.sendMessage({
+      cmd: 'notify',
+      message: (e.detail === 'password' ? 'Password' : 'Login name') + ' is copied to the clipboard'
+    });
   }
   else if (cmd === 'close') {
     chrome.runtime.sendMessage({cmd: 'close-me'});
   }
 });
+
+// keep focus
+window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
