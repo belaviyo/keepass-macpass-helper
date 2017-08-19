@@ -9,18 +9,18 @@ var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('
 }), {});
 
 var cookie = {
-  get host () {
+  get host() {
     return (new URL(url)).hostname;
   },
   get: () => {
-    let key = document.cookie.split(`${cookie.host}=`);
+    const key = document.cookie.split(`${cookie.host}=`);
     if (key.length > 1) {
       return key[1].split(';')[0];
     }
   },
-  set: (value) => {
-    let days = 60;
-    let date = new Date();
+  set: value => {
+    const days = 60;
+    const date = new Date();
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
 
     document.cookie = `${cookie.host}=${value}; expires=${date.toGMTString()}`;
@@ -31,7 +31,7 @@ var usernames = [];
 
 search.value = url;
 
-function add (login, name, password) {
+function add(login, name, password) {
   const entry = Object.assign(document.createElement('option'), {
     textContent: login + (name ? ` - ${name}` : ''),
     value: login
@@ -40,7 +40,7 @@ function add (login, name, password) {
   list.appendChild(entry);
 }
 
-function submit () {
+function submit() {
   const query = search.value || url;
   search.value = query;
   list.textContent = '';
@@ -55,33 +55,37 @@ function submit () {
     query
   }, ({error, response}) => {
     if (error) {
-      return add(error);
+      add(error);
     }
-    response.Entries = response.Entries || [];
-    response.Entries.forEach(e => add(e.Login, e.Name, e.Password));
-    if (response.Success === 'false') {
-      return add('Something went wrong!');
+    else {
+      response.Entries = response.Entries || [];
+      response.Entries.forEach(e => add(e.Login, e.Name, e.Password));
+      if (response.Success === 'false') {
+        focus();
+        add('Something went wrong!');
+      }
+      else {
+        if (response.Entries.length === 0) {
+          add('No match!');
+        }
+        else {// select an item
+          const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
+            cookie.get() ||
+            response.Entries[0].Login;
+          list.value = username;
+          list.dispatchEvent(new Event('change', {
+            bubbles: true
+          }));
+        }
+      }
     }
-
-    if (response.Entries.length === 0) {
-      add('No match!');
-    }
-    else {// select an item
-      const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
-        cookie.get() ||
-        response.Entries[0].Login;
-      list.value = username;
-      window.focus();
-      list.focus();
-      list.dispatchEvent(new Event('change', {
-        bubbles: true
-      }));
-    }
+    window.focus();
+    list.focus();
   });
 }
 
-function copy (str) {
-  document.oncopy = (event) => {
+function copy(str) {
+  document.oncopy = event => {
     event.clipboardData.setData('text/plain', str);
     event.preventDefault();
   };
@@ -89,7 +93,6 @@ function copy (str) {
 }
 
 chrome.runtime.onMessage.addListener(request => {
-  console.error(request);
   if (request.cmd === 'guesses') {
     usernames = usernames.concat(request.guesses);
     [...list.querySelectorAll('option')].map(o => o.value)
