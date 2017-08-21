@@ -98,27 +98,27 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
               }
               onChange(aElement);
               if (${cmd === 'insert-both'}) {
-                let form = aElement.closest('form');
+                const form = aElement.closest('form');
                 if (form) {
-                  let password = form.querySelector('[type=password]');
-                  if (password) {
-                    password.focus();
+                  const passElement = form.querySelector('[type=password]');
+                  if (passElement) {
+                    passElement.focus();
                     document.execCommand('selectAll', false, '');
-                    let v = document.execCommand('insertText', false, password);
+                    const v = document.execCommand('insertText', false, password);
                     if (!v) {
                       try {
-                        password.value = password;
+                        passElement.value = password;
                       } catch (e) {}
                     }
-                    onChange(password);
+                    onChange(passElement);
                     if ('${request.detail}' !== 'no-submit') {
                       // submit
-                      let button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
+                      const button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
                       if (button) {
                         button.click();
                       }
                       else {
-                        let onsubmit = form.getAttribute('onsubmit');
+                        const onsubmit = form.getAttribute('onsubmit');
                         if (onsubmit && onsubmit.indexOf('return false') === -1) {
                           form.onsubmit();
                         }
@@ -128,7 +128,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
                       }
                     }
                     window.focus();
-                    password.focus();
+                    passElement.focus();
                   }
                 }
               }

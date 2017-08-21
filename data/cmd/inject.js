@@ -6,13 +6,13 @@ try {
 catch (e) {}
 var iframe;
 
-function isEditable (el) {
-  let node = el.nodeName.toLowerCase();
-  if (el.nodeType === 1 && (node === 'textarea' ||
+function isEditable(el) {
+  const node = el && el.nodeName.toLowerCase();
+  if (el && el.nodeType === 1 && (node === 'textarea' ||
     (node === 'input' && /^(?:text|email|number|search|tel|url|password)$/i.test(el.type)))) {
     return true;
   }
-  return el.isContentEditable;
+  return el ? el.isContentEditable : false;
 }
 
 // will be used to focus the element after text insertion
@@ -20,7 +20,7 @@ var aElement = document.activeElement; //jshint ignore:line
 aElement = isEditable(aElement) ? aElement : null;
 
 // try to find used usernames
-function inspect () {
+function inspect() {
   if (aElement) {
     const forms = [...document.querySelectorAll('input[type=password]')]
       .map(p => p.form)
@@ -33,7 +33,6 @@ function inspect () {
       .reduce((p, c) => p.concat(c), [])
       .map(e => e && e.value ? e.value : null)
       .filter(n => n);
-    console.error(guesses)
     if (guesses.length !== 0) {
       chrome.runtime.sendMessage({
         cmd: 'guesses',
@@ -82,5 +81,3 @@ if (window === window.top) {
 else {
   inspect();
 }
-
-''; // jshint ignore:line
