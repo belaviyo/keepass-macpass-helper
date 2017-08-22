@@ -233,9 +233,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       charset: 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
       length: 12
     }, prefs => {
-      const password = Array.apply(null, new Array(prefs.length))
-        .map(() => prefs.charset.charAt(Math.floor(Math.random() * prefs.charset.length)))
-        .join('');
+      const array = new Uint8Array(prefs.length);
+      window.crypto.getRandomValues(array);
+      const password = [...array].map(n => Math.floor(n / 256 * prefs.charset.length) - 1)
+        .map(n => prefs.charset[n]);
       // copy to clipboard
       copy(password, tab.id);
     });
