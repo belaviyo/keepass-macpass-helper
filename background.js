@@ -70,7 +70,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
   }
   else if (cmd === 'vars') {
     response(storage[request.id]);
-    delete storage[request.id];
+    // multiple requests may need this value
+    window.setTimeout(() => delete storage[request.id], 2000);
   }
   else if (request.cmd.startsWith('insert-')) {
     const key = Math.random();
