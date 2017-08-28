@@ -259,7 +259,7 @@ chrome.storage.local.get({
     });
   }
 });
-(function() {
+{
   const {name, version} = chrome.runtime.getManifest();
   chrome.runtime.setUninstallURL('http://add0n.com/feedback.html?name=' + name + '&version=' + version);
-})();
+}

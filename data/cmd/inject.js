@@ -20,33 +20,35 @@ var aElement = document.activeElement; //jshint ignore:line
 aElement = isEditable(aElement) ? aElement : null;
 
 // try to find used usernames
-function inspect() {
-  if (aElement) {
-    const forms = [...document.querySelectorAll('input[type=password]')]
-      .map(p => p.form)
-      .filter(f => f)
-      .filter((f, i, l) => l.indexOf(f) === i);
+if (aElement) {
+  const forms = [...document.querySelectorAll('input[type=password]')]
+    .map(p => p.form)
+    .filter(f => f)
+    .filter((f, i, l) => l.indexOf(f) === i);
 
-    const guesses = forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
-        .filter(i => (i.type === 'text' || i.type === 'email'))
-      )
-      .reduce((p, c) => p.concat(c), [])
-      .map(e => e && e.value ? e.value : null)
-      .filter(n => n);
-    if (guesses.length !== 0) {
-      chrome.runtime.sendMessage({
-        cmd: 'guesses',
-        guesses
-      });
-    }
+  const guesses = forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
+      .filter(i => (i.type === 'text' || i.type === 'email'))
+    )
+    .reduce((p, c) => p.concat(c), [])
+    .map(e => e && e.value ? e.value : null)
+    .filter(n => n);
+  if (guesses.length !== 0) {
+    chrome.runtime.sendMessage({
+      cmd: 'guesses',
+      guesses
+    });
   }
 }
 
 if (window === window.top) {
   let guesses = [];
-  const observe = request => {
+  const observe = (request, sender, response) => {
     if (request.guesses) {
       guesses = guesses.concat(request.guesses);
+    }
+    else if (request.cmd === 'fetch-guesses') {
+      response(guesses);
+      chrome.runtime.onMessage.removeListener(observe);
     }
   };
   chrome.runtime.onMessage.addListener(observe);
@@ -69,15 +71,4 @@ if (window === window.top) {
   document.body.appendChild(iframe);
   iframe.src = chrome.runtime.getURL('data/cmd/index.html') +
     '?url=' + encodeURIComponent(document.location.href);
-  iframe.addEventListener('load', () => {
-    chrome.runtime.sendMessage({
-      cmd: 'guesses',
-      guesses
-    });
-    chrome.runtime.onMessage.removeListener(observe);
-    inspect();
-  });
-}
-else {
-  inspect();
 }

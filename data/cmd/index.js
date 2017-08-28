@@ -92,13 +92,18 @@ function copy(str) {
   document.execCommand('Copy', false, null);
 }
 
-chrome.runtime.onMessage.addListener(request => {
-  if (request.cmd === 'guesses') {
-    usernames = usernames.concat(request.guesses);
+chrome.tabs.query({
+  currentWindow: true,
+  active: true
+}, ([tab]) => {
+  chrome.tabs.sendMessage(tab.id, {
+    cmd: 'fetch-guesses'
+  }, resp => {
+    usernames = resp;
     [...list.querySelectorAll('option')].map(o => o.value)
-      .filter(u => request.guesses.indexOf(u) !== -1)
+      .filter(u => usernames.indexOf(u) !== -1)
       .forEach(u => list.value = u);
-  }
+  });
 });
 
 submit();
