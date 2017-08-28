@@ -53,22 +53,27 @@ if (window === window.top) {
   };
   chrome.runtime.onMessage.addListener(observe);
 
-  iframe = document.createElement('iframe');
-  iframe.setAttribute('style', `
-    border: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 550px;
-    height: 400px;
-    max-width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-    background-color: #414141;
-    z-index: 10000000000;
-  `);
-  document.body.appendChild(iframe);
-  iframe.src = chrome.runtime.getURL('data/cmd/index.html') +
-    '?url=' + encodeURIComponent(document.location.href);
+  chrome.storage.local.get({
+    embedded: false
+  }, prefs => {
+    if (prefs.embedded) {
+      iframe = document.createElement('iframe');
+      iframe.setAttribute('style', `
+        border: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 550px;
+        height: 400px;
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #414141;
+        z-index: 10000000000;
+      `);
+      document.body.appendChild(iframe);
+      iframe.src = chrome.runtime.getURL('data/cmd/index.html');
+    }
+  });
 }

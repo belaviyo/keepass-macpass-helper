@@ -12,23 +12,23 @@ function notify(message) {
   });
 }
 
-function onCommand(tab) {
-  chrome.tabs.executeScript(tab.id, {
+function onCommand(id) {
+  chrome.tabs.executeScript(id, {
     file: 'data/cmd/inject.js',
     allFrames: true,
     matchAboutBlank: true,
     runAt: 'document_start'
   }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
 }
-chrome.browserAction.onClicked.addListener(onCommand);
+chrome.browserAction.onClicked.addListener(({id}) => onCommand(id));
 
 chrome.runtime.onMessage.addListener((request, sender, response) => {
-  const id = sender.tab.id;
+  const id = request.tabId;
   const cmd = request.cmd;
 
-  if (cmd === 'close-me' || request.cmd.startsWith('insert-')) {
+  if (cmd === 'close-me' || cmd.startsWith('insert-')) {
     chrome.tabs.executeScript(id, {
-      code: 'iframe && document.body.removeChild(iframe) && window.focus()',
+      code: `typeof iframe !== 'undefined' && document.body.removeChild(iframe) && window.focus()`,
       runAt: 'document_start',
       allFrames: false
     });
@@ -39,7 +39,10 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     });
   }
 
-  if (cmd === 'notify') {
+  if (cmd === 'command') {
+    onCommand(request.tabId);
+  }
+  else if (cmd === 'notify') {
     notify(request.message);
   }
   else if (cmd === 'logins') {
@@ -194,27 +197,27 @@ function copy(str, tabId) {
 }
 
 // Context Menu
-(function(callback) {
+{
+  const callback = () => {
+    chrome.contextMenus.create({
+      id: 'open-keyboards',
+      title: 'Keyboard Shortcut Settings',
+      contexts: ['browser_action']
+    });
+    chrome.contextMenus.create({
+      id: 'generate-password',
+      title: 'Generate a Random Password',
+      contexts: ['browser_action']
+    });
+    chrome.contextMenus.create({
+      id: 'save-form',
+      title: 'Save a new login form in KeePass',
+      contexts: ['browser_action']
+    });
+  };
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);
-})(function() {
-  chrome.contextMenus.create({
-    id: 'open-keyboards',
-    title: 'Keyboard Shortcut Settings',
-    contexts: ['browser_action']
-  });
-  chrome.contextMenus.create({
-    id: 'generate-password',
-    title: 'Generate a Random Password',
-    contexts: ['browser_action']
-  });
-  chrome.contextMenus.create({
-    id: 'save-form',
-    title: 'Save a new login form in KeePass',
-    contexts: ['browser_action']
-  });
-});
-
+}
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'save-form') {
     chrome.tabs.executeScript(tab.id, {
@@ -242,6 +245,20 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     });
   }
 });
+
+// panel-view modes
+{
+  const c1 = bol => chrome.browserAction.setPopup({
+    popup: bol ? '' : '/data/cmd/index.html'
+  });
+  const c2 = () => chrome.storage.local.get({
+    embedded: false
+  }, prefs => c1(prefs.embedded));
+
+  chrome.runtime.onInstalled.addListener(c2);
+  chrome.runtime.onStartup.addListener(c2);
+  chrome.storage.onChanged.addListener(prefs => prefs.embedded && c1(prefs.embedded.newValue));
+}
 
 // FAQs & Feedback
 chrome.storage.local.get({

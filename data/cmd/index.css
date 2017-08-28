@@ -11,6 +11,11 @@ body {
   font-size: 13px;
   font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
 }
+body[data-top=true] {
+  width: 550px;
+  height: 400px;
+  background-color: #414141;
+}
 input {
   border: none;
   outline: none;

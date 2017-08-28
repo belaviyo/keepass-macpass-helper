@@ -3,10 +3,15 @@
 var list = document.getElementById('list');
 var search = document.querySelector('input[type=search]');
 
-var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('='))
-.reduce((p, c) => Object.assign(p, {
-  [c[0]]: decodeURIComponent(c[1])
-}), {});
+var url;
+var tab = {};
+var usernames = [];
+
+document.body.dataset.top = window.top === window;
+
+var send = (obj, callback) => chrome.runtime.sendMessage(Object.assign(obj, {
+  tabId: tab.id
+}), callback);
 
 var cookie = {
   get host() {
@@ -27,10 +32,6 @@ var cookie = {
   }
 };
 
-var usernames = [];
-
-search.value = url;
-
 function add(login, name, password) {
   const entry = Object.assign(document.createElement('option'), {
     textContent: login + (name ? ` - ${name}` : ''),
@@ -50,7 +51,7 @@ function submit() {
     }
   });
 
-  chrome.runtime.sendMessage({
+  send({
     cmd: 'logins',
     query
   }, ({error, response}) => {
@@ -92,21 +93,6 @@ function copy(str) {
   document.execCommand('Copy', false, null);
 }
 
-chrome.tabs.query({
-  currentWindow: true,
-  active: true
-}, ([tab]) => {
-  chrome.tabs.sendMessage(tab.id, {
-    cmd: 'fetch-guesses'
-  }, resp => {
-    usernames = resp;
-    [...list.querySelectorAll('option')].map(o => o.value)
-      .filter(u => usernames.indexOf(u) !== -1)
-      .forEach(u => list.value = u);
-  });
-});
-
-submit();
 document.addEventListener('search', submit);
 
 document.addEventListener('change', e => {
@@ -174,6 +160,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const target = e.target;
   const cmd = target.dataset.cmd;
+
   // cache
   if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
     cookie.set(list.value);
@@ -181,7 +168,7 @@ document.addEventListener('click', e => {
   //
   if (cmd && cmd.startsWith('insert-')) {
     const checked = list.selectedOptions[0];
-    chrome.runtime.sendMessage({
+    send({
       cmd,
       detail: e.detail,
       login: list.value,
@@ -196,15 +183,49 @@ document.addEventListener('click', e => {
     else {
       copy(list.value);
     }
-    chrome.runtime.sendMessage({
+    send({
       cmd: 'notify',
       message: (e.detail === 'password' ? 'Password' : 'Login name') + ' is copied to the clipboard'
     });
   }
   else if (cmd === 'close') {
-    chrome.runtime.sendMessage({cmd: 'close-me'});
+    send({
+      cmd: 'close-me',
+      tabId: tab.id
+    });
+  }
+  if (cmd === 'close-me' || cmd.startsWith('insert-')) {
+    if (window.top === window) {
+      window.close();
+    }
   }
 });
 
 // keep focus
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
+
+// init
+chrome.tabs.query({
+  currentWindow: true,
+  active: true
+}, ([t]) => {
+  if (t) {
+    tab = t;
+    chrome.tabs.sendMessage(tab.id, {
+      cmd: 'fetch-guesses'
+    }, resp => {
+      usernames = resp || [];
+      [...list.querySelectorAll('option')].map(o => o.value)
+        .filter(u => usernames.indexOf(u) !== -1)
+        .forEach(u => list.value = u);
+    });
+
+    url = tab.url;
+    search.value = url;
+    submit();
+
+    if (window.top === window) {
+      send({cmd: 'command'});
+    }
+  }
+});
