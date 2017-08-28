@@ -205,30 +205,31 @@ document.addEventListener('click', e => {
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
 // init
-const init = () => chrome.tabs.query({
-  currentWindow: true,
-  active: true
-}, ([t]) => {
-  if (t) {
-    tab = t;
-    chrome.tabs.sendMessage(tab.id, {
-      cmd: 'fetch-guesses'
-    }, resp => {
-      console.log(resp);
-      usernames = resp || [];
-      [...list.querySelectorAll('option')].map(o => o.value)
-        .filter(u => usernames.indexOf(u) !== -1)
-        .forEach(u => list.value = u);
-    });
+const init = t => {
+  tab = t;
+  send({
+    cmd: 'fetch-guesses'
+  }, resp => {
+    usernames = resp || [];
+    [...list.querySelectorAll('option')].map(o => o.value)
+      .filter(u => usernames.indexOf(u) !== -1)
+      .forEach(u => list.value = u);
+  });
 
-    url = tab.url;
-    search.value = url;
-    submit();
-  }
-});
+  url = tab.url;
+  search.value = url;
+  submit();
+};
 if (window.top === window) {
-  send({cmd: 'command'}, init);
+  send({cmd: 'command'}, () => {
+    chrome.tabs.query({
+      currentWindow: true,
+      active: true
+    }, ([tab]) => init(tab));
+  });
 }
 else {
-  init();
+  send({
+    cmd: 'introduce-me'
+  }, init);
 }

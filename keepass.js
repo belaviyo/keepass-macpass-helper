@@ -158,7 +158,7 @@ KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
           });
         }
         else {
-          callback('Communication is rejected');
+          callback('Communication is rejected! Is your database open?');
         }
       });
     }

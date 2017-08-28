@@ -44,7 +44,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       allFrames: false
     }, () => chrome.runtime.lastError);
     chrome.tabs.executeScript(id, {
-      code: `typeof aElement !== 'undefined' && aElement && aElement.focus()`,
+      code: `
+        if (typeof aElement !== 'undefined' && aElement) {
+          aElement.focus();
+          window.focus();
+        }
+      `,
       runAt: 'document_start',
       allFrames: true
     }, () => chrome.runtime.lastError);
@@ -52,6 +57,16 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 
   if (cmd === 'command') {
     onCommand(request.tabId, response);
+    return true;
+  }
+  else if (cmd === 'introduce-me') {
+    response({
+      url: sender.tab.url,
+      id: sender.tab.id
+    });
+  }
+  else if (cmd === 'fetch-guesses') {
+    chrome.tabs.sendMessage(id, request, response);
     return true;
   }
   else if (cmd === 'notify') {
