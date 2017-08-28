@@ -159,7 +159,7 @@ document.addEventListener('keydown', e => {
 
 document.addEventListener('click', e => {
   const target = e.target;
-  const cmd = target.dataset.cmd;
+  const cmd = target.dataset.cmd || '';
 
   // cache
   if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
@@ -194,7 +194,7 @@ document.addEventListener('click', e => {
       tabId: tab.id
     });
   }
-  if (cmd === 'close-me' || cmd.startsWith('insert-')) {
+  if (cmd === 'close' || cmd.startsWith('insert-')) {
     if (window.top === window) {
       window.close();
     }
@@ -205,7 +205,7 @@ document.addEventListener('click', e => {
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
 // init
-chrome.tabs.query({
+const init = () => chrome.tabs.query({
   currentWindow: true,
   active: true
 }, ([t]) => {
@@ -214,6 +214,7 @@ chrome.tabs.query({
     chrome.tabs.sendMessage(tab.id, {
       cmd: 'fetch-guesses'
     }, resp => {
+      console.log(resp);
       usernames = resp || [];
       [...list.querySelectorAll('option')].map(o => o.value)
         .filter(u => usernames.indexOf(u) !== -1)
@@ -223,9 +224,11 @@ chrome.tabs.query({
     url = tab.url;
     search.value = url;
     submit();
-
-    if (window.top === window) {
-      send({cmd: 'command'});
-    }
   }
 });
+if (window.top === window) {
+  send({cmd: 'command'}, init);
+}
+else {
+  init();
+}

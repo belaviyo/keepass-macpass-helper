@@ -54,7 +54,7 @@ if (window === window.top) {
   chrome.runtime.onMessage.addListener(observe);
 
   chrome.storage.local.get({
-    embedded: false
+    embedded: true
   }, prefs => {
     if (prefs.embedded) {
       iframe = document.createElement('iframe');

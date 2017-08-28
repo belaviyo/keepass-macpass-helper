@@ -6,28 +6,26 @@ function restore() {
     foramt: '[login] - [name]',
     charset: 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
     length: 12,
-    faqs: navigator.userAgent.toLowerCase().indexOf('firefox') === -1 ? true : false
-  }, (prefs) => {
+    embedded: true,
+    faqs: true
+  }, prefs => {
     document.getElementById('host').value = prefs.host;
     document.getElementById('format').value = prefs.format;
     document.getElementById('charset').value = prefs.charset;
     document.getElementById('length').value = prefs.length;
+    document.getElementById('embedded').checked = prefs.embedded;
     document.getElementById('faqs').checked = prefs.faqs;
   });
 }
 
 function save() {
-  const host = document.getElementById('host').value;
-  const format = document.getElementById('format').value;
-  const charset = document.getElementById('charset').value;
-  const length = Math.max(document.getElementById('length').value, 3);
-  const faqs = document.getElementById('faqs').checked;
   chrome.storage.local.set({
-    host,
-    format,
-    charset,
-    length,
-    faqs
+    host: document.getElementById('host').value,
+    format: document.getElementById('format').value,
+    charset: document.getElementById('charset').value,
+    length: Math.max(document.getElementById('length').value, 3),
+    embedded: document.getElementById('embedded').checked,
+    faqs: document.getElementById('faqs').checked
   }, () => {
     const status = document.getElementById('status');
     status.textContent = 'Options saved.';

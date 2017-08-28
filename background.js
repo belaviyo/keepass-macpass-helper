@@ -12,35 +12,47 @@ function notify(message) {
   });
 }
 
-function onCommand(id) {
+function onCommand(id, callback = function() {}) {
   chrome.tabs.executeScript(id, {
     file: 'data/cmd/inject.js',
     allFrames: true,
     matchAboutBlank: true,
     runAt: 'document_start'
-  }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+  }, () => {
+    if (chrome.runtime.lastError) {
+      notify(chrome.runtime.lastError.message);
+    }
+    callback();
+  });
 }
 chrome.browserAction.onClicked.addListener(({id}) => onCommand(id));
 
 chrome.runtime.onMessage.addListener((request, sender, response) => {
-  const id = request.tabId;
+  const id = request.tabId || (sender.tab ? sender.tab.id : -1);
   const cmd = request.cmd;
-
   if (cmd === 'close-me' || cmd.startsWith('insert-')) {
     chrome.tabs.executeScript(id, {
-      code: `typeof iframe !== 'undefined' && document.body.removeChild(iframe) && window.focus()`,
+      code: `{
+        try {
+          document.body.removeChild(iframe)
+        }
+        catch(e) {}
+        delete iframe;
+        window.focus();
+      }`,
       runAt: 'document_start',
       allFrames: false
-    });
+    }, () => chrome.runtime.lastError);
     chrome.tabs.executeScript(id, {
       code: `typeof aElement !== 'undefined' && aElement && aElement.focus()`,
       runAt: 'document_start',
       allFrames: true
-    });
+    }, () => chrome.runtime.lastError);
   }
 
   if (cmd === 'command') {
-    onCommand(request.tabId);
+    onCommand(request.tabId, response);
+    return true;
   }
   else if (cmd === 'notify') {
     notify(request.message);
@@ -252,7 +264,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     popup: bol ? '' : '/data/cmd/index.html'
   });
   const c2 = () => chrome.storage.local.get({
-    embedded: false
+    embedded: true
   }, prefs => c1(prefs.embedded));
 
   chrome.runtime.onInstalled.addListener(c2);
