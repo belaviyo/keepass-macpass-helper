@@ -6,7 +6,7 @@ function restore() {
     foramt: '[login] - [name]',
     charset: 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
     length: 12,
-    embedded: true,
+    embedded: false,
     faqs: true
   }, prefs => {
     document.getElementById('host').value = prefs.host;

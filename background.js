@@ -279,7 +279,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     popup: bol ? '' : '/data/cmd/index.html'
   });
   const c2 = () => chrome.storage.local.get({
-    embedded: true
+    embedded: false
   }, prefs => c1(prefs.embedded));
 
   chrome.runtime.onInstalled.addListener(c2);
