@@ -266,7 +266,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       const array = new Uint8Array(prefs.length);
       window.crypto.getRandomValues(array);
       const password = [...array].map(n => Math.floor(n / 256 * prefs.charset.length) - 1)
-        .map(n => prefs.charset[n]);
+        .map(n => prefs.charset[n]).join('');
       // copy to clipboard
       copy(password, tab.id);
     });
