@@ -10,9 +10,15 @@
       }
       table {
         width: 100%;
+        border-collapse: collapse;
       }
       input[type=text] {
         width: 100%;
+      }
+      th {
+        height: 24px;
+        line-height: 24px;
+        background-color: rgba(0, 0, 0, 0.1);
       }
     </style>
   </head>
@@ -22,30 +28,66 @@
       <col width="220">
       <col>
     </colgroup>
-    <tr>
-      <td>KeePassHTTP host</td>
-      <td><input type="text" id="host"></td>
-    </tr>
-    <tr style="display: none;">
-      <td>Display format</td>
-      <td><input type="text" id="format"></td>
-    </tr>
-    <tr>
-      <td>Password generation character set</td>
-      <td><input type="text" id="charset"></td>
-    </tr>
-    <tr>
-      <td>Password generation length</td>
-      <td><input type="number" id="length"></td>
-    </tr>
-    <tr>
-      <td>Use an embedded iframe to display credentials</td>
-      <td><input type="checkbox" id="embedded"></td>
-    </tr>
-    <tr>
-      <td>Open FAQs on updates</td>
-      <td><input type="checkbox" id="faqs"></td>
-    </tr>
+    <thead>
+      <tr>
+        <th colspan="2">Connection</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>KeePassHTTP host</td>
+        <td><input type="text" id="host"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2">Password generation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Password generation character set</td>
+        <td><input type="text" id="charset"></td>
+      </tr>
+      <tr>
+        <td>Password generation length</td>
+        <td><input type="number" id="length"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2">Auto login (for one credential)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fill login form and close the panel</td>
+        <td><input type="checkbox" id="auto-login"></td>
+      </tr>
+      <tr>
+        <td>Then submit the form</td>
+        <td><input type="checkbox" id="auto-submit"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2">Misc</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Use an embedded iframe to display credentials</td>
+        <td><input type="checkbox" id="embedded"></td>
+      </tr>
+      <tr>
+        <td>Open FAQs on updates</td>
+        <td><input type="checkbox" id="faqs"></td>
+      </tr>
+      <tr style="display: none;">
+        <td>Display format</td>
+        <td><input type="text" id="format"></td>
+      </tr>
+    </tbody>
   </table>
   <p>
     <button id="save">Save</button>

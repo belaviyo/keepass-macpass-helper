@@ -1,48 +1,64 @@
 'use strict';
 
+var isTop = window === window.top;
+
 try {
   document.body.removeChild(window.iframe);
 }
 catch (e) {}
 var iframe;
 
-function inspect () {
+var usernames = [];
+var passwords = [];
+
+if (isTop) {
+  const observe = request => {
+    if (request.cmd === 'guesses') {
+      usernames = usernames.concat(request.usernames);
+      passwords = passwords.concat(request.passwords);
+    }
+    else if (request.cmd === 'collect') {
+      iframe.contentWindow.postMessage({
+        usernames,
+        passwords
+      }, '*');
+      chrome.runtime.onMessage.removeListener(observe);
+    }
+  };
+  chrome.runtime.onMessage.addListener(observe);
+}
+
+{ // collecting
   const forms = [...document.querySelectorAll('input[type=password]')]
     .map(p => p.form)
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
 
-  chrome.runtime.sendMessage({
-    cmd: 'guesses',
-    usernames: forms.map(f => [
-      ...f.querySelectorAll('input[type=text]'),
-      ...f.querySelectorAll('input[type=email]')
-    ])
-      .reduce((p, c) => p.concat(c), [])
-      .map(e => e && e.value ? e.value : null)
-      .filter(n => n),
-    passwords: forms.map(f => [
-      ...f.querySelectorAll('input[type=password]')
-    ])
-      .reduce((p, c) => p.concat(c), [])
-      .map(e => e && e.value ? e.value : null)
-      .filter(n => n),
-  });
+  usernames.push(...forms.map(f => [
+    ...f.querySelectorAll('input[type=text]'),
+    ...f.querySelectorAll('input[type=email]')
+  ])
+    .reduce((p, c) => p.concat(c), [])
+    .map(e => e && e.value ? e.value : null)
+    .filter(n => n));
+
+  passwords.push(...forms.map(f => [
+    ...f.querySelectorAll('input[type=password]')
+  ])
+    .reduce((p, c) => p.concat(c), [])
+    .map(e => e && e.value ? e.value : null)
+    .filter(n => n));
+
+  if (isTop === false) {
+    chrome.runtime.sendMessage({
+      cmd: 'guesses',
+      usernames,
+      passwords
+    });
+  }
 }
 
-if (window === window.top) {
-  let usernames = [], passwords = [];
-  const observe = (request) => {
-    if (request.usernames) {
-      usernames = usernames.concat(request.usernames);
-    }
-    if (request.passwords) {
-      passwords = passwords.concat(request.passwords);
-    }
-  };
-
-  chrome.runtime.onMessage.addListener(observe);
-
+if (isTop) {
   iframe = document.createElement('iframe');
   iframe.setAttribute('style', `
     border: none;
@@ -60,16 +76,4 @@ if (window === window.top) {
   document.body.appendChild(iframe);
   iframe.src = chrome.runtime.getURL('/data/save/index.html') +
     '?url=' + encodeURIComponent(document.location.href);
-  iframe.addEventListener('load', () => {
-    iframe.contentWindow.postMessage({
-      cmd: 'guesses',
-      usernames,
-      passwords
-    }, '*');
-    chrome.runtime.onMessage.removeListener(observe);
-    inspect();
-  });
-}
-else {
-  inspect();
 }

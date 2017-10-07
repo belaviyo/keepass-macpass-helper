@@ -95,7 +95,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     });
     return true;
   }
-  else if (cmd === 'guesses') {
+  else if (cmd === 'guesses' || cmd === 'collect') {
     chrome.tabs.sendMessage(id, request);
   }
   else if (cmd === 'vars') {

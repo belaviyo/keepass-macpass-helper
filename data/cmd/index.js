@@ -77,6 +77,17 @@ function submit() {
           list.dispatchEvent(new Event('change', {
             bubbles: true
           }));
+          if (response.Entries.length === 1) {
+            chrome.storage.local.get({
+              'auto-login': false,
+              'auto-submit': true
+            }, prefs => prefs['auto-login'] && document.querySelector('[data-cmd="insert-both"]').dispatchEvent(
+              new CustomEvent('click', {
+                'detail': prefs['auto-submit'] ? '' : 'no-submit',
+                'bubbles': true
+              })
+            ));
+          }
         }
       }
     }

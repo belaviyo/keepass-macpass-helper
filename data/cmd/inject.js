@@ -18,7 +18,6 @@ function isEditable(el) {
 // will be used to focus the element after text insertion
 var aElement = document.activeElement; //jshint ignore:line
 aElement = isEditable(aElement) ? aElement : null;
-
 // try to find used usernames
 if (aElement) {
   const forms = [...document.querySelectorAll('input[type=password]')]
@@ -32,6 +31,7 @@ if (aElement) {
     .reduce((p, c) => p.concat(c), [])
     .map(e => e && e.value ? e.value : null)
     .filter(n => n);
+
   if (guesses.length !== 0) {
     chrome.runtime.sendMessage({
       cmd: 'guesses',

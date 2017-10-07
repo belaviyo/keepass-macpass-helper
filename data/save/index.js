@@ -40,7 +40,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   const formData = new FormData(e.target);
-  let data = {};
+  const data = {};
   for (const [key, value] of formData.entries()) {
     data[key] = value;
   }
@@ -50,12 +50,14 @@ document.addEventListener('submit', e => {
   }, () => document.querySelector('[data-cmd=cancel]').click());
 });
 
-chrome.runtime.onMessage.addListener(request => {
-  if (request.cmd === 'guesses') {
-    request.usernames.forEach(n => document.querySelector('[name=login]').value = n);
-    request.passwords.forEach(n => document.querySelector('[name=password]').value = n);
-  }
+window.addEventListener('message', ({data}) => {
+  data.usernames.forEach(n => document.querySelector('[name=login]').value = n);
+  data.passwords.forEach(n => document.querySelector('[name=password]').value = n);
 });
+chrome.runtime.sendMessage({
+  cmd: 'collect'
+});
+
 document.querySelector('[name=url]').value = url;
 document.querySelector('[name=url]').focus();
 document.querySelector('[name=url]').select();
