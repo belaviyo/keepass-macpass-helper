@@ -77,3 +77,5 @@ if (window === window.top) {
     }
   });
 }
+
+''; // https://github.com/belaviyo/keepass-macpass-helper/issues/15#issuecomment-336926598

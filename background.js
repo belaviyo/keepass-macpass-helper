@@ -19,6 +19,7 @@ function onCommand(id, callback = function() {}) {
     matchAboutBlank: true,
     runAt: 'document_start'
   }, () => {
+    console.log(chrome.runtime.lastError)
     if (chrome.runtime.lastError) {
       notify(chrome.runtime.lastError.message);
     }
