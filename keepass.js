@@ -1,12 +1,12 @@
 /* globals sjcl */
 'use strict';
 
-var KeePass = function () {
+var KeePass = function() {
   this.host = null;
   this.key = '';
   this.id = '';
 };
-KeePass.prototype.init = function (callback) {
+KeePass.prototype.init = function(callback) {
   chrome.storage.local.get({
     host: 'http://localhost:19455',
     key: '',
@@ -27,10 +27,10 @@ KeePass.prototype.init = function (callback) {
     callback();
   });
 };
-KeePass.prototype.post = function (obj, callback) {
-  let req = new window.XMLHttpRequest();
+KeePass.prototype.post = function(obj, callback) {
+  const req = new window.XMLHttpRequest();
   req.open('POST', this.host);
-  let data = JSON.stringify(obj);
+  const data = JSON.stringify(obj);
   req.responseType = 'json';
   req.setRequestHeader('Content-Type', 'application/json');
   req.onload = () => {
@@ -39,12 +39,12 @@ KeePass.prototype.post = function (obj, callback) {
   req.ontimeout = () => {
     callback('Timeout! Try again...');
   };
-  req.onerror = (e) => {
+  req.onerror = e => {
     callback(e.message || 'Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
   };
   req.send(data);
 };
-KeePass.prototype.iv = function (len = 16) {
+KeePass.prototype.iv = function(len = 16) {
   let iv = [];
   for (let i = 0; i < len; i++) {
     iv.push(String.fromCharCode(Math.floor(Math.random() * 256)));
@@ -52,23 +52,23 @@ KeePass.prototype.iv = function (len = 16) {
   iv = iv.join('');
   return btoa(iv);
 };
-KeePass.prototype.encrypt = function (data, iv) {
-  let enc = sjcl.mode.cbc.encrypt(
+KeePass.prototype.encrypt = function(data, iv) {
+  const enc = sjcl.mode.cbc.encrypt(
     new sjcl.cipher.aes(sjcl.codec.base64.toBits(this.key)),
     sjcl.codec.utf8String.toBits(data),
     sjcl.codec.base64.toBits(iv)
   );
   return sjcl.codec.base64.fromBits(enc);
 };
-KeePass.prototype.decrypt = function (data, iv) {
-  let dec = sjcl.mode.cbc.decrypt(
+KeePass.prototype.decrypt = function(data, iv) {
+  const dec = sjcl.mode.cbc.decrypt(
     new sjcl.cipher.aes(sjcl.codec.base64.toBits(this.key)),
     sjcl.codec.base64.toBits(data),
     sjcl.codec.base64.toBits(iv));
   return sjcl.codec.utf8String.fromBits(dec);
 };
-KeePass.prototype.verify = function (request) {
-  let iv = this.iv();
+KeePass.prototype.verify = function(request) {
+  const iv = this.iv();
   request.Nonce = iv;
   request.Verifier = this.encrypt(iv, iv);
   if (this.id) {
@@ -76,7 +76,7 @@ KeePass.prototype.verify = function (request) {
   }
   return request;
 };
-KeePass.prototype.test = function (callback) {
+KeePass.prototype.test = function(callback) {
   let request = {
     'RequestType': 'test-associate',
     'TriggerUnlock': false
@@ -84,7 +84,7 @@ KeePass.prototype.test = function (callback) {
   request = this.verify(request);
   this.post(request, callback);
 };
-KeePass.prototype.associate = function (callback) {
+KeePass.prototype.associate = function(callback) {
   let request = {
     'RequestType': 'associate',
     'Key': this.key
@@ -92,14 +92,14 @@ KeePass.prototype.associate = function (callback) {
   request = this.verify(request);
   this.post(request, callback);
 };
-KeePass.prototype.logins = function ({url, submiturl, realm}, callback) {
+KeePass.prototype.logins = function({url, submiturl, realm}, callback) {
   let request = {
     'RequestType': 'get-logins',
     'TriggerUnlock': 'false',
     'SortSelection': 'false'
   };
   request = this.verify(request);
-  let iv = request.Nonce;
+  const iv = request.Nonce;
   request.Url = this.encrypt(url, iv);
   if (submiturl) {
     request.SubmitUrl = this.encrypt(submiturl, iv);
@@ -109,19 +109,21 @@ KeePass.prototype.logins = function ({url, submiturl, realm}, callback) {
   }
   this.post(request, (e, r) => {
     if (r && r.Entries) {
-      let iv = r.Nonce;
-      r.Entries = r.Entries.map(e => {
-        return Object.assign(e, {
-          Login: this.decrypt(e.Login, iv),
-          Name: this.decrypt(e.Name, iv),
-          Password: this.decrypt(e.Password, iv)
-        });
-      });
+      const iv = r.Nonce;
+      r.Entries = r.Entries.map(e => Object.assign(e, {
+        Login: this.decrypt(e.Login, iv),
+        Name: this.decrypt(e.Name, iv),
+        Password: this.decrypt(e.Password, iv),
+        StringFields: (e.StringFields || []).map(o => Object.assign({
+          Key: this.decrypt(o.Key, iv),
+          Value: this.decrypt(o.Value, iv)
+        }))
+      }));
     }
     callback(e, r);
   });
 };
-KeePass.prototype.set = function ({url, submiturl, login, password}, callback) {
+KeePass.prototype.set = function({url, submiturl, login, password}, callback) {
   let request = {
     'RequestType': 'set-login',
   };
@@ -136,7 +138,7 @@ KeePass.prototype.set = function ({url, submiturl, login, password}, callback) {
   this.post(request, callback);
 };
 // tl: test -> logins
-KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
+KeePass.prototype.tl = function({url, submiturl, realm}, callback) {
   this.test((e, r) => {
     if (e) {
       callback(e);
@@ -166,11 +168,11 @@ KeePass.prototype.tl = function ({url, submiturl, realm}, callback) {
 };
 
 // itl: init -> test -> logins
-KeePass.prototype.itl = function ({url, submiturl, realm}, callback) {
+KeePass.prototype.itl = function({url, submiturl, realm}, callback) {
   this.init(() => this.tl({url, submiturl, realm}, callback));
 };
 // is init -> test -> set
-KeePass.prototype.its = function ({url, submiturl, login, password}, callback) {
+KeePass.prototype.its = function({url, submiturl, login, password}, callback) {
   this.init(() => {
     this.test((e, r) => {
       if (e) {

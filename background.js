@@ -19,7 +19,6 @@ function onCommand(id, callback = function() {}) {
     matchAboutBlank: true,
     runAt: 'document_start'
   }, () => {
-    console.log(chrome.runtime.lastError)
     if (chrome.runtime.lastError) {
       notify(chrome.runtime.lastError.message);
     }
@@ -108,7 +107,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     const key = Math.random();
     storage[key] = {
       username: request.login,
-      password: request.password
+      password: request.password,
+      stringFields: request.stringFields
     };
 
     chrome.tabs.executeScript(id, {
@@ -116,7 +116,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
         chrome.runtime.sendMessage({
           cmd: 'vars',
           id: ${key}
-        }, ({username, password}) => {
+        }, ({username, password, stringFields = []}) => {
           function onChange (e) {
             e.dispatchEvent(new Event('change', {bubbles: true}));
             e.dispatchEvent(new Event('input', {bubbles: true}));
@@ -132,6 +132,22 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
               if (${cmd === 'insert-both'}) {
                 const form = aElement.closest('form');
                 if (form) {
+                  // string fields
+                  stringFields.forEach(o => {
+                    const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
+                    if (custom) {
+                      custom.focus();
+                      document.execCommand('selectAll', false, '');
+                      const v = document.execCommand('insertText', false, o.Value);
+                      if (!v) {
+                        try {
+                          custom.value = password;
+                        } catch (e) {}
+                      }
+                      onChange(custom);
+                    }
+                  });
+                  // password
                   const passElement = form.querySelector('[type=password]');
                   if (passElement) {
                     passElement.focus();

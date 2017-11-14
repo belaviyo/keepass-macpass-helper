@@ -32,12 +32,13 @@ var cookie = {
   }
 };
 
-function add(login, name, password) {
+function add(login, name, password, stringFields) {
   const entry = Object.assign(document.createElement('option'), {
     textContent: login + (name ? ` - ${name}` : ''),
     value: login
   });
   entry.dataset.password = password || '';
+  entry.stringFields = stringFields;
   list.appendChild(entry);
 }
 
@@ -60,7 +61,7 @@ function submit() {
     }
     else {
       response.Entries = response.Entries || [];
-      response.Entries.forEach(e => add(e.Login, e.Name, e.Password));
+      response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
       if (response.Success === 'false') {
         focus();
         add('Something went wrong!');
@@ -183,7 +184,8 @@ document.addEventListener('click', e => {
       cmd,
       detail: e.detail,
       login: list.value,
-      password: checked.dataset.password
+      password: checked.dataset.password,
+      stringFields: checked.stringFields
     });
   }
   else if (cmd && cmd.startsWith('copy')) {
