@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.3.0",
+  "version": "0.3.2",
   "name": "KeePassHelper Password Manager",
   "description": "Helper extension for KeePass to find and insert logins and passwords without copying them",
   "permissions": [
@@ -10,6 +10,9 @@
     "contextMenus",
     "clipboardWrite",
     "notifications"
+  ],
+  "optional_permissions": [
+    "webNavigation"
   ],
   "background": {
     "persistent": false,

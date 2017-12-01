@@ -12,8 +12,10 @@
         width: 100%;
         border-collapse: collapse;
       }
+      textarea,
       input[type=text] {
         width: 100%;
+        box-sizing: border-box;
       }
       th {
         height: 24px;
@@ -56,7 +58,7 @@
     </tbody>
     <thead>
       <tr>
-        <th colspan="2">Auto login (for one credential)</th>
+        <th colspan="2">AutoFill (for one credential)</th>
       </tr>
     </thead>
     <tbody>
@@ -67,6 +69,23 @@
       <tr>
         <td>Then submit the form</td>
         <td><input type="checkbox" id="auto-submit"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2">Auto Login</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2">A JSON array to fill login forms automatically without the need to use the panel at all. Example: [{"url": "https://github.com/login", "username": "test.user@gmail.com"}]</td>
+      </tr>
+      <tr>
+        <td colspan="2"><textarea rows="4" id="json"></textarea></td>
+      </tr>
+      <tr>
+        <td>Then submit the form</td>
+        <td><input type="checkbox" id="auto-submit-auto-login"></td>
       </tr>
     </tbody>
     <thead>

@@ -27,7 +27,7 @@ function onCommand(id, callback = function() {}) {
 }
 chrome.browserAction.onClicked.addListener(({id}) => onCommand(id));
 
-chrome.runtime.onMessage.addListener((request, sender, response) => {
+var onMessage = (request, sender, response) => {
   const id = request.tabId || (sender.tab ? sender.tab.id : -1);
   const cmd = request.cmd;
   if (cmd === 'close-me' || cmd.startsWith('insert-')) {
@@ -45,7 +45,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     }, () => chrome.runtime.lastError);
     chrome.tabs.executeScript(id, {
       code: `
-        if (typeof aElement !== 'undefined' && aElement) {
+        if (typeof aElement !== 'undefined' && aElement && !Array.isArray(aElement)) {
           aElement.focus();
           window.focus();
         }
@@ -110,7 +110,6 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       password: request.password,
       stringFields: request.stringFields
     };
-
     chrome.tabs.executeScript(id, {
       code: `
         chrome.runtime.sendMessage({
@@ -121,7 +120,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             e.dispatchEvent(new Event('change', {bubbles: true}));
             e.dispatchEvent(new Event('input', {bubbles: true}));
           }
-          if (aElement) {
+          const once = aElement => {
             (function (success) {
               if (!success) {
                 try {
@@ -151,8 +150,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
                   const passElement = form.querySelector('[type=password]');
                   if (passElement) {
                     passElement.focus();
-                    document.execCommand('selectAll', false, '');
-                    const v = document.execCommand('insertText', false, password);
+                    let v = false;
+                    // only insert if password element is focused
+                    if (document.activeElement === passElement) {
+                      document.execCommand('selectAll', false, '');
+                      v = document.execCommand('insertText', false, password);
+                    }
                     if (!v) {
                       try {
                         passElement.value = password;
@@ -193,6 +196,17 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
               )
             );
           }
+          if (aElement) {
+            if (Array.isArray(aElement)) {
+              aElement.forEach(e => {
+                e.focus();
+                once(e);
+              });
+            }
+            else {
+              once(aElement);
+            }
+          }
         });
       `,
       runAt: 'document_start',
@@ -200,7 +214,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       matchAboutBlank: true
     }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
   }
-});
+};
+chrome.runtime.onMessage.addListener(onMessage);
 
 function copy(str, tabId) {
   if (/Firefox/.test(navigator.userAgent)) {
@@ -240,6 +255,71 @@ function copy(str, tabId) {
   }
 }
 
+// auto login
+var login = {
+  'json': JSON.parse(localStorage.getItem('json') || '[]'),
+  'auto-submit': localStorage.getItem('auto-submit') === 'true',
+  observe: d => {
+    if (d.frameId === 0) {
+      const o = login.json.filter(o => d.url.startsWith(o.url)).pop();
+      if (o) {
+        onMessage({
+          cmd: 'logins',
+          query: d.url
+        }, {}, ({error, response}) => {
+          if (!error && response) {
+            const e = (response.Entries || []).filter(e => e.Login === o.username).pop();
+            if (e) {
+              // do we have a username field?
+              chrome.tabs.executeScript(d.tabId, {
+                runAt: 'document_start',
+                allFrames: true,
+                code: `(() => {
+                  const forms = [...document.querySelectorAll('input[type=password]')]
+                    .map(p => p.form)
+                    .filter(f => f &&
+                      (f.name || '').indexOf('reg') === -1 &&
+                      (f.id || '').indexOf('reg') === -1 &&
+                      (f.action || '').indexOf('join') === -1
+                    );
+                  aElement = [];
+
+                  forms.forEach(f => {
+                    aElement.push(...[...f.querySelectorAll('input:not([type=password])')]
+                      .filter(i => (i.type === 'text' || i.type === 'email')));
+                  });
+                  return aElement.length;
+                })()`
+              }, (arr = []) => {
+                // if there is a username input (aElement exists)
+                if (arr.some(i => i)) {
+                  onMessage({
+                    tabId: d.tabId,
+                    cmd: 'insert-both',
+                    login: e.Login,
+                    password: e.Password,
+                    detail: login['auto-submit'] ? '' : 'no-submit',
+                    stringFields: e.StringFields
+                  });
+                }
+              });
+            }
+          }
+        });
+      }
+    }
+  },
+  register: () => {
+    if (chrome.webNavigation) {
+      chrome.webNavigation.onDOMContentLoaded.removeListener(login.observe);
+      if (login.json.length) {
+        chrome.webNavigation.onDOMContentLoaded.addListener(login.observe);
+      }
+    }
+  }
+};
+login.register();
+
 // Context Menu
 {
   const callback = () => {
@@ -258,6 +338,11 @@ function copy(str, tabId) {
       title: 'Save a new login form in KeePass',
       contexts: ['browser_action']
     });
+    chrome.contextMenus.create({
+      id: 'auto-login',
+      title: 'Perform auto-login for this URL',
+      contexts: ['browser_action']
+    });
   };
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);
@@ -273,6 +358,37 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   else if (info.menuItemId === 'open-keyboards') {
     chrome.tabs.create({
       url: 'chrome://extensions/configureCommands'
+    });
+  }
+  else if (info.menuItemId === 'auto-login') {
+    let key = document.cookie.split(`${(new URL(tab.url)).hostname}=`);
+    if (key.length > 1) {
+      key = key[1].split(';')[0];
+    }
+    else {
+      key = '';
+    }
+
+    chrome.tabs.executeScript(tab.id, {
+      runAt: 'document_start',
+      allFrames: false,
+      code: `window.prompt('What is the username to match with KeePass database? This username must exactly match with one of the credentials stored in your KeePass database for this URL', '${key}')`
+    }, (arr = []) => {
+      if (chrome.runtime.lastError) {
+        return notify(chrome.runtime.lastError.message);
+      }
+      const username = (arr[0] || '').trim();
+      if (username) {
+        login.json.push({
+          url: tab.url.split('?')[0],
+          username
+        });
+        localStorage.setItem('json', JSON.stringify(login.json));
+        login.register();
+        notify(`A new automatic login is registered for this URL.
+
+To fill the credential automatically refresh the page.`);
+      }
     });
   }
   else {
@@ -307,19 +423,22 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // FAQs & Feedback
 chrome.storage.local.get({
   'version': null,
-  'faqs': !/Firefox/.test(navigator.userAgent)
+  'faqs': navigator.userAgent.indexOf('Firefox') === -1
 }, prefs => {
   const version = chrome.runtime.getManifest().version;
 
   if (prefs.version ? (prefs.faqs && prefs.version !== version) : true) {
     chrome.storage.local.set({version}, () => {
+      const p = Boolean(prefs.version);
       chrome.tabs.create({
-        url: 'http://add0n.com/keepass-helper.html?version=' + version +
-          '&type=' + (prefs.version ? ('upgrade&p=' + prefs.version) : 'install')
+        url: chrome.runtime.getManifest().homepage_url + '?version=' + version +
+          '&type=' + (p ? ('upgrade&p=' + prefs.version) : 'install'),
+        active: p === false
       });
     });
   }
 });
+
 {
   const {name, version} = chrome.runtime.getManifest();
   chrome.runtime.setUninstallURL('http://add0n.com/feedback.html?name=' + name + '&version=' + version);
