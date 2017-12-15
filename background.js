@@ -274,13 +274,13 @@ var onMessage = (request, sender, response) => {
 
     const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
     const sotp = request.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
-    if (sotp) {
+    if (sotp && cmd === 'insert-both') {
       jsOTP.secure(id, sotp, true).then(s => {
         secret = s;
         step();
       }).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
     }
-    else if (otp) {
+    else if (otp && cmd === 'insert-both') {
       secret = jsOTP.exec(otp || '', true);
       step();
     }

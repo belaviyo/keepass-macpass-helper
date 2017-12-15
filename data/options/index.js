@@ -74,3 +74,6 @@ document.getElementById('example').addEventListener('click', () => {
     'username': 'test.user@gmail.com'
   }], null, '  ');
 });
+document.getElementById('support').addEventListener('click', () => chrome.tabs.create({
+  url: 'https://www.paypal.me/addondonation/10usd'
+}));
