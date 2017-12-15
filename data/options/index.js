@@ -68,3 +68,9 @@ function save() {
 
 document.addEventListener('DOMContentLoaded', restore);
 document.getElementById('save').addEventListener('click', save);
+document.getElementById('example').addEventListener('click', () => {
+  document.getElementById('json').value = JSON.stringify([{
+    'url': 'https://github.com/login',
+    'username': 'test.user@gmail.com'
+  }], null, '  ');
+});
