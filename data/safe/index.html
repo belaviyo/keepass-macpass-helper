@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: "Helvetica Neue",Helvetica,sans-serif;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+      }
+      form {
+        background-color: #fff;
+        padding: 10px;
+        border: solid 1px #ccc;
+        width: 300px;
+      }
+      table {
+        width: 100%;
+      }
+      td {
+        white-space: nowrap;
+      }
+      td:last-child {
+        text-align: right;
+      }
+      input[type=text],
+      input[type=password] {
+        width: 100%;
+        box-sizing: border-box;
+        text-indent: 5px;
+      }
+      input[type=button],
+      input[type=submit] {
+        border: solid 1px #ccc;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      input[type=text],
+      input[type=submit],
+      input[type=button],
+      input[type=password] {
+        height: 22px;
+      }
+      input {
+        outline: none;
+      }
+      .submit {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .submit input {
+        margin: 10px 2px;
+        padding: 0 20px;
+      }
+      .spacer {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="#">
+      <table>
+        <colgroup>
+          <col width="10px"></col>
+          <col></col>
+        </colgroup>
+        <tr>
+          <td>Passphrase</td>
+          <td><input type="password" id="passphrase" required></td>
+        </tr>
+        <tr>
+          <td>String</td>
+          <td><input type="text" id="data" required></td>
+        </tr>
+        <tr>
+          <td>Result</td>
+          <td><input type="text" id="result" readonly="true"></td>
+        </tr>
+      </table>
+      <div class="submit">
+        <input type="button" value="Cancel" id="cancel">
+        <span class="spacer"></span>
+        <input type="submit" value="Decrypt" id="decrypt">
+        <input type="submit" value="Encrypt" id="encrypt">
+      </div>
+    </form>
+    <script src="/safe.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>

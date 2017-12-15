@@ -1,15 +1,22 @@
-/* globals KeePass, jsOTP */
+/* globals KeePass, jsOTP, safe */
 'use strict';
 
 var storage = {};
 var login;
 
-jsOTP.exec = secret => {
-  if (secret.indexOf('key=') === -1) {
-    notify('"otp" string-field entry should have a value of "key=OTP_SECRET" format');
+jsOTP.exec = (secret, silent = false) => {
+  if (secret.indexOf('key=') !== -1) {
+    return (new jsOTP.totp()).getOtp(secret.split('key=')[1].split('&')[0]);
+  }
+  else if (secret.indexOf('secret=') !== -1) {
+    return (new jsOTP.totp()).getOtp(secret.split('secret=')[1].split('&')[0]);
+  }
+  else {
+    if (silent === false) {
+      notify('"otp" string-field entry should have a value of "key=OTP_SECRET" format');
+    }
     return 'invalid sectet';
   }
-  return (new jsOTP.totp()).getOtp(secret.split('key=')[1].split('&')[0]);
 };
 
 function notify(message) {
@@ -20,6 +27,23 @@ function notify(message) {
     message
   });
 }
+jsOTP.secure = (id, ensecret, silent = false) => new Promise((resolve, reject) => chrome.tabs.executeScript(id, {
+  code: `window.prompt('Please enter the passphrase to decrypt the encrypted OTP secret')`,
+  runAt: 'document_start',
+  allFrames: false
+}, rtn => {
+  if (chrome.runtime.lastError) {
+    reject(chrome.runtime.lastError);
+  }
+  else {
+    if (rtn && rtn.length) {
+      safe.decrypt(ensecret, rtn[0]).then(secret => jsOTP.exec(secret, silent)).then(resolve, reject);
+    }
+    else {
+      reject(new Error('return value is empty'));
+    }
+  }
+}));
 
 function onCommand(id, callback = function() {}) {
   chrome.tabs.executeScript(id, {
@@ -95,6 +119,11 @@ var onMessage = (request, sender, response) => {
   else if (cmd === 'otp') {
     copy(jsOTP.exec(request.value), null, 'OTP token is copied to the clipboard');
   }
+  else if (cmd === 'sotp') {
+    tab().then(t => jsOTP.secure(t.id, request.value).then(token => {
+      copy(token, t.id, 'OTP token is copied to the clipboard');
+    })).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
+  }
   else if (cmd === 'logins') {
     const keepass = new KeePass();
     keepass.itl({
@@ -127,124 +156,154 @@ var onMessage = (request, sender, response) => {
     window.setTimeout(() => delete storage[request.id], 2000);
   }
   else if (request.cmd.startsWith('insert-')) {
-    const key = Math.random();
-    const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
-    const secret = jsOTP.exec(otp || '');
-
-    storage[key] = {
-      username: request.login,
-      password: request.password,
-      stringFields: request.stringFields.map(o => {
-        o.Value = o.Value.replace('{TOTP}', secret);
-        return o;
-      })
-    };
-    chrome.tabs.executeScript(id, {
-      code: `
-        chrome.runtime.sendMessage({
-          cmd: 'vars',
-          id: ${key}
-        }, ({username, password, stringFields = []}) => {
-          function onChange (e) {
-            e.dispatchEvent(new Event('change', {bubbles: true}));
-            e.dispatchEvent(new Event('input', {bubbles: true}));
-          }
-          const once = aElement => {
-            (function (success) {
-              if (!success) {
-                try {
-                  aElement.value = ${cmd === 'insert-password'} ? password : username;
-                } catch (e) {}
-              }
-              onChange(aElement);
-              if (${cmd === 'insert-both'}) {
-                const form = aElement.closest('form');
-                if (form) {
-                  // string fields
-                  stringFields.forEach(o => {
-                    const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
-                    if (custom) {
-                      custom.focus();
-                      document.execCommand('selectAll', false, '');
-                      const v = document.execCommand('insertText', false, o.Value);
+    let secret = '';
+    const step = () => {
+      const key = Math.random();
+      storage[key] = {
+        username: request.login,
+        password: request.password,
+        stringFields: request.stringFields.map(o => {
+          o.Value = o.Value.replace('{TOTP}', secret);
+          return o;
+        })
+      };
+      chrome.tabs.executeScript(id, {
+        code: `
+          chrome.runtime.sendMessage({
+            cmd: 'vars',
+            id: ${key}
+          }, ({username, password, stringFields = []}) => {
+            function onChange (e) {
+              e.dispatchEvent(new Event('change', {bubbles: true}));
+              e.dispatchEvent(new Event('input', {bubbles: true}));
+            }
+            const once = aElement => {
+              (function (success) {
+                if (!success) {
+                  try {
+                    aElement.value = ${cmd === 'insert-password'} ? password : username;
+                  } catch (e) {}
+                }
+                onChange(aElement);
+                if (${cmd === 'insert-both'}) {
+                  const form = aElement.closest('form');
+                  if (form) {
+                    // string fields
+                    stringFields.forEach(o => {
+                      const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
+                      if (custom) {
+                        custom.focus();
+                        document.execCommand('selectAll', false, '');
+                        const v = document.execCommand('insertText', false, o.Value);
+                        if (!v) {
+                          try {
+                            custom.value = o.Value;
+                          } catch (e) {}
+                        }
+                        onChange(custom);
+                      }
+                    });
+                    // password
+                    const passElement = form.querySelector('[type=password]');
+                    if (passElement) {
+                      passElement.focus();
+                      let v = false;
+                      // only insert if password element is focused
+                      if (document.activeElement === passElement) {
+                        document.execCommand('selectAll', false, '');
+                        v = document.execCommand('insertText', false, password);
+                      }
                       if (!v) {
                         try {
-                          custom.value = o.Value;
+                          passElement.value = password;
                         } catch (e) {}
                       }
-                      onChange(custom);
-                    }
-                  });
-                  // password
-                  const passElement = form.querySelector('[type=password]');
-                  if (passElement) {
-                    passElement.focus();
-                    let v = false;
-                    // only insert if password element is focused
-                    if (document.activeElement === passElement) {
-                      document.execCommand('selectAll', false, '');
-                      v = document.execCommand('insertText', false, password);
-                    }
-                    if (!v) {
-                      try {
-                        passElement.value = password;
-                      } catch (e) {}
-                    }
-                    onChange(passElement);
-                    if ('${request.detail}' !== 'no-submit') {
-                      // submit
-                      const button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
-                      if (button) {
-                        button.click();
-                      }
-                      else {
-                        const onsubmit = form.getAttribute('onsubmit');
-                        if (onsubmit && onsubmit.indexOf('return false') === -1) {
-                          form.onsubmit();
+                      onChange(passElement);
+                      if ('${request.detail}' !== 'no-submit') {
+                        // submit
+                        const button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
+                        if (button) {
+                          button.click();
                         }
                         else {
-                          form.submit();
+                          const onsubmit = form.getAttribute('onsubmit');
+                          if (onsubmit && onsubmit.indexOf('return false') === -1) {
+                            form.onsubmit();
+                          }
+                          else {
+                            form.submit();
+                          }
                         }
                       }
+                      window.focus();
+                      passElement.focus();
                     }
-                    window.focus();
-                    passElement.focus();
                   }
                 }
+                else {
+                  aElement.focus();
+                  window.focus();
+                }
+              })(
+                document.execCommand('selectAll', false, '') &&
+                document.execCommand(
+                  'insertText',
+                  false,
+                  ${cmd === 'insert-password'} ? password : username
+                )
+              );
+            }
+            if (aElement) {
+              if (Array.isArray(aElement)) {
+                aElement.forEach(e => {
+                  e.focus();
+                  once(e);
+                });
               }
               else {
-                aElement.focus();
-                window.focus();
+                once(aElement);
               }
-            })(
-              document.execCommand('selectAll', false, '') &&
-              document.execCommand(
-                'insertText',
-                false,
-                ${cmd === 'insert-password'} ? password : username
-              )
-            );
-          }
-          if (aElement) {
-            if (Array.isArray(aElement)) {
-              aElement.forEach(e => {
-                e.focus();
-                once(e);
-              });
             }
-            else {
-              once(aElement);
-            }
-          }
-        });
-      `,
-      runAt: 'document_start',
-      allFrames: true,
-      matchAboutBlank: true
-    }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+          });
+        `,
+        runAt: 'document_start',
+        allFrames: true,
+        matchAboutBlank: true
+      }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+    };
+
+    const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
+    const sotp = request.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
+    if (sotp) {
+      jsOTP.secure(id, sotp, true).then(s => {
+        secret = s;
+        step();
+      }).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
+    }
+    else if (otp) {
+      secret = jsOTP.exec(otp || '', true);
+      step();
+    }
+    else {
+      step();
+    }
   }
 };
 chrome.runtime.onMessage.addListener(onMessage);
+
+function tab() {
+  return new Promise((resolve, reject) => chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, tabs => {
+    if (tabs && tabs.length) {
+      resolve(tabs[0]);
+    }
+    else {
+      reject(new Error('No active tab is detected'));
+    }
+  }));
+}
 
 function copy(str, tabId, msg) {
   if (/Firefox/.test(navigator.userAgent)) {
@@ -273,17 +332,7 @@ function copy(str, tabId, msg) {
       run(tabId);
     }
     else {
-      chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      }, tabs => {
-        if (tabs && tabs.length) {
-          run(tabs[0].id);
-        }
-        else {
-          notify('No active tab is detected');
-        }
-      });
+      tab().then(tab => run(tab.id)).catch(e => notify(e.message));
     }
   }
   else {
@@ -394,6 +443,11 @@ login.register();
       title: 'Perform auto-login for this URL',
       contexts: ['browser_action']
     });
+    chrome.contextMenus.create({
+      id: 'encrypt-data',
+      title: 'Encrypt or decrypt a string data',
+      contexts: ['browser_action']
+    });
   };
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);
@@ -441,6 +495,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 To fill the credential automatically refresh the page.`);
       }
     });
+  }
+  else if (info.menuItemId === 'encrypt-data') {
+    chrome.tabs.executeScript(tab.id, {
+      file: '/data/safe/inject.js',
+      runAt: 'document_start'
+    }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
   }
   else {
     chrome.storage.local.get({

@@ -208,10 +208,11 @@ document.addEventListener('click', e => {
   else if (cmd === 'otp') {
     const checked = list.selectedOptions[0];
     const otp = checked.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
-    if (otp) {
+    const sotp = checked.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
+    if (otp || sotp) {
       send({
-        cmd: 'otp',
-        value: otp
+        cmd: sotp ? 'sotp' : 'otp',
+        value: sotp || otp
       });
     }
     else {
