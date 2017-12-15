@@ -161,7 +161,6 @@ var onMessage = (request, sender, response) => {
                 const form = aElement.closest('form');
                 if (form) {
                   // string fields
-                  console.log(stringFields);
                   stringFields.forEach(o => {
                     const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
                     if (custom) {
