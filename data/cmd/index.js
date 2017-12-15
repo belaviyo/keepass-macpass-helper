@@ -127,6 +127,10 @@ document.addEventListener('keydown', e => {
     document.querySelector('[data-cmd="copy"]').click();
     e.preventDefault();
   }
+  else if (metaKey && e.code === 'KeyO') {
+    document.querySelector('[data-cmd="otp"]').click();
+    e.preventDefault();
+  }
   else if (metaKey && e.code === 'KeyX') {
     document.querySelector('[data-cmd="copy"]').dispatchEvent(
       new CustomEvent('click', {
@@ -200,6 +204,22 @@ document.addEventListener('click', e => {
       cmd: 'notify',
       message: (e.detail === 'password' ? 'Password' : 'Login name') + ' is copied to the clipboard'
     });
+  }
+  else if (cmd === 'otp') {
+    const checked = list.selectedOptions[0];
+    const otp = checked.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
+    if (otp) {
+      send({
+        cmd: 'otp',
+        value: otp
+      });
+    }
+    else {
+      send({
+        cmd: 'notify',
+        message: 'No string-field entry with "otp" key is detected. To generate one-time password tokens, save a new string-field entry with "otp" key and "key=OTP_SECRET" value.'
+      });
+    }
   }
   else if (cmd === 'close') {
     send({

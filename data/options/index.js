@@ -56,34 +56,14 @@ function save() {
       message: e.message
     });
   }
-  const doSave = () => {
-    localStorage.setItem('json', JSON.stringify(json));
-    const checked = document.getElementById('auto-submit-auto-login').checked;
-    localStorage.setItem('auto-submit', checked);
-    chrome.runtime.getBackgroundPage(b => {
-      b.login.json = json;
-      b.login['auto-submit'] = checked;
-      b.login.register();
-
-      restore();
-    });
-  };
-  if (json.length) {
-    chrome.permissions.request({
-      permissions: ['webNavigation']
-    }, granted => {
-      if (granted) {
-        doSave();
-      }
-      else {
-        json = [];
-        doSave();
-      }
-    });
-  }
-  else {
-    doSave();
-  }
+  localStorage.setItem('json', JSON.stringify(json));
+  const checked = document.getElementById('auto-submit-auto-login').checked;
+  localStorage.setItem('auto-submit', checked);
+  chrome.runtime.sendMessage({
+    cmd: 'register-login',
+    'auto-submit': checked,
+    json
+  });
 }
 
 document.addEventListener('DOMContentLoaded', restore);

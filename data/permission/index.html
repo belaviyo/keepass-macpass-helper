@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Permissions :: KeePassHelper</title>
+  </head>
+  <style type="text/css">
+    html {
+      height: 100%;
+      background-color: #414141;
+      color: #ccc;
+    }
+    input {
+      background-color: #282828;
+      color: #ccc;
+      border: none;
+      border-radius: 0;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      outline: none;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: "Helvetica Neue",Helvetica,sans-serif;
+      font-size: 13px;
+      margin: 10px;
+      height: calc(100% - 20px);
+      background: url('../icons/128.png') center center no-repeat;
+    }
+
+  </style>
+  <body>
+    <p>For auto-login feature to work, <span>"webNavigation"</span> permission is required. <span>"chrome.webNavigation"</span> has an observer method to notify the extension when a webpage is loaded.</p>
+    <div style="flex: 1;"></div>
+    <div style="text-align: right">
+      <input type="button" id="disable" value="Disable auto-login">
+      <input type="button" id="permission" value="Request the Permission">
+    </div>
+    <script src="index.js"></script>
+  </body>
+</html>

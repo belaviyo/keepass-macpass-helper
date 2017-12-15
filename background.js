@@ -1,7 +1,16 @@
-/* globals KeePass */
+/* globals KeePass, jsOTP */
 'use strict';
 
 var storage = {};
+var login;
+
+jsOTP.exec = secret => {
+  if (secret.indexOf('key=') === -1) {
+    notify('"otp" string-field entry should have a value of "key=OTP_SECRET" format');
+    return 'invalid sectet';
+  }
+  return (new jsOTP.totp()).getOtp(secret.split('key=')[1].split('&')[0]);
+};
 
 function notify(message) {
   chrome.notifications.create({
@@ -72,6 +81,20 @@ var onMessage = (request, sender, response) => {
   else if (cmd === 'notify') {
     notify(request.message);
   }
+  else if (cmd === 'register-login') {
+    login.json = request.json;
+    login['auto-submit'] = request['auto-submit'];
+    login.register();
+  }
+  else if (cmd === 'disable-login') {
+    login.json = [];
+    localStorage.setItem('json', '[]');
+    login.register();
+    chrome.tabs.remove(sender.tab.id);
+  }
+  else if (cmd === 'otp') {
+    copy(jsOTP.exec(request.value), null, 'OTP token is copied to the clipboard');
+  }
   else if (cmd === 'logins') {
     const keepass = new KeePass();
     keepass.itl({
@@ -105,10 +128,16 @@ var onMessage = (request, sender, response) => {
   }
   else if (request.cmd.startsWith('insert-')) {
     const key = Math.random();
+    const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
+    const secret = jsOTP.exec(otp || '');
+
     storage[key] = {
       username: request.login,
       password: request.password,
-      stringFields: request.stringFields
+      stringFields: request.stringFields.map(o => {
+        o.Value = o.Value.replace('{TOTP}', secret);
+        return o;
+      })
     };
     chrome.tabs.executeScript(id, {
       code: `
@@ -132,6 +161,7 @@ var onMessage = (request, sender, response) => {
                 const form = aElement.closest('form');
                 if (form) {
                   // string fields
+                  console.log(stringFields);
                   stringFields.forEach(o => {
                     const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
                     if (custom) {
@@ -140,7 +170,7 @@ var onMessage = (request, sender, response) => {
                       const v = document.execCommand('insertText', false, o.Value);
                       if (!v) {
                         try {
-                          custom.value = password;
+                          custom.value = o.Value;
                         } catch (e) {}
                       }
                       onChange(custom);
@@ -217,11 +247,11 @@ var onMessage = (request, sender, response) => {
 };
 chrome.runtime.onMessage.addListener(onMessage);
 
-function copy(str, tabId) {
+function copy(str, tabId, msg) {
   if (/Firefox/.test(navigator.userAgent)) {
     const id = Math.random();
     storage[id] = str;
-    chrome.tabs.executeScript(tabId, {
+    const run = tabId => chrome.tabs.executeScript(tabId, {
       allFrames: false,
       runAt: 'document_start',
       code: `
@@ -238,25 +268,37 @@ function copy(str, tabId) {
         });
       `
     }, () => {
-      notify(
-        chrome.runtime.lastError ?
-          'Cannot copy to the clipboard on this page!' :
-          'Generated password is copied to the clipboard'
-      );
+      notify(chrome.runtime.lastError ? 'Cannot copy to the clipboard on this page!' : msg);
     });
+    if (tabId) {
+      run(tabId);
+    }
+    else {
+      chrome.tabs.query({
+        active: true,
+        currentWindow: true
+      }, tabs => {
+        if (tabs && tabs.length) {
+          run(tabs[0].id);
+        }
+        else {
+          notify('No active tab is detected');
+        }
+      });
+    }
   }
   else {
     document.oncopy = e => {
       e.clipboardData.setData('text/plain', str);
       e.preventDefault();
-      notify('Generated password is copied to the clipboard');
+      notify(msg);
     };
     document.execCommand('Copy', false, null);
   }
 }
 
 // auto login
-var login = {
+login = {
   'json': JSON.parse(localStorage.getItem('json') || '[]'),
   'auto-submit': localStorage.getItem('auto-submit') === 'true',
   observe: d => {
@@ -315,6 +357,16 @@ var login = {
       if (login.json.length) {
         chrome.webNavigation.onDOMContentLoaded.addListener(login.observe);
       }
+    }
+    else if (login.json.length) {
+      chrome.windows.create({
+        url: 'data/permission/index.html',
+        type: 'popup',
+        width: 400,
+        height: 250,
+        left: screen.availLeft + Math.round((screen.availWidth - 400) / 2),
+        top: screen.availTop + Math.round((screen.availHeight - 250) / 2)
+      });
     }
   }
 };
@@ -401,7 +453,7 @@ To fill the credential automatically refresh the page.`);
       const password = [...array].map(n => Math.floor(n / 256 * prefs.charset.length) - 1)
         .map(n => prefs.charset[n]).join('');
       // copy to clipboard
-      copy(password, tab.id);
+      copy(password, tab.id, 'Generated password is copied to the clipboard');
     });
   }
 });
@@ -423,23 +475,35 @@ To fill the credential automatically refresh the page.`);
 // FAQs & Feedback
 chrome.storage.local.get({
   'version': null,
-  'faqs': navigator.userAgent.indexOf('Firefox') === -1
+  'faqs': navigator.userAgent.indexOf('Firefox') === -1,
+  'last-update': 0,
 }, prefs => {
   const version = chrome.runtime.getManifest().version;
 
   if (prefs.version ? (prefs.faqs && prefs.version !== version) : true) {
-    chrome.storage.local.set({version}, () => {
-      const p = Boolean(prefs.version);
-      chrome.tabs.create({
-        url: chrome.runtime.getManifest().homepage_url + '?version=' + version +
-          '&type=' + (p ? ('upgrade&p=' + prefs.version) : 'install'),
-        active: p === false
-      });
+    const now = Date.now();
+    const doUpdate = (now - prefs['last-update']) / 1000 / 60 / 60 / 24 > 30;
+    chrome.storage.local.set({
+      version,
+      'last-update': doUpdate ? Date.now() : prefs['last-update']
+    }, () => {
+      // do not display the FAQs page if last-update occurred less than 30 days ago.
+      if (doUpdate) {
+        const p = Boolean(prefs.version);
+        chrome.tabs.create({
+          url: chrome.runtime.getManifest().homepage_url + '?version=' + version +
+            '&type=' + (p ? ('upgrade&p=' + prefs.version) : 'install'),
+          active: p === false
+        });
+      }
     });
   }
 });
 
 {
   const {name, version} = chrome.runtime.getManifest();
-  chrome.runtime.setUninstallURL('http://add0n.com/feedback.html?name=' + name + '&version=' + version);
+  chrome.runtime.setUninstallURL(
+    (new URL(chrome.runtime.getManifest().homepage_url)).origin +
+      '/feedback.html?name=' + name + '&version=' + version
+  );
 }
