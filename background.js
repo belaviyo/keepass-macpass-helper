@@ -190,7 +190,8 @@ var onMessage = (request, sender, response) => {
                   if (form) {
                     // string fields
                     stringFields.forEach(o => {
-                      const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
+                      const key = o.Key.replace('KPH: ', '');
+                      const custom = form.querySelector('[id="' + key + '"]') || form.querySelector('[name="' + key + '"]');
                       if (custom) {
                         custom.focus();
                         document.execCommand('selectAll', false, '');
