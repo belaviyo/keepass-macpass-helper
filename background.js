@@ -221,7 +221,7 @@ var onMessage = (request, sender, response) => {
                       onChange(passElement);
                       if ('${request.detail}' !== 'no-submit') {
                         // submit
-                        const button = form.querySelector('input[type=submit]') || form.querySelector('[type=submit]');
+                        const button = form.querySelector('input[type=submit]') || form.querySelector('button:not([type=reset i]):not([type=button i])');
                         if (button) {
                           button.click();
                         }
