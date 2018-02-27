@@ -169,109 +169,25 @@ var onMessage = (request, sender, response) => {
       };
       chrome.tabs.executeScript(id, {
         code: `
-          chrome.runtime.sendMessage({
-            cmd: 'vars',
-            id: ${key}
-          }, ({username, password, stringFields = []}) => {
-            function onChange (e) {
-              e.dispatchEvent(new Event('change', {bubbles: true}));
-              e.dispatchEvent(new Event('input', {bubbles: true}));
-            }
-            const once = aElement => {
-              (function (success) {
-                if (!success) {
-                  try {
-                    aElement.value = ${cmd === 'insert-password'} ? password : username;
-                  } catch (e) {}
-                }
-                onChange(aElement);
-                if (${cmd === 'insert-both'}) {
-                  const form = aElement.closest('form');
-                  if (form) {
-                    // string fields
-                    stringFields.forEach(o => {
-                      const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
-                      if (custom) {
-                        custom.focus();
-                        document.execCommand('selectAll', false, '');
-                        const v = document.execCommand('insertText', false, o.Value);
-                        if (!v) {
-                          try {
-                            custom.value = o.Value;
-                          } catch (e) {}
-                        }
-                        onChange(custom);
-                      }
-                    });
-                    // password
-                    const passElement = form.querySelector('[type=password]');
-                    if (passElement) {
-                      passElement.focus();
-                      let v = false;
-                      // only insert if password element is focused
-                      if (document.activeElement === passElement) {
-                        document.execCommand('selectAll', false, '');
-                        v = document.execCommand('insertText', false, password);
-                      }
-                      if (!v) {
-                        try {
-                          passElement.value = password;
-                        } catch (e) {}
-                      }
-                      onChange(passElement);
-                      if ('${request.detail}' !== 'no-submit') {
-                        // submit
-                        const button = form.querySelector('input[type=submit]') || form.querySelector('button:not([type=reset i]):not([type=button i])');
-                        if (button) {
-                          button.click();
-                        }
-                        else {
-                          const onsubmit = form.getAttribute('onsubmit');
-                          if (onsubmit && onsubmit.indexOf('return false') === -1) {
-                            form.onsubmit();
-                          }
-                          else {
-                            form.submit();
-                          }
-                        }
-                      }
-                      window.focus();
-                      passElement.focus();
-                    }
-                  }
-                }
-                else {
-                  aElement.focus();
-                  window.focus();
-                }
-              })(
-                document.execCommand('selectAll', false, '') &&
-                document.execCommand(
-                  'insertText',
-                  false,
-                  ${cmd === 'insert-password'} ? password : username
-                )
-              );
-            }
-            if (aElement) {
-              if (Array.isArray(aElement)) {
-                aElement.forEach(e => {
-                  e.focus();
-                  once(e);
-                });
-              }
-              else {
-                once(aElement);
-              }
-            }
-          });
+          var key = ${key};
+          var cmd = '${cmd}';
+          var doSubmit = ${request.detail !== 'no-submit'};
         `,
         runAt: 'document_start',
         allFrames: true,
         matchAboutBlank: true
-      }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+      }, () => {
+        if (chrome.runtime.lastError) {
+          return notify(chrome.runtime.lastError.message);
+        }
+        chrome.tabs.executeScript(id, {
+          file: 'data/insert.js',
+          runAt: 'document_start',
+          allFrames: true,
+          matchAboutBlank: true
+        });
+      });
     };
-
     const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
     const sotp = request.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
     if (sotp && cmd === 'insert-both') {
@@ -534,7 +450,7 @@ To fill the credential automatically refresh the page.`);
 // FAQs & Feedback
 chrome.storage.local.get({
   'version': null,
-  'faqs': navigator.userAgent.indexOf('Firefox') === -1,
+  'faqs': false,
   'last-update': 0,
 }, prefs => {
   const version = chrome.runtime.getManifest().version;
