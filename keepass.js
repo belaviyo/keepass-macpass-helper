@@ -115,7 +115,7 @@ KeePass.prototype.logins = function({url, submiturl, realm}, callback) {
         Name: this.decrypt(e.Name, iv),
         Password: this.decrypt(e.Password, iv),
         StringFields: (e.StringFields || []).map(o => Object.assign({
-          Key: this.decrypt(o.Key, iv),
+          Key: this.decrypt(o.Key, iv).replace('KPH: ', ''),
           Value: this.decrypt(o.Value, iv)
         }))
       }));
