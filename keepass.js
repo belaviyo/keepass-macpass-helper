@@ -28,7 +28,6 @@ KeePass.prototype.init = function(callback) {
   });
 };
 KeePass.prototype.post = function(obj, callback) {
-  console.log(obj);
   const req = new window.XMLHttpRequest();
   req.open('POST', this.host);
   const data = JSON.stringify(obj);

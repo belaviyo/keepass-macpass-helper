@@ -116,14 +116,6 @@ var onMessage = (request, sender, response) => {
     login.register();
     chrome.tabs.remove(sender.tab.id);
   }
-  else if (cmd === 'otp') {
-    copy(jsOTP.exec(request.value), null, 'OTP token is copied to the clipboard');
-  }
-  else if (cmd === 'sotp') {
-    tab().then(t => jsOTP.secure(t.id, request.value).then(token => {
-      copy(token, t.id, 'OTP token is copied to the clipboard');
-    })).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
-  }
   else if (cmd === 'logins') {
     const keepass = new KeePass();
     keepass.itl({
@@ -156,16 +148,12 @@ var onMessage = (request, sender, response) => {
     window.setTimeout(() => delete storage[request.id], 2000);
   }
   else if (request.cmd.startsWith('insert-')) {
-    let secret = '';
     const step = () => {
       const key = Math.random();
       storage[key] = {
         username: request.login,
         password: request.password,
-        stringFields: request.stringFields.map(o => {
-          o.Value = o.Value.replace('{TOTP}', secret);
-          return o;
-        })
+        stringFields: request.stringFields
       };
       chrome.tabs.executeScript(id, {
         code: `
@@ -188,21 +176,25 @@ var onMessage = (request, sender, response) => {
         });
       });
     };
-    const otp = request.stringFields.filter(o => o.Key === 'otp').map(o => o.Value).shift();
-    const sotp = request.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
-    if (sotp && cmd === 'insert-both') {
-      jsOTP.secure(id, sotp, true).then(s => {
-        secret = s;
-        step();
-      }).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
+    step();
+  }
+  else if (request.cmd === 'insert.js-otp') {
+    if (request.sotp) {
+      jsOTP.secure(id, request.sotp, true).then(response)
+        .catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
+      return true; // async request
     }
-    else if (otp && cmd === 'insert-both') {
-      secret = jsOTP.exec(otp || '', true);
-      step();
+    else if (request.otp) {
+      response(jsOTP.exec(request.otp || '', true));
     }
-    else {
-      step();
-    }
+  }
+  else if (cmd === 'cmd-otp') {
+    copy(jsOTP.exec(request.value), null, 'OTP token is copied to the clipboard');
+  }
+  else if (cmd === 'cmd-sotp') {
+    tab().then(t => jsOTP.secure(t.id, request.value).then(token => {
+      copy(token, t.id, 'OTP token is copied to the clipboard');
+    })).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
   }
 };
 chrome.runtime.onMessage.addListener(onMessage);

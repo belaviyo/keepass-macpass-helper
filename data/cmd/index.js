@@ -211,7 +211,7 @@ document.addEventListener('click', e => {
     const sotp = checked.stringFields.filter(o => o.Key === 'sotp').map(o => o.Value).shift();
     if (otp || sotp) {
       send({
-        cmd: sotp ? 'sotp' : 'otp',
+        cmd: sotp ? 'cmd-sotp' : 'cmd-otp',
         value: sotp || otp
       });
     }
