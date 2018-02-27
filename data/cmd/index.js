@@ -94,6 +94,8 @@ function submit() {
     }
     window.focus();
     list.focus();
+    // Firefox bug!
+    window.setTimeout(() => list.focus(), 500);
   });
 }
 

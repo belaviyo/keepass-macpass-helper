@@ -38,7 +38,7 @@ chrome.runtime.sendMessage({
                 const v = document.execCommand('insertText', false, value);
                 if (!v) {
                   try {
-                    custom.value = o.Value;
+                    custom.value = value;
                   }
                   catch (e) {}
                 }
@@ -114,8 +114,8 @@ chrome.runtime.sendMessage({
         }
       }
       else {
-        aElement.focus();
         window.focus();
+        aElement.focus();
       }
     })(
       document.execCommand('selectAll', false, '') &&
