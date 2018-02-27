@@ -28,6 +28,7 @@ KeePass.prototype.init = function(callback) {
   });
 };
 KeePass.prototype.post = function(obj, callback) {
+  console.log(obj);
   const req = new window.XMLHttpRequest();
   req.open('POST', this.host);
   const data = JSON.stringify(obj);
@@ -79,7 +80,7 @@ KeePass.prototype.verify = function(request) {
 KeePass.prototype.test = function(callback) {
   let request = {
     'RequestType': 'test-associate',
-    'TriggerUnlock': false
+    'TriggerUnlock': 'true'
   };
   request = this.verify(request);
   this.post(request, callback);
@@ -95,7 +96,7 @@ KeePass.prototype.associate = function(callback) {
 KeePass.prototype.logins = function({url, submiturl, realm}, callback) {
   let request = {
     'RequestType': 'get-logins',
-    'TriggerUnlock': 'false',
+    'TriggerUnlock': 'true',
     'SortSelection': 'false'
   };
   request = this.verify(request);
