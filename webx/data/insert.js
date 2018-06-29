@@ -96,17 +96,27 @@ chrome.runtime.sendMessage({
             if (doSubmit) {
               const button = form.querySelector('input[type=submit]') ||
                 form.querySelector('button:not([type=reset i]):not([type=button i])');
+
               if (button) {
                 button.click();
               }
               else {
-                const onsubmit = form.getAttribute('onsubmit');
-                if (onsubmit && onsubmit.indexOf('return false') === -1) {
-                  form.onsubmit();
-                }
-                else {
-                  form.submit();
-                }
+                // try to submit with Enter key on the password element
+                const enter = name => new KeyboardEvent(name, {
+                  keyCode: 13,
+                  bubbles: true
+                });
+                aElement.dispatchEvent(enter('keypress'));
+                aElement.dispatchEvent(enter('keydown'));
+                aElement.dispatchEvent(enter('keyup'));
+
+                // const onsubmit = form.getAttribute('onsubmit');
+                // if (onsubmit && onsubmit.indexOf('return false') === -1) {
+                //   form.onsubmit();
+                // }
+                // else {
+                //   form.submit();
+                // }
               }
             }
             window.focus();
