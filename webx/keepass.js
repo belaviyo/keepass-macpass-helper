@@ -125,7 +125,7 @@ KeePass.prototype.logins = function({url, submiturl, realm}, callback) {
 };
 KeePass.prototype.set = function({url, submiturl, login, password}, callback) {
   let request = {
-    'RequestType': 'set-login',
+    'RequestType': 'set-login'
   };
   request = this.verify(request);
   const iv = request.Nonce;

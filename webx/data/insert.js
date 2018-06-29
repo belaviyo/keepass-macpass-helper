@@ -57,7 +57,7 @@ chrome.runtime.sendMessage({
                     otp
                   }, secret => {
                     if (secret) {
-                      next(o.Value.replace('{TOTP}', secret));
+                      next(o.Value.replace(/\{{1,2}TOTP\}{1,2}/, secret));
                       resolve();
                     }
                     else {
