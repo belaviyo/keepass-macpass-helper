@@ -1,5 +1,15 @@
 'use strict';
 
+// style
+{
+  const style = localStorage.getItem('cmd-style');
+  if (style) {
+    const e = document.createElement('style');
+    e.textContent = style;
+    document.documentElement.appendChild(e);
+  }
+}
+
 var list = document.getElementById('list');
 var search = document.querySelector('input[type=search]');
 

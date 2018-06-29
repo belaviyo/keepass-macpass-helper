@@ -9,8 +9,9 @@ function restore() {
     'embedded': false,
     'auto-login': false,
     'auto-submit': true,
-    'faqs': true,
+    'faqs': true
   }, prefs => {
+    document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
     document.getElementById('host').value = prefs.host;
     document.getElementById('format').value = prefs.format;
     document.getElementById('charset').value = prefs.charset;
@@ -29,6 +30,8 @@ function restore() {
 }
 
 function save() {
+  localStorage.setItem('cmd-style', document.getElementById('cmd-style').value);
+
   chrome.storage.local.set({
     'host': document.getElementById('host').value,
     'format': document.getElementById('format').value,
@@ -57,10 +60,11 @@ function save() {
     });
   }
   localStorage.setItem('json', JSON.stringify(json));
+
   const checked = document.getElementById('auto-submit-auto-login').checked;
   localStorage.setItem('auto-submit', checked);
   chrome.runtime.sendMessage({
-    cmd: 'register-login',
+    'cmd': 'register-login',
     'auto-submit': checked,
     json
   });

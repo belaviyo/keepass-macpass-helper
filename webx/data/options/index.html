@@ -7,6 +7,7 @@
       body {
         font-family: "Helvetica Neue",Helvetica,sans-serif;
         font-size: 13px;
+        min-width: 500px;
       }
       table {
         width: 100%;
@@ -17,10 +18,14 @@
         width: 100%;
         box-sizing: border-box;
       }
-      th {
-        height: 24px;
-        line-height: 24px;
+      th span{
         background-color: rgba(0, 0, 0, 0.1);
+        padding: 5px;
+        display: block;
+        margin: 10px 0;
+      }
+      thead:first-of-type th span {
+        margin-top: 0;
       }
     </style>
   </head>
@@ -32,7 +37,7 @@
     </colgroup>
     <thead>
       <tr>
-        <th colspan="2">Connection</th>
+        <th colspan="2"><span>Connection</span></th>
       </tr>
     </thead>
     <tbody>
@@ -43,7 +48,7 @@
     </tbody>
     <thead>
       <tr>
-        <th colspan="2">Password generation</th>
+        <th colspan="2"><span>Password generation</span></th>
       </tr>
     </thead>
     <tbody>
@@ -58,7 +63,7 @@
     </tbody>
     <thead>
       <tr>
-        <th colspan="2">AutoFill (for one credential)</th>
+        <th colspan="2"><span>AutoFill (for one credential)</span></th>
       </tr>
     </thead>
     <tbody>
@@ -73,7 +78,7 @@
     </tbody>
     <thead>
       <tr>
-        <th colspan="2">Auto Login</th>
+        <th colspan="2"><span>Auto Login</span></th>
       </tr>
     </thead>
     <tbody>
@@ -90,7 +95,17 @@
     </tbody>
     <thead>
       <tr>
-        <th colspan="2">Misc</th>
+        <th colspan="2"><span>Panel Styling</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2"><textarea rows="4" id="cmd-style" placeholder="style panel with CSS; e.g.: body {background: #fff !important;}"></textarea></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Misc</span></th>
       </tr>
     </thead>
     <tbody>
