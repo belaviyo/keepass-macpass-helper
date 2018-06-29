@@ -1,0 +1,27 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body vbox>
+    <div>
+      <input type="search">
+    </div>
+    <select flex=1 id="list" size=5></select>
+    <div id="toolbar">
+      <input type="button" value="Close (ESC)" data-cmd="close">
+      <input type="button" value="Username (U)" title="Press Alt + U or Command + U to insert username" data-cmd="insert-login" disabled="true">
+      <input type="button" value="Password (P)" title="Press Alt + P or Command + P to insert password" data-cmd="insert-password" disabled="true">
+      <input type="button" value="Both (B)" title="Press Alt + B or Command + B to perform {USERNAME}{TAB}{PASSWORD} sequence or press Alt + Shift + B or Command + Shift + B to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence" data-cmd="insert-both" disabled="true">
+      <!--
+      -
+      <input type="button" value="Copy (C/X)" title="Press Alt + C to copy username and press Alt + X to copy password to the clipboard" data-cmd="copy" disabled="true">
+      -->
+    </div>
+    <script src="chrome.js"></script>
+    <script src="sjcl.js"></script>
+    <script src="keepass.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>

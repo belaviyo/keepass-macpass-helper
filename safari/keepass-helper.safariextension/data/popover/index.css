@@ -1,0 +1,77 @@
+input,
+body {
+  color: #ccc;
+  background-color: #414141;
+}
+html {
+  height: 100%;
+}
+body {
+  margin: 10px;
+  height: calc(100% - 20px);
+  font-size: 13px;
+  font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
+}
+input {
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+input[type=button] {
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+input[type=button]:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+input[type=search] {
+  height: 32px;
+  width: 100%;
+  -webkit-appearance: none
+}
+div {
+  background-color: #282828;
+}
+
+select {
+  outline: none;
+  background-color: #282828;
+  color: #fff;
+  border: none;
+  margin: 10px 0;
+  width: 100%;
+  height: 32px;
+}
+select:empty {
+  background-image: url('loading.svg');
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+#toolbar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px;
+}
+#toolbar input {
+  padding: 0 10px;
+}
+#toolbar input:active {
+  opacity: 0.5;
+}
+
+[hbox] {
+  display: flex;
+  flex-direction: row;
+}
+[vbox] {
+  display: flex;
+  flex-direction: column;
+}
+[flex="1"] {
+  flex: 1;
+}
