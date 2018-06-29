@@ -59,6 +59,11 @@
     "page": "data/options/index.html",
     "chrome_style": true
   },
+  "commands": {
+    "open-embedded": {
+      "description": "Open credentials in the embedded mode (useful for popup windows)"
+    }
+  },
   "applications": {
     "gecko": {
       "id": "{69ef9498-0139-43e4-97b8-942982ac9158}",

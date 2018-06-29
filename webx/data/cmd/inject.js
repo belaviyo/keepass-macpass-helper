@@ -16,7 +16,7 @@ function isEditable(el) {
 }
 
 // will be used to focus the element after text insertion
-var aElement = document.activeElement; //jshint ignore:line
+var aElement = document.activeElement;
 aElement = isEditable(aElement) ? aElement : null;
 // try to find used usernames
 if (aElement) {
@@ -56,7 +56,9 @@ if (window === window.top) {
   chrome.storage.local.get({
     embedded: false
   }, prefs => {
-    if (prefs.embedded) {
+    if (prefs.embedded || window.inject === true) {
+      // window.inject allows forced injection
+      window.inject = false;
       iframe = document.createElement('iframe');
       iframe.setAttribute('style', `
         border: none;

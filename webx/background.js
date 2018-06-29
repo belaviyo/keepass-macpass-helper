@@ -59,6 +59,14 @@ function onCommand(id, callback = function() {}) {
   });
 }
 chrome.browserAction.onClicked.addListener(({id}) => onCommand(id));
+chrome.commands.onCommand.addListener(() => tab().then(({id}) => {
+  chrome.tabs.executeScript(id, {
+    runAt: 'document_start',
+    matchAboutBlank: true, // some popups are actually about:blank
+    allFrames: false,
+    code: 'window.inject = true;'
+  }, () => onCommand(id));
+}));
 
 var onMessage = (request, sender, response) => {
   const id = request.tabId || (sender.tab ? sender.tab.id : -1);
@@ -74,7 +82,8 @@ var onMessage = (request, sender, response) => {
         window.focus();
       }`,
       runAt: 'document_start',
-      allFrames: false
+      allFrames: false,
+      matchAboutBlank: true
     }, () => chrome.runtime.lastError);
     chrome.tabs.executeScript(id, {
       code: `
@@ -119,7 +128,7 @@ var onMessage = (request, sender, response) => {
   else if (cmd === 'logins') {
     const keepass = new KeePass();
     keepass.itl({
-      url: request.query,
+      url: request.query
     }, (e, r) => response({
       error: e,
       response: r
@@ -257,7 +266,7 @@ function copy(str, tabId, msg) {
 login = {
   'json': JSON.parse(localStorage.getItem('json') || '[]'),
   'auto-submit': localStorage.getItem('auto-submit') === 'true',
-  observe: d => {
+  'observe': d => {
     if (d.frameId === 0) {
       const o = login.json.filter(o => d.url.startsWith(o.url)).pop();
       if (o) {
@@ -307,7 +316,7 @@ login = {
       }
     }
   },
-  register: () => {
+  'register': () => {
     if (chrome.webNavigation) {
       chrome.webNavigation.onDOMContentLoaded.removeListener(login.observe);
       if (login.json.length) {
@@ -443,7 +452,7 @@ To fill the credential automatically refresh the page.`);
 chrome.storage.local.get({
   'version': null,
   'faqs': false,
-  'last-update': 0,
+  'last-update': 0
 }, prefs => {
   const version = chrome.runtime.getManifest().version;
 
