@@ -5,9 +5,12 @@
     <title>KeePassHelper :: Options</title>
     <style>
       body {
-        font-family: "Helvetica Neue",Helvetica,sans-serif;
-        font-size: 13px;
         min-width: 500px;
+      }
+      @-moz-document url-prefix() {
+        body {
+          min-width: unset;
+        }
       }
       table {
         width: 100%;
@@ -26,6 +29,9 @@
       }
       thead:first-of-type th span {
         margin-top: 0;
+      }
+      td:nth-child(2) {
+        text-align: right;
       }
     </style>
   </head>
@@ -120,12 +126,20 @@
     </thead>
     <tbody>
       <tr>
-        <td>Use an embedded iframe to display credentials</td>
-        <td><input type="checkbox" id="embedded"></td>
+        <td colspan="2">
+          <div style="display: flex">
+            <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials</label>
+            <input type="checkbox" id="embedded">
+          </div>
+        </td>
       </tr>
       <tr>
-        <td>Open FAQs on updates</td>
-        <td><input type="checkbox" id="faqs"></td>
+        <td colspan="2">
+          <div style="display: flex">
+            <label for="faqs" style="flex: 1">Open FAQs on updates</label>
+            <input type="checkbox" id="faqs">
+          </div>
+        </td>
       </tr>
       <tr style="display: none;">
         <td>Display format</td>
