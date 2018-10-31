@@ -1,5 +1,17 @@
 'use strict';
 
+// styling
+try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
+  const style = localStorage.getItem('save-dialog-style');
+  console.log(style);
+  if (style) {
+    const e = document.createElement('style');
+    e.textContent = style;
+    document.documentElement.appendChild(e);
+  }
+}
+catch(e) {}
+
 var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('='))
 .reduce((p, c) => Object.assign(p, {
   [c[0]]: decodeURIComponent(c[1])

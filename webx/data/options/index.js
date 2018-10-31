@@ -12,6 +12,7 @@ function restore() {
     'faqs': true
   }, prefs => {
     document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
+    document.getElementById('save-dialog-style').value = localStorage.getItem('save-dialog-style') || '';
     document.getElementById('host').value = prefs.host;
     document.getElementById('format').value = prefs.format;
     document.getElementById('charset').value = prefs.charset;
@@ -31,6 +32,7 @@ function restore() {
 
 function save() {
   localStorage.setItem('cmd-style', document.getElementById('cmd-style').value);
+  localStorage.setItem('save-dialog-style', document.getElementById('save-dialog-style').value);
 
   chrome.storage.local.set({
     'host': document.getElementById('host').value,
