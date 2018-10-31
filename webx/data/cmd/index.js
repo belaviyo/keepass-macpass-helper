@@ -1,7 +1,7 @@
 'use strict';
 
-// style
-{
+// styling
+try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
   const style = localStorage.getItem('cmd-style');
   if (style) {
     const e = document.createElement('style');
@@ -9,6 +9,7 @@
     document.documentElement.appendChild(e);
   }
 }
+catch (e) {}
 
 var list = document.getElementById('list');
 var search = document.querySelector('input[type=search]');
