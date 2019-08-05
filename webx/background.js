@@ -1,8 +1,7 @@
 /* globals KeePass, jsOTP, safe */
 'use strict';
 
-var storage = {};
-var login;
+const storage = {};
 
 jsOTP.exec = (secret, silent = false) => {
   if (secret.indexOf('key=') !== -1) {
@@ -68,7 +67,7 @@ chrome.commands.onCommand.addListener(() => tab().then(({id}) => {
   }, () => onCommand(id));
 }));
 
-var onMessage = (request, sender, response) => {
+const onMessage = (request, sender, response) => {
   const id = request.tabId || (sender.tab ? sender.tab.id : -1);
   const cmd = request.cmd;
   if (cmd === 'close-me' || cmd.startsWith('insert-')) {
@@ -263,7 +262,7 @@ function copy(str, tabId, msg) {
 }
 
 // auto login
-login = {
+const login = {
   'json': JSON.parse(localStorage.getItem('json') || '[]'),
   'auto-submit': localStorage.getItem('auto-submit') === 'true',
   'observe': d => {
@@ -340,11 +339,13 @@ login.register();
 // Context Menu
 {
   const callback = () => {
-    chrome.contextMenus.create({
-      id: 'open-keyboards',
-      title: 'Keyboard Shortcut Settings',
-      contexts: ['browser_action']
-    });
+    if (/Firefox/.test(navigator.userAgent) === -1) {
+      chrome.contextMenus.create({
+        id: 'open-keyboards',
+        title: 'Keyboard Shortcut Settings',
+        contexts: ['browser_action']
+      });
+    }
     chrome.contextMenus.create({
       id: 'generate-password',
       title: 'Generate a Random Password',

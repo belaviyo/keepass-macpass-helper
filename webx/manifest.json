@@ -1,15 +1,15 @@
 {
   "manifest_version": 2,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "name": "KeePassHelper Password Manager",
   "description": "Helper extension for KeePass to find and insert logins and passwords without copying them",
   "permissions": [
     "storage",
     "activeTab",
-    "<all_urls>",
     "contextMenus",
     "clipboardWrite",
-    "notifications"
+    "notifications",
+    "<all_urls>"
   ],
   "optional_permissions": [
     "webNavigation"
@@ -60,6 +60,7 @@
     "chrome_style": true
   },
   "commands": {
+    "_execute_browser_action": {},
     "open-embedded": {
       "description": "Open credentials in the embedded mode (useful for popup windows)"
     }

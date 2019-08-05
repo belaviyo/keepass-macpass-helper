@@ -11,35 +11,36 @@ try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
 }
 catch (e) {}
 
-var list = document.getElementById('list');
-var search = document.querySelector('input[type=search]');
+const list = document.getElementById('list');
+const search = document.querySelector('input[type=search]');
 
-var url;
-var tab = {};
-var usernames = [];
+let url;
+let tab = {};
+let usernames = [];
 
 document.body.dataset.top = window.top === window;
 
-var send = (obj, callback) => chrome.runtime.sendMessage(Object.assign(obj, {
+const send = (obj, callback) => chrome.runtime.sendMessage(Object.assign(obj, {
   tabId: tab.id
 }), callback);
 
-var cookie = {
+const cookie = {
   get host() {
     return (new URL(url)).hostname;
   },
   get: () => {
+    const value = localStorage.getItem('cookie:' + cookie.host);
+    if (value) {
+      return value;
+    }
+    // fallback for older version
     const key = document.cookie.split(`${cookie.host}=`);
     if (key.length > 1) {
       return key[1].split(';')[0];
     }
   },
   set: value => {
-    const days = 60;
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-
-    document.cookie = `${cookie.host}=${value}; expires=${date.toGMTString()}`;
+    localStorage.setItem('cookie:' + cookie.host, value);
   }
 };
 

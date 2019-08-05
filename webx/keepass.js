@@ -1,11 +1,14 @@
 /* globals sjcl */
 'use strict';
 
-var KeePass = function() {
+const KeePass = function() {
   this.host = null;
   this.key = '';
   this.id = '';
+  this.timeout = 5000;
 };
+window.KeePass = KeePass;
+
 KeePass.prototype.init = function(callback) {
   chrome.storage.local.get({
     host: 'http://localhost:19455',
@@ -33,6 +36,7 @@ KeePass.prototype.post = function(obj, callback) {
   const data = JSON.stringify(obj);
   req.responseType = 'json';
   req.setRequestHeader('Content-Type', 'application/json');
+  req.timeout =
   req.onload = () => {
     callback(null, req.response);
   };

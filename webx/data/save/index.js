@@ -3,19 +3,15 @@
 // styling
 try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
   const style = localStorage.getItem('save-dialog-style');
-  console.log(style);
   if (style) {
     const e = document.createElement('style');
     e.textContent = style;
     document.documentElement.appendChild(e);
   }
 }
-catch(e) {}
+catch (e) {}
 
-var {url} = document.location.search.split('?')[1].split('&').map(s => s.split('='))
-.reduce((p, c) => Object.assign(p, {
-  [c[0]]: decodeURIComponent(c[1])
-}), {});
+const args = new URLSearchParams(location.search);
 
 document.addEventListener('click', e => {
   const target = e.target;
@@ -70,7 +66,7 @@ chrome.runtime.sendMessage({
   cmd: 'collect'
 });
 
-document.querySelector('[name=url]').value = url;
+document.querySelector('[name=url]').value = args.get('url');
 document.querySelector('[name=url]').focus();
 document.querySelector('[name=url]').select();
 
