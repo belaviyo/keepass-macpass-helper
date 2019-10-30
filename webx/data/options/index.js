@@ -1,5 +1,24 @@
 'use strict';
 
+let restart = false;
+document.getElementById('id').textContent = chrome.runtime.id;
+
+document.getElementById('keepassxc').addEventListener('change', e => {
+  if (e.target.checked) {
+    chrome.permissions.request({
+      permissions: ['nativeMessaging']
+    }, granted => {
+      if (granted === false) {
+        document.getElementById('keepass').checked = true;
+      }
+      else {
+        // bug?
+        restart = true;
+      }
+    });
+  }
+});
+
 function restore() {
   chrome.storage.local.get({
     'host': 'http://localhost:19455',
@@ -9,8 +28,10 @@ function restore() {
     'embedded': false,
     'auto-login': false,
     'auto-submit': true,
-    'faqs': true
+    'faqs': true,
+    'engine': 'keepass'
   }, prefs => {
+    document.getElementById(prefs.engine).checked = true;
     document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
     document.getElementById('save-dialog-style').value = localStorage.getItem('save-dialog-style') || '';
     document.getElementById('host').value = prefs.host;
@@ -43,10 +64,15 @@ function save() {
     'auto-login': document.getElementById('auto-login').checked,
     'auto-submit': document.getElementById('auto-submit').checked,
     'faqs': document.getElementById('faqs').checked,
+    'engine': document.querySelector('[name="method"]:checked').id
   }, () => {
     const status = document.getElementById('status');
     status.textContent = 'Options saved.';
-    setTimeout(() => status.textContent = '', 750);
+    setTimeout(() => {
+      status.textContent = '';
+      chrome.runtime.reload();
+      window.close();
+    }, 750);
   });
 
   let json = [];

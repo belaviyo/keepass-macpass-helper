@@ -12,15 +12,18 @@
     "<all_urls>"
   ],
   "optional_permissions": [
-    "webNavigation"
+    "webNavigation",
+    "nativeMessaging"
   ],
   "background": {
     "persistent": false,
     "scripts":[
       "safe.js",
       "jsOTP.js",
-      "sjcl.js",
-      "keepass.js",
+      "keepass/sjcl.js",
+      "keepass/keepass.js",
+      "keepassxc/nacl.min.js",
+      "keepassxc/keepassxc.js",
       "background.js"
     ]
   },
@@ -54,7 +57,7 @@
     "data/cmd/index.html",
     "data/cmd/loading.svg"
   ],
-  "homepage_url": "http://add0n.com/keepass-helper.html",
+  "homepage_url": "https://add0n.com/keepass-helper.html",
   "options_ui": {
     "page": "data/options/index.html",
     "chrome_style": true
@@ -63,12 +66,6 @@
     "_execute_browser_action": {},
     "open-embedded": {
       "description": "Open credentials in the embedded mode (useful for popup windows)"
-    }
-  },
-  "applications": {
-    "gecko": {
-      "id": "{69ef9498-0139-43e4-97b8-942982ac9158}",
-      "strict_min_version": "52.0"
     }
   }
 }

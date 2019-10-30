@@ -1,7 +1,8 @@
-/* globals KeePass, jsOTP, safe */
+/* globals KeePass, keepassxc, jsOTP, safe */
 'use strict';
 
 const storage = {};
+const keepass = new KeePass();
 
 jsOTP.exec = (secret, silent = false) => {
   if (secret.indexOf('key=') !== -1) {
@@ -125,25 +126,31 @@ const onMessage = (request, sender, response) => {
     chrome.tabs.remove(sender.tab.id);
   }
   else if (cmd === 'logins') {
-    const keepass = new KeePass();
-    keepass.itl({
-      url: request.query
-    }, (e, r) => response({
-      error: e,
-      response: r
-    }));
+    chrome.storage.local.get({
+      engine: 'keepass'
+    }, prefs => {
+      (prefs.engine === 'keepass' ? keepass : keepassxc).itl({
+        url: request.query
+      }, (e, r) => response({
+        error: e,
+        response: r
+      }));
+    });
     return true;
   }
   else if (cmd === 'save-form') {
-    const keepass = new KeePass();
-    keepass.its(request.data, e => {
-      if (e) {
-        notify(e.message || e);
-      }
-      else {
-        notify('Successfully added to KeePass database');
-      }
-      response();
+    chrome.storage.local.get({
+      engine: 'keepass'
+    }, prefs => {
+      (prefs.engine === 'keepass' ? keepass : keepassxc).its(request.data, e => {
+        if (e) {
+          notify(e.message || e);
+        }
+        else {
+          notify('Successfully added to KeePass database');
+        }
+        response();
+      });
     });
     return true;
   }
