@@ -25,10 +25,9 @@ if (aElement) {
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
 
-  const guesses = forms.map(f => [...f.querySelectorAll('input:not([type=password])')]
-      .filter(i => (i.type === 'text' || i.type === 'email'))
-    )
-    .reduce((p, c) => p.concat(c), [])
+  const guesses = forms.map(f => {
+    return [...f.querySelectorAll('input:not([type=password])')].filter(i => (i.type === 'text' || i.type === 'email'));
+  }).reduce((p, c) => p.concat(c), [])
     .map(e => e && e.value ? e.value : null)
     .filter(n => n);
 
@@ -72,7 +71,7 @@ if (window === window.top) {
         margin-left: auto;
         margin-right: auto;
         background-color: #414141;
-        z-index: 10000000000;
+        z-index: 2147483647;
       `);
       document.body.appendChild(iframe);
       iframe.src = chrome.runtime.getURL('data/cmd/index.html');

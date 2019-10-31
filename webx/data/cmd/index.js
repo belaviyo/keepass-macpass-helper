@@ -1,8 +1,25 @@
 'use strict';
 
+const storage = {
+  get(name) {
+    try {
+      return localStorage.getItem(name);
+    }
+    catch (e) {
+      return undefined;
+    }
+  },
+  set(name, value) {
+    try {
+      localStorage.setItem(name, value);
+    }
+    catch (e) {}
+  }
+};
+
 // styling
 try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
-  const style = localStorage.getItem('cmd-style');
+  const style = storage.get('cmd-style');
   if (style) {
     const e = document.createElement('style');
     e.textContent = style;
@@ -29,7 +46,7 @@ const cookie = {
     return (new URL(url)).hostname;
   },
   get: () => {
-    const value = localStorage.getItem('cookie:' + cookie.host);
+    const value = storage.get('cookie:' + cookie.host);
     if (value) {
       return value;
     }
@@ -40,7 +57,7 @@ const cookie = {
     }
   },
   set: value => {
-    localStorage.setItem('cookie:' + cookie.host, value);
+    storage.set('cookie:' + cookie.host, value);
   }
 };
 

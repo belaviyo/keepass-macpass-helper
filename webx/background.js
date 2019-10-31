@@ -211,6 +211,9 @@ const onMessage = (request, sender, response) => {
       copy(token, t.id, 'OTP token is copied to the clipboard');
     })).catch(e => notify(e.message || 'Cannot decrypt using the provided passphrase'));
   }
+  else if (cmd === 'inject-embedded') {
+    onCommand(sender.tab.id);
+  }
 };
 chrome.runtime.onMessage.addListener(onMessage);
 
@@ -457,37 +460,28 @@ To fill the credential automatically refresh the page.`);
 }
 
 // FAQs & Feedback
-chrome.storage.local.get({
-  'version': null,
-  'faqs': false,
-  'last-update': 0
-}, prefs => {
-  const version = chrome.runtime.getManifest().version;
-
-  if (prefs.version ? (prefs.faqs && prefs.version !== version) : true) {
-    const now = Date.now();
-    const doUpdate = (now - prefs['last-update']) / 1000 / 60 / 60 / 24 > 30;
-    chrome.storage.local.set({
-      version,
-      'last-update': doUpdate ? Date.now() : prefs['last-update']
-    }, () => {
-      // do not display the FAQs page if last-update occurred less than 30 days ago.
-      if (doUpdate) {
-        const p = Boolean(prefs.version);
-        chrome.tabs.create({
-          url: chrome.runtime.getManifest().homepage_url + '?version=' + version +
-            '&type=' + (p ? ('upgrade&p=' + prefs.version) : 'install'),
-          active: p === false
-        });
+{
+  const {onInstalled, setUninstallURL, getManifest} = chrome.runtime;
+  const {name, version} = getManifest();
+  const page = getManifest().homepage_url;
+  onInstalled.addListener(({reason, previousVersion}) => {
+    chrome.storage.local.get({
+      'faqs': true,
+      'last-update': 0
+    }, prefs => {
+      if (reason === 'install' || (prefs.faqs && reason === 'update')) {
+        const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
+        if (doUpdate && previousVersion !== version) {
+          chrome.tabs.create({
+            url: page + '?version=' + version +
+              (previousVersion ? '&p=' + previousVersion : '') +
+              '&type=' + reason,
+            active: reason === 'install'
+          });
+          chrome.storage.local.set({'last-update': Date.now()});
+        }
       }
     });
-  }
-});
-
-{
-  const {name, version} = chrome.runtime.getManifest();
-  chrome.runtime.setUninstallURL(
-    (new URL(chrome.runtime.getManifest().homepage_url)).origin +
-      '/feedback.html?name=' + name + '&version=' + version
-  );
+  });
+  setUninstallURL(page + '?rd=feedback&name=' + encodeURIComponent(name) + '&version=' + version);
 }

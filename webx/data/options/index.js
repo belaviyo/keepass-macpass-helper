@@ -21,6 +21,18 @@ document.getElementById('keepassxc').addEventListener('change', e => {
   }
 });
 
+document.getElementById('minilogin').addEventListener('change', e => {
+  if (e.target.checked) {
+    chrome.permissions.request({
+      permissions: ['declarativeContent']
+    }, granted => {
+      if (granted === false) {
+        e.target.checked = false;
+      }
+    });
+  }
+});
+
 function restore() {
   chrome.storage.local.get({
     'host': 'http://localhost:19455',
@@ -31,8 +43,10 @@ function restore() {
     'auto-login': false,
     'auto-submit': true,
     'faqs': true,
-    'engine': 'keepass'
+    'engine': 'keepass',
+    'minilogin': false
   }, prefs => {
+    document.getElementById('minilogin').checked = prefs.minilogin;
     document.getElementById(prefs.engine).checked = true;
     document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
     document.getElementById('save-dialog-style').value = localStorage.getItem('save-dialog-style') || '';
@@ -57,7 +71,28 @@ function save() {
   localStorage.setItem('cmd-style', document.getElementById('cmd-style').value);
   localStorage.setItem('save-dialog-style', document.getElementById('save-dialog-style').value);
 
+  if (chrome.declarativeContent) {
+    const e = document.getElementById('minilogin');
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+      if (e.checked) {
+        chrome.declarativeContent.onPageChanged.addRules([{
+          conditions: [
+            new chrome.declarativeContent.PageStateMatcher({
+              css: ['input[type="password"]']
+            })
+          ],
+          actions: [
+            new chrome.declarativeContent.RequestContentScript({
+              js: ['/data/minilogin/inject.js']
+            })
+          ]
+        }]);
+      }
+    });
+  }
+
   chrome.storage.local.set({
+    'minilogin': document.getElementById('minilogin').checked,
     'host': document.getElementById('host').value,
     'format': document.getElementById('format').value,
     'charset': document.getElementById('charset').value,

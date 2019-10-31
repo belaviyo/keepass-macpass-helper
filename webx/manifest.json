@@ -13,7 +13,8 @@
   ],
   "optional_permissions": [
     "webNavigation",
-    "nativeMessaging"
+    "nativeMessaging",
+    "declarativeContent"
   ],
   "background": {
     "persistent": false,
@@ -55,7 +56,8 @@
     "data/save/index.html",
     "data/safe/index.html",
     "data/cmd/index.html",
-    "data/cmd/loading.svg"
+    "data/cmd/loading.svg",
+    "data/icons/32.png"
   ],
   "homepage_url": "https://add0n.com/keepass-helper.html",
   "options_ui": {

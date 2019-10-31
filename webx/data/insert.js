@@ -12,7 +12,17 @@ chrome.runtime.sendMessage({
   const isHidden = el => el.offsetParent === null;
 
   const once = aElement => {
-    (function(success) {
+    const form = aElement.closest('form');
+    // insert-both is requested; but password field is selected
+    if (form && cmd === 'insert-both' && aElement.type === 'password') {
+      const e = [...form.querySelectorAll('input[type=text]')].filter(e => isHidden(e) === false).shift();
+      if (e) {
+        e.focus();
+        aElement = e;
+      }
+    }
+
+    (success => {
       if (!success) {
         try {
           aElement.value = cmd === 'insert-password' ? password : username;
@@ -21,7 +31,6 @@ chrome.runtime.sendMessage({
       }
       onChange(aElement);
       if (cmd === 'insert-both') {
-        const form = aElement.closest('form');
         if (form) {
           // do we have otp or sotp
           const otp = stringFields.filter(o => o.Key === 'otp' || o.Key === 'otp-key')
@@ -62,7 +71,7 @@ chrome.runtime.sendMessage({
                     }
                     else {
                       next('OTP generation failed');
-                      reject('Cannot generate OTP');
+                      reject(Error('Cannot generate OTP'));
                     }
                   });
                 });
@@ -76,6 +85,7 @@ chrome.runtime.sendMessage({
           Promise.all(stringFields.map(fillStringField)).then(() => {
             // password
             const passElements = [...form.querySelectorAll('[type=password]')].filter(a => isHidden(a) === false);
+
             passElements.forEach(passElement => {
               passElement.focus();
               let v = false;
