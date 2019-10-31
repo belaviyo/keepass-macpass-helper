@@ -33,6 +33,10 @@
       td:nth-child(2) {
         text-align: right;
       }
+      .hidden {
+        opacity: 0.2;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -137,7 +141,7 @@
           </div>
         </td>
       </tr>
-      <tr>
+      <tr class="chrome">
         <td colspan="2">
           <div style="display: flex">
             <label for="minilogin" style="flex: 1">Display login button next to password fields</label>

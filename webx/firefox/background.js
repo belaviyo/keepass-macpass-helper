@@ -232,43 +232,14 @@ function tab() {
 }
 
 function copy(str, tabId, msg) {
-  if (/Firefox/.test(navigator.userAgent)) {
-    const id = Math.random();
-    storage[id] = str;
-    const run = tabId => chrome.tabs.executeScript(tabId, {
-      allFrames: false,
-      runAt: 'document_start',
-      code: `
-        chrome.runtime.sendMessage({
-          cmd: 'vars',
-          id: ${id}
-        }, password => {
-          document.oncopy = (event) => {
-            event.clipboardData.setData('text/plain', password);
-            event.preventDefault();
-          };
-          window.focus();
-          document.execCommand('Copy', false, null);
-        });
-      `
-    }, () => {
-      notify(chrome.runtime.lastError ? 'Cannot copy to the clipboard on this page!' : msg);
-    });
-    if (tabId) {
-      run(tabId);
-    }
-    else {
-      tab().then(tab => run(tab.id)).catch(e => notify(e.message));
-    }
-  }
-  else {
+  navigator.clipboard.writeText(str).catch(() => new Promise(resolve => {
     document.oncopy = e => {
       e.clipboardData.setData('text/plain', str);
       e.preventDefault();
-      notify(msg);
+      resolve();
     };
     document.execCommand('Copy', false, null);
-  }
+  })).then(() => notify(msg));
 }
 
 // auto login
@@ -349,7 +320,7 @@ login.register();
 // Context Menu
 {
   const callback = () => {
-    if (/Firefox/.test(navigator.userAgent) === -1) {
+    if (/Firefox/.test(navigator.userAgent) === false) {
       chrome.contextMenus.create({
         id: 'open-keyboards',
         title: 'Keyboard Shortcut Settings',
@@ -375,6 +346,11 @@ login.register();
       id: 'encrypt-data',
       title: 'Encrypt or decrypt a string data',
       contexts: ['browser_action']
+    });
+    chrome.contextMenus.create({
+      id: 'inject-embedded',
+      title: 'Open credentials in the embedded mode',
+      contexts: ['password']
     });
   };
   chrome.runtime.onInstalled.addListener(callback);
@@ -429,6 +405,13 @@ To fill the credential automatically refresh the page.`);
       file: '/data/safe/inject.js',
       runAt: 'document_start'
     }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+  }
+  else if (info.menuItemId === 'inject-embedded') {
+    chrome.tabs.executeScript({
+      code: 'window.inject = true;'
+    }, () => {
+      onCommand(tab.id);
+    });
   }
   else {
     chrome.storage.local.get({

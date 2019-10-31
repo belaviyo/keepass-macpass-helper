@@ -2,6 +2,10 @@
 
 const toast = document.getElementById('toast');
 
+if (/Firefox/.test(navigator.userAgent)) {
+  [...document.querySelectorAll('.chrome')].forEach(e => e.classList.add('hidden'));
+}
+
 let restart = false;
 document.getElementById('id').textContent = chrome.runtime.id;
 
