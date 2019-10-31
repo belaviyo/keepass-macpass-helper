@@ -1,5 +1,7 @@
 'use strict';
 
+const toast = document.getElementById('toast');
+
 let restart = false;
 document.getElementById('id').textContent = chrome.runtime.id;
 
@@ -66,12 +68,13 @@ function save() {
     'faqs': document.getElementById('faqs').checked,
     'engine': document.querySelector('[name="method"]:checked').id
   }, () => {
-    const status = document.getElementById('status');
-    status.textContent = 'Options saved.';
+    toast.textContent = 'Options saved.';
     setTimeout(() => {
-      status.textContent = '';
-      chrome.runtime.reload();
-      window.close();
+      toast.textContent = '';
+      if (restart) {
+        chrome.runtime.reload();
+        window.close();
+      }
     }, 750);
   });
 
@@ -109,3 +112,18 @@ document.getElementById('example').addEventListener('click', () => {
 document.getElementById('support').addEventListener('click', () => chrome.tabs.create({
   url: 'https://www.paypal.me/addondonation/10usd'
 }));
+
+// reset
+document.getElementById('reset').addEventListener('click', e => {
+  if (e.detail === 1) {
+    toast.textContent = 'Double-click to reset!';
+    window.setTimeout(() => toast.textContent = '', 750);
+  }
+  else {
+    localStorage.clear();
+    chrome.storage.local.clear(() => {
+      chrome.runtime.reload();
+      window.close();
+    });
+  }
+});

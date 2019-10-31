@@ -190,6 +190,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const target = e.target;
   const cmd = target.dataset.cmd || '';
+  const alt = e.metaKey || e.ctrlKey;
 
   // cache
   if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
@@ -200,14 +201,14 @@ document.addEventListener('click', e => {
     const checked = list.selectedOptions[0];
     send({
       cmd,
-      detail: e.detail,
+      detail: cmd === 'insert-both' && alt ? 'no-submit' : e.detail,
       login: list.value,
       password: checked.dataset.password,
       stringFields: checked.stringFields
     });
   }
   else if (cmd && cmd.startsWith('copy')) {
-    if (e.detail === 'password') {
+    if (e.detail === 'password' || alt) {
       const checked = list.selectedOptions[0];
       copy(checked.dataset.password);
     }
@@ -216,7 +217,7 @@ document.addEventListener('click', e => {
     }
     send({
       cmd: 'notify',
-      message: (e.detail === 'password' ? 'Password' : 'Login name') + ' is copied to the clipboard'
+      message: (e.detail === 'password' || alt ? 'Password' : 'Login name') + ' is copied to the clipboard'
     });
   }
   else if (cmd === 'otp') {
@@ -247,6 +248,7 @@ document.addEventListener('click', e => {
       window.close();
     }
   }
+  list.focus();
 });
 
 // keep focus

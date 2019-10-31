@@ -60,49 +60,26 @@ const keepassxc = {
     return new Promise((resolve, reject) => {
       // get or generate public and private keys
       chrome.storage.local.get({
-        'xc-key-pair': {},
-        'xc-server-public-key': '',
         'xc-client-id': 'keepass-helper-' + Math.random().toString(36).substring(7)
       }, async prefs => {
         keepassxc.clientID = prefs['xc-client-id'];
-        if (prefs['xc-key-pair'].publicKey && prefs['xc-key-pair'].secretKey) {
-          keepassxc.keyPair = {
-            publicKey: keepassxc.atob(prefs['xc-key-pair'].publicKey),
-            secretKey: keepassxc.atob(prefs['xc-key-pair'].secretKey)
-          };
-        }
-        else {
-          keepassxc.keyPair = nacl.box.keyPair();
-          chrome.storage.local.set({
-            'xc-client-id': keepassxc.clientID,
-            'xc-key-pair': {
-              publicKey: keepassxc.btoa(keepassxc.keyPair.publicKey),
-              secretKey: keepassxc.btoa(keepassxc.keyPair.secretKey)
-            }
-          });
-        }
+        keepassxc.keyPair = nacl.box.keyPair();
+        chrome.storage.local.set({
+          'xc-client-id': keepassxc.clientID
+        });
         // get server public key
-        if (prefs['xc-server-public-key']) {
-          keepassxc.serverPublicKey = keepassxc.atob(prefs['xc-server-public-key']);
+        const resp = await keepassxc.post({
+          'action': 'change-public-keys',
+          'nonce': keepassxc.nonce,
+          'clientID': keepassxc.clientID,
+          'publicKey': keepassxc.btoa(keepassxc.keyPair.publicKey)
+        });
+        if (resp && resp.success === 'true') {
+          keepassxc.serverPublicKey = keepassxc.atob(resp.publicKey);
           return resolve();
         }
         else {
-          const resp = await keepassxc.post({
-            'action': 'change-public-keys',
-            'nonce': keepassxc.nonce,
-            'clientID': keepassxc.clientID,
-            'publicKey': keepassxc.btoa(keepassxc.keyPair.publicKey)
-          });
-          if (resp && resp.success === 'true') {
-            chrome.storage.local.set({
-              'xc-server-public-key': resp.publicKey
-            });
-            keepassxc.serverPublicKey = keepassxc.atob(resp.publicKey);
-            return resolve();
-          }
-          else {
-            reject(Error('"change-public-keys" failed'));
-          }
+          reject(Error('"change-public-keys" failed'));
         }
       });
     });
@@ -113,10 +90,6 @@ const keepassxc = {
     });
   },
   async associate() {
-    keepassxc.db = keepassxc.db || (await keepassxc.databasehash());
-    if (!keepassxc.db || !keepassxc.db.hash) {
-      throw Error('Cannot read database hash');
-    }
     const idKey = keepassxc.btoa(nacl.box.keyPair().publicKey);
     const messageData = {
       action: 'associate',
@@ -144,10 +117,11 @@ const keepassxc = {
     }
   },
   async 'test-associate'() {
-    keepassxc.db = keepassxc.db || (await keepassxc.databasehash());
-    if (!keepassxc.db || !keepassxc.db.hash) {
-      throw Error('Cannot read database hash');
+    const resp = await keepassxc.databasehash();
+    if (!resp.hash) {
+      throw Error('Requesting database info from KeePassXC failed');
     }
+    keepassxc.db = resp;
     return new Promise((resolve, reject) => chrome.storage.local.get({
       ['xc-' + keepassxc.db.hash]: {}
     }, async prefs => {
@@ -200,13 +174,20 @@ const keepassxc = {
       await keepassxc.init();
     }
     catch (e) {
+      console.error(e);
       return callback(e.message + '. Does KeePassHelper have access to the native application?', null);
     }
     try {
       await keepassxc['test-associate']();
     }
     catch (e) {
-      await keepassxc.associate();
+      try {
+        await keepassxc.associate();
+      }
+      catch (e) {
+        console.error(e);
+        return callback(e.message + '. Does KeePassHelper have access to the native application?', null);
+      }
     }
     try {
       const resp = await keepassxc['get-logins'](url).then(resp => {
@@ -222,6 +203,7 @@ const keepassxc = {
       callback(null, resp);
     }
     catch (e) {
+      console.error(e);
       callback(e.message, null);
     }
   },
