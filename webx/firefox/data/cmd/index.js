@@ -1,22 +1,5 @@
 'use strict';
 
-const storage = {
-  get(name) {
-    try {
-      return localStorage.getItem(name);
-    }
-    catch (e) {
-      return undefined;
-    }
-  },
-  set(name, value) {
-    try {
-      localStorage.setItem(name, value);
-    }
-    catch (e) {}
-  }
-};
-
 // styling
 try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
   const style = storage.get('cmd-style');
@@ -41,6 +24,22 @@ const send = (obj, callback) => chrome.runtime.sendMessage(Object.assign(obj, {
   tabId: tab.id
 }), callback);
 
+const storage = {
+  get(name) {
+    try {
+      return localStorage.getItem(name);
+    }
+    catch (e) {
+      return undefined;
+    }
+  },
+  set(name, value) {
+    try {
+      localStorage.setItem(name, value);
+    }
+    catch (e) {}
+  }
+};
 const cookie = {
   get host() {
     return (new URL(url)).hostname;
@@ -83,7 +82,7 @@ function submit() {
 
   send({
     cmd: 'logins',
-    query
+    url: query
   }, ({error, response}) => {
     if (error) {
       add(error);

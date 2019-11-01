@@ -1,6 +1,7 @@
 'use strict';
 
-var safe = {};
+const safe = {};
+window.safe = safe;
 
 {
   const toBuffer = str => {
@@ -16,7 +17,7 @@ var safe = {};
     name: 'AES-CBC'
   }, false, ['encrypt', 'decrypt']));
 
-  safe.encrypt = async(data, password) => {
+  safe.encrypt = async (data, password) => {
     const iv = crypto.getRandomValues(new Uint8Array(16));
     const key = await passwordToKey(password);
     const result = await crypto.subtle.encrypt({
@@ -29,7 +30,7 @@ var safe = {};
       reader.readAsDataURL(new Blob([iv, result], {type: 'application/octet-binary'}));
     });
   };
-  safe.decrypt = async(data, password) => {
+  safe.decrypt = async (data, password) => {
     const iv = crypto.getRandomValues(new Uint8Array(16));
     const key = await passwordToKey(password);
     const result = await crypto.subtle.decrypt({

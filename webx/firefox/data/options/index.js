@@ -166,3 +166,12 @@ document.getElementById('reset').addEventListener('click', e => {
     });
   }
 });
+
+document.getElementById('permission').addEventListener('click', () => chrome.windows.create({
+  url: '/data/permission/index.html',
+  type: 'popup',
+  width: 400,
+  height: 250,
+  left: screen.availLeft + Math.round((screen.availWidth - 400) / 2),
+  top: screen.availTop + Math.round((screen.availHeight - 250) / 2)
+}));

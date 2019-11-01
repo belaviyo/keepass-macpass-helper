@@ -3,33 +3,10 @@
 
 const KeePass = function() {
   this.host = null;
-  this.key = '';
-  this.id = '';
   this.timeout = 5000;
 };
 window.KeePass = KeePass;
 
-KeePass.prototype.init = function(callback) {
-  chrome.storage.local.get({
-    host: 'http://localhost:19455',
-    key: '',
-    id: ''
-  }, prefs => {
-    this.host = prefs.host;
-    this.port = prefs.port;
-    this.id = prefs.id;
-    if (prefs.key) {
-      this.key = prefs.key;
-    }
-    else {
-      this.key = this.iv(32);
-      chrome.storage.local.set({
-        key: this.key
-      });
-    }
-    callback();
-  });
-};
 KeePass.prototype.post = function(obj, callback) {
   const req = new window.XMLHttpRequest();
   req.open('POST', this.host);
@@ -80,21 +57,78 @@ KeePass.prototype.verify = function(request) {
   }
   return request;
 };
+KeePass.prototype.init = function(callback) {
+  chrome.storage.local.get({
+    host: 'http://localhost:19455'
+  }, prefs => {
+    this.host = prefs.host;
+    // find database hash
+    this.post({
+      'RequestType': 'test-associate',
+      'TriggerUnlock': false
+    }, (e, r) => {
+      if (e) {
+        callback(e, r);
+      }
+      else if (r && r.Hash) {
+        chrome.storage.local.get({
+          [r.Hash]: {},
+          id: '',
+          key: ''
+        }, prefs => {
+          // overwrite based on database
+          if (prefs[r.Hash].id && prefs[r.Hash].key) {
+            Object.assign(this, prefs[r.Hash]);
+          }
+          else {
+            Object.assign(this, {
+              id: prefs.id,
+              key: prefs.key
+            });
+          }
+          callback();
+        });
+      }
+      else {
+        callback('Cannot detect database hash');
+      }
+    });
+  });
+};
 KeePass.prototype.test = function(callback) {
-  let request = {
-    'RequestType': 'test-associate',
-    'TriggerUnlock': 'true'
-  };
-  request = this.verify(request);
-  this.post(request, callback);
+  if (this.key) {
+    let request = {
+      'RequestType': 'test-associate',
+      'TriggerUnlock': true
+    };
+    request = this.verify(request);
+    this.post(request, callback);
+  }
+  else {
+    callback(null, {
+      Success: false,
+      Error: 'There is no saved key'
+    });
+  }
 };
 KeePass.prototype.associate = function(callback) {
+  this.key = this.iv(32);
   let request = {
     'RequestType': 'associate',
     'Key': this.key
   };
   request = this.verify(request);
-  this.post(request, callback);
+  this.post(request, (e, r) => {
+    if (r) {
+      this.id = r.Id;
+      chrome.storage.local.set({
+        [r.Hash]: {
+          id: r.Id,
+          key: this.key
+        }
+      }, () => callback(e, r));
+    }
+  });
 };
 KeePass.prototype.logins = function({url, submiturl, realm}, callback) {
   let request = {
@@ -176,7 +210,8 @@ KeePass.prototype.itl = function({url, submiturl, realm}, callback) {
   this.init(() => this.tl({url, submiturl, realm}, callback));
 };
 // is init -> test -> set
-KeePass.prototype.its = function({url, submiturl, login, password}, callback) {
+KeePass.prototype.its = function(...args) {
+  const [{url, submiturl, login, password}, callback] = args;
   this.init(() => {
     this.test((e, r) => {
       if (e) {
@@ -201,12 +236,7 @@ KeePass.prototype.its = function({url, submiturl, login, password}, callback) {
             callback(e);
           }
           else if (r && r.Success) {
-            chrome.storage.local.set({
-              id: r.Id
-            }, () => {
-              this.id = r.Id;
-              this.its.apply(this, arguments);
-            });
+            this.its(...args);
           }
           else {
             callback('Communication is rejected');

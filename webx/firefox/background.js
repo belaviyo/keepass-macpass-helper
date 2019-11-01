@@ -129,9 +129,7 @@ const onMessage = (request, sender, response) => {
     chrome.storage.local.get({
       engine: 'keepass'
     }, prefs => {
-      (prefs.engine === 'keepass' ? keepass : keepassxc).itl({
-        url: request.query
-      }, (e, r) => response({
+      (prefs.engine === 'keepass' ? keepass : keepassxc).itl(request, (e, r) => response({
         error: e,
         response: r
       }));
@@ -247,12 +245,13 @@ const login = {
   'json': JSON.parse(localStorage.getItem('json') || '[]'),
   'auto-submit': localStorage.getItem('auto-submit') === 'true',
   'observe': d => {
+    console.log(d);
     if (d.frameId === 0) {
       const o = login.json.filter(o => d.url.startsWith(o.url)).pop();
       if (o) {
         onMessage({
           cmd: 'logins',
-          query: d.url
+          url: d.url
         }, {}, ({error, response}) => {
           if (!error && response) {
             const e = (response.Entries || []).filter(e => e.Login === o.username).pop();
@@ -347,11 +346,13 @@ login.register();
       title: 'Encrypt or decrypt a string data',
       contexts: ['browser_action']
     });
-    chrome.contextMenus.create({
-      id: 'inject-embedded',
-      title: 'Open credentials in the embedded mode',
-      contexts: ['password']
-    });
+    if (chrome.contextMenus.ContextType.PASSWORD) {
+      chrome.contextMenus.create({
+        id: 'inject-embedded',
+        title: 'Open credentials in the embedded mode',
+        contexts: ['password']
+      });
+    }
   };
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);

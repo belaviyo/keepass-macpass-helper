@@ -16,11 +16,11 @@ const keepassxc = {
   textEncoder: new TextEncoder(), // always utf-8
   textDecoder: new TextDecoder('utf-8'),
   encrypt(request) {
-    const messageData = keepassxc.textEncoder.encode(JSON.stringify(request));
-    const messageNonce = keepassxc.atob(keepassxc.nonce);
+    const m = keepassxc.textEncoder.encode(JSON.stringify(request));
+    const n = keepassxc.atob(keepassxc.nonce);
 
     if (keepassxc.serverPublicKey) {
-      const message = nacl.box(messageData, messageNonce, keepassxc.serverPublicKey, keepassxc.keyPair.secretKey);
+      const message = nacl.box(m, n, keepassxc.serverPublicKey, keepassxc.keyPair.secretKey);
       if (message) {
         return keepassxc.btoa(message);
       }
