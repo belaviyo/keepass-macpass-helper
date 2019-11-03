@@ -245,7 +245,6 @@ const login = {
   'json': JSON.parse(localStorage.getItem('json') || '[]'),
   'auto-submit': localStorage.getItem('auto-submit') === 'true',
   'observe': d => {
-    console.log(d);
     if (d.frameId === 0) {
       const o = login.json.filter(o => d.url.startsWith(o.url)).pop();
       if (o) {
