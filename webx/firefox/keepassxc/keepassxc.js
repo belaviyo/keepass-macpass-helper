@@ -190,17 +190,19 @@ const keepassxc = {
       }
     }
     try {
-      const resp = await keepassxc['get-logins'](url).then(resp => {
-        return {
-          Entries: resp.map(e => Object.assign(e, {
-            Login: e.login,
-            Name: e.name,
-            Password: e.password,
-            StringFields: (e.stringFields || [])
-          }))
-        };
+      const resp = await keepassxc['get-logins'](url);
+      callback(null, {
+        Entries: resp.map(e => Object.assign(e, {
+          Login: e.login,
+          Name: e.name,
+          Password: e.password,
+          StringFields: (e.stringFields || []).map(o => Object.entries(o).reduce((p, [key, value]) => {
+            p.Key = key.replace('KPH: ', ''),
+            p.Value = value;
+            return p;
+          }, {}))
+        }))
       });
-      callback(null, resp);
     }
     catch (e) {
       console.error(e);

@@ -1,6 +1,15 @@
 'use strict';
 
-const toast = document.getElementById('toast');
+const toast = (msg, callback = () => {}) => {
+  console.log(msg);
+  const e = document.getElementById('toast');
+  e.textContent = msg;
+  window.clearTimeout(toast.id);
+  toast.id = setTimeout(() => {
+    e.textContent = '';
+    callback();
+  }, 1000);
+};
 
 if (/Firefox/.test(navigator.userAgent)) {
   [...document.querySelectorAll('.chrome')].forEach(e => e.classList.add('hidden'));
@@ -107,14 +116,12 @@ function save() {
     'faqs': document.getElementById('faqs').checked,
     'engine': document.querySelector('[name="method"]:checked').id
   }, () => {
-    toast.textContent = 'Options saved.';
-    setTimeout(() => {
-      toast.textContent = '';
+    toast('Options saved.', () => {
       if (restart) {
         chrome.runtime.reload();
         window.close();
       }
-    }, 750);
+    });
   });
 
   let json = [];
@@ -155,8 +162,7 @@ document.getElementById('support').addEventListener('click', () => chrome.tabs.c
 // reset
 document.getElementById('reset').addEventListener('click', e => {
   if (e.detail === 1) {
-    toast.textContent = 'Double-click to reset!';
-    window.setTimeout(() => toast.textContent = '', 750);
+    toast('Double-click to reset!');
   }
   else {
     localStorage.clear();
@@ -175,3 +181,27 @@ document.getElementById('permission').addEventListener('click', () => chrome.win
   left: screen.availLeft + Math.round((screen.availWidth - 400) / 2),
   top: screen.availTop + Math.round((screen.availHeight - 250) / 2)
 }));
+
+
+document.getElementById('check').addEventListener('click', () => {
+  try {
+    const url = document.getElementById('host').value;
+    const o = '*://' + (new URL(url)).hostname + '/';
+    chrome.permissions.request({
+      permissions: ['webNavigation'],
+      origins: [o]
+    }, granted => {
+      if (granted) {
+        fetch(url).then(r => {
+          toast('Looks Good');
+        }).catch(e => toast(e.message));
+      }
+      else {
+        toast('Permission is not granted');
+      }
+    });
+  }
+  catch (e) {
+    toast(e.message);
+  }
+});
