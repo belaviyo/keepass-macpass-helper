@@ -1,16 +1,5 @@
 'use strict';
 
-// styling
-try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
-  const style = storage.get('cmd-style');
-  if (style) {
-    const e = document.createElement('style');
-    e.textContent = style;
-    document.documentElement.appendChild(e);
-  }
-}
-catch (e) {}
-
 const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
 
@@ -59,6 +48,19 @@ const cookie = {
     storage.set('cookie:' + cookie.host, value);
   }
 };
+
+// styling
+try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
+  const style = storage.get('cmd-style');
+  if (style) {
+    const e = document.createElement('style');
+    e.textContent = style;
+    document.documentElement.appendChild(e);
+  }
+}
+catch (e) {
+  console.log(e);
+}
 
 function add(login, name, password, stringFields) {
   const entry = Object.assign(document.createElement('option'), {
