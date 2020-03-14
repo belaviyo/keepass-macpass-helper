@@ -12,7 +12,16 @@ chrome.runtime.sendMessage({
   const isHidden = el => el.offsetParent === null;
 
   const once = aElement => {
-    const form = aElement.closest('form');
+    let form = aElement.closest('form');
+    // what if there is no form element
+    let parent = aElement;
+    for (let i = 0; i < 5; i += 1) {
+      parent = parent.parentElement;
+      if (parent.querySelector('[type=password]')) {
+        form = parent;
+        break;
+      }
+    }
     // insert-both is requested; but password field is selected
     if (form && cmd === 'insert-both' && aElement.type === 'password') {
       const e = [...form.querySelectorAll('input[type=text]')].filter(e => isHidden(e) === false).shift();

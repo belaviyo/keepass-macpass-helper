@@ -1,7 +1,6 @@
 'use strict';
 
 const toast = (msg, callback = () => {}) => {
-  console.log(msg);
   const e = document.getElementById('toast');
   e.textContent = msg;
   window.clearTimeout(toast.id);
@@ -57,7 +56,8 @@ function restore() {
     'auto-submit': true,
     'faqs': true,
     'engine': 'keepass',
-    'minilogin': false
+    'minilogin': false,
+    'xc-native-id': 'org.keepassxc.keepassxc_browser'
   }, prefs => {
     document.getElementById('minilogin').checked = prefs.minilogin;
     document.getElementById(prefs.engine).checked = true;
@@ -77,6 +77,7 @@ function restore() {
       null,
       '  '
     );
+    document.getElementById('xc-native-id').value = prefs['xc-native-id'];
   });
 }
 
@@ -114,7 +115,8 @@ function save() {
     'auto-login': document.getElementById('auto-login').checked,
     'auto-submit': document.getElementById('auto-submit').checked,
     'faqs': document.getElementById('faqs').checked,
-    'engine': document.querySelector('[name="method"]:checked').id
+    'engine': document.querySelector('[name="method"]:checked').id,
+    'xc-native-id': document.getElementById('xc-native-id').value
   }, () => {
     toast('Options saved.', () => {
       if (restart) {
@@ -192,9 +194,7 @@ document.getElementById('check').addEventListener('click', () => {
       origins: [o]
     }, granted => {
       if (granted) {
-        fetch(url).then(r => {
-          toast('Looks Good');
-        }).catch(e => toast(e.message));
+        fetch(url).then(() => toast('Looks Good')).catch(e => toast(e.message));
       }
       else {
         toast('Permission is not granted');
@@ -205,3 +205,10 @@ document.getElementById('check').addEventListener('click', () => {
     toast(e.message);
   }
 });
+
+//
+document.getElementById('xc-help').addEventListener('click', () => {
+  document.querySelector('[for="xc-help"').classList.toggle('hidden');
+  console.log(12);
+});
+  console.log(12);

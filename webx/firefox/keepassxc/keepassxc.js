@@ -6,6 +6,7 @@
 'use strict';
 
 const keepassxc = {
+  nativeID: '',
   clientID: '',
   btoa(arrayBuffer) {
     return btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
@@ -35,7 +36,7 @@ const keepassxc = {
   },
   nonce: null,
   post(request) {
-    return new Promise(resolve => chrome.runtime.sendNativeMessage('org.keepassxc.keepassxc_browser', request, resolve));
+    return new Promise(resolve => chrome.runtime.sendNativeMessage(keepassxc.nativeID, request, resolve));
   },
   securePost(messageData) {
     return keepassxc.post({
@@ -60,8 +61,10 @@ const keepassxc = {
     return new Promise((resolve, reject) => {
       // get or generate public and private keys
       chrome.storage.local.get({
+        'xc-native-id': 'org.keepassxc.keepassxc_browser',
         'xc-client-id': 'keepass-helper-' + Math.random().toString(36).substring(7)
       }, async prefs => {
+        keepassxc.nativeID = prefs['xc-native-id'];
         keepassxc.clientID = prefs['xc-client-id'];
         keepassxc.keyPair = nacl.box.keyPair();
         chrome.storage.local.set({

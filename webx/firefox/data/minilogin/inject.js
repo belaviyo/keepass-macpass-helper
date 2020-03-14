@@ -28,7 +28,7 @@ document.documentElement.appendChild(style);
   const pos = () => {
     const box = e.getBoundingClientRect();
     let left = box.left + box.width - 22;
-    // do we have a conflicing element at position; e.g. proton mail
+    // do we have a conflicting element at position; e.g. proton mail
     const eps = document.elementsFromPoint(box.left + box.width - 11, box.top + box.height / 2);
     if (eps[0] !== e && eps[1] === e) {
       left -= eps[0].getBoundingClientRect().width;

@@ -30,7 +30,19 @@ if (isTop) {
 
 { // collecting
   const forms = [...document.querySelectorAll('input[type=password]')]
-    .map(p => p.form)
+    .map(p => {
+      let form = p.closest('form');
+      // what if there is no form element
+      let parent = p;
+      for (let i = 0; i < 5; i += 1) {
+        parent = parent.parentElement;
+        if (parent.querySelector('input[type=text],input[type=email]')) {
+          form = parent;
+          break;
+        }
+      }
+      return form;
+    })
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
 
