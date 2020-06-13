@@ -27,23 +27,19 @@ function notify(message) {
     message
   });
 }
-jsOTP.secure = (id, ensecret, silent = false) => new Promise((resolve, reject) => chrome.tabs.executeScript(id, {
-  code: `window.prompt('Please enter the passphrase to decrypt the encrypted OTP secret')`,
-  runAt: 'document_start',
-  allFrames: false
-}, rtn => {
-  if (chrome.runtime.lastError) {
-    reject(chrome.runtime.lastError);
-  }
-  else {
-    if (rtn && rtn.length) {
-      safe.decrypt(ensecret, rtn[0]).then(secret => jsOTP.exec(secret, silent)).then(resolve, reject);
-    }
-    else {
-      reject(new Error('return value is empty'));
-    }
-  }
-}));
+jsOTP.secure = (id, ensecret, silent = false) => {
+  return new Promise((resolve, reject) => chrome.windows.create({
+    url: 'data/prompt/index.html',
+    type: 'popup',
+    width: 600,
+    height: 180,
+    left: screen.availLeft + Math.round((screen.availWidth - 600) / 2),
+    top: screen.availTop + Math.round((screen.availHeight - 180) / 2)
+  }, w => {
+    jsOTP.secure.cache[w.id] = {resolve, reject, silent, ensecret, id};
+  }));
+};
+jsOTP.secure.cache = {};
 
 function onCommand(id, callback = function() {}) {
   chrome.tabs.executeScript(id, {
@@ -211,6 +207,25 @@ const onMessage = (request, sender, response) => {
   }
   else if (cmd === 'inject-embedded') {
     onCommand(sender.tab.id);
+  }
+  else if (cmd === 'prompt-resolved') {
+    const o = jsOTP.secure.cache[sender.tab.windowId];
+    if (o) {
+      const {resolve, reject, silent, ensecret} = o;
+      delete jsOTP.secure.cache[sender.tab.windowId];
+
+      if (request.password) {
+        safe.decrypt(ensecret, request.password).then(secret => jsOTP.exec(secret, silent)).then(resolve, reject);
+      }
+      else {
+        reject(new Error('return value is empty'));
+      }
+    }
+    else if (cmd === 'bring-to-front') {
+      chrome.windows.update(sender.tab.windowId, {
+        focused: true
+      });
+    }
   }
 };
 chrome.runtime.onMessage.addListener(onMessage);
@@ -442,29 +457,29 @@ To fill the credential automatically refresh the page.`);
   chrome.storage.onChanged.addListener(prefs => prefs.embedded && c1(prefs.embedded.newValue));
 }
 
-// FAQs & Feedback
+/* FAQs & Feedback */
 {
-  const {onInstalled, setUninstallURL, getManifest} = chrome.runtime;
-  const {name, version} = getManifest();
-  const page = getManifest().homepage_url;
-  onInstalled.addListener(({reason, previousVersion}) => {
-    chrome.storage.local.get({
-      'faqs': true,
-      'last-update': 0
-    }, prefs => {
-      if (reason === 'install' || (prefs.faqs && reason === 'update')) {
-        const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
-        if (doUpdate && previousVersion !== version) {
-          chrome.tabs.create({
-            url: page + '?version=' + version +
-              (previousVersion ? '&p=' + previousVersion : '') +
-              '&type=' + reason,
-            active: reason === 'install'
-          });
-          chrome.storage.local.set({'last-update': Date.now()});
+  const {management, runtime: {onInstalled, setUninstallURL, getManifest}, storage, tabs} = chrome;
+  if (navigator.webdriver !== true) {
+    const page = getManifest().homepage_url;
+    const {name, version} = getManifest();
+    onInstalled.addListener(({reason, previousVersion}) => {
+      management.getSelf(({installType}) => installType === 'normal' && storage.local.get({
+        'faqs': true,
+        'last-update': 0
+      }, prefs => {
+        if (reason === 'install' || (prefs.faqs && reason === 'update')) {
+          const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
+          if (doUpdate && previousVersion !== version) {
+            tabs.create({
+              url: page + '?version=' + version + (previousVersion ? '&p=' + previousVersion : '') + '&type=' + reason,
+              active: reason === 'install'
+            });
+            storage.local.set({'last-update': Date.now()});
+          }
         }
-      }
+      }));
     });
-  });
-  setUninstallURL(page + '?rd=feedback&name=' + encodeURIComponent(name) + '&version=' + version);
+    setUninstallURL(page + '?rd=feedback&name=' + encodeURIComponent(name) + '&version=' + version);
+  }
 }
