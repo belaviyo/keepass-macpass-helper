@@ -150,6 +150,7 @@ document.addEventListener('change', e => {
 });
 
 document.addEventListener('keydown', e => {
+  console.log(e);
   const metaKey = e.metaKey || e.altKey || e.ctrlKey;
   if (e.code === 'Escape') {
     document.querySelector('[data-cmd="close"]').click();
@@ -198,7 +199,7 @@ document.addEventListener('keydown', e => {
     search.focus();
     e.preventDefault();
   }
-  else if (e.code === 'Enter') {
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
     if (e.target.nodeName === 'SELECT') {
       document.querySelector('[data-cmd="insert-both"]').click();
     }
@@ -303,3 +304,8 @@ else {
     cmd: 'introduce-me'
   }, init);
 }
+
+// dbl-click
+list.addEventListener('dblclick', () => {
+  document.querySelector('[data-cmd="insert-both"]').click();
+});
