@@ -209,6 +209,4 @@ document.getElementById('check').addEventListener('click', () => {
 //
 document.getElementById('xc-help').addEventListener('click', () => {
   document.querySelector('[for="xc-help"').classList.toggle('hidden');
-  console.log(12);
 });
-  console.log(12);

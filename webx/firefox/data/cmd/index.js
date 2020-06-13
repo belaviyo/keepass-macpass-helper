@@ -59,7 +59,7 @@ try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
   }
 }
 catch (e) {
-  console.log(e);
+  console.warn(e);
 }
 
 function add(login, name, password, stringFields) {
@@ -150,7 +150,6 @@ document.addEventListener('change', e => {
 });
 
 document.addEventListener('keydown', e => {
-  console.log(e);
   const metaKey = e.metaKey || e.altKey || e.ctrlKey;
   if (e.code === 'Escape') {
     document.querySelector('[data-cmd="close"]').click();
