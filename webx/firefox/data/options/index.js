@@ -36,7 +36,8 @@ document.getElementById('keepassxc').addEventListener('change', e => {
 document.getElementById('minilogin').addEventListener('change', e => {
   if (e.target.checked) {
     chrome.permissions.request({
-      permissions: ['declarativeContent']
+      permissions: ['declarativeContent'],
+      origins: ['<all_urls>']
     }, granted => {
       if (granted === false) {
         e.target.checked = false;

@@ -221,11 +221,11 @@ const onMessage = (request, sender, response) => {
         reject(new Error('return value is empty'));
       }
     }
-    else if (cmd === 'bring-to-front') {
-      chrome.windows.update(sender.tab.windowId, {
-        focused: true
-      });
-    }
+  }
+  else if (cmd === 'bring-to-front') {
+    chrome.windows.update(sender.tab.windowId, {
+      focused: true
+    });
   }
 };
 chrome.runtime.onMessage.addListener(onMessage);
