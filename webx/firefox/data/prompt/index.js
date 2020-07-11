@@ -25,3 +25,9 @@ window.addEventListener('blur', () => chrome.runtime.sendMessage({
 window.onbeforeunload = () => chrome.runtime.sendMessage({
   cmd: 'prompt-resolved'
 });
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'Escape') {
+    window.close();
+  }
+});

@@ -173,7 +173,8 @@ const onMessage = (request, sender, response) => {
         runAt: 'document_start',
         allFrames: true,
         matchAboutBlank: true
-      }, () => {
+      }, arr => {
+        console.log(arr);
         if (chrome.runtime.lastError) {
           return notify(chrome.runtime.lastError.message);
         }
@@ -182,6 +183,10 @@ const onMessage = (request, sender, response) => {
           runAt: 'document_start',
           allFrames: true,
           matchAboutBlank: true
+        }, arr => {
+          if (arr.filter(o => o).length === 0) {
+            notify(`No login box is detected! To enable access to the remote frames, activate "Access Remote Frames Permission" on the options page.`);
+          }
         });
       });
     };

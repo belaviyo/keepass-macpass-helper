@@ -211,3 +211,16 @@ document.getElementById('check').addEventListener('click', () => {
 document.getElementById('xc-help').addEventListener('click', () => {
   document.querySelector('[for="xc-help"').classList.toggle('hidden');
 });
+
+document.getElementById('all-frames').addEventListener('click', () => chrome.permissions.request({
+  origins: ['<all_urls>']
+}));
+// hide granted permissions
+chrome.permissions.contains({
+  origins: ['<all_urls>']
+}, granted => granted && document.getElementById('all-frames').classList.add('hidden'));
+chrome.permissions.contains({
+  permissions: ['webNavigation'],
+  origins: ['<all_urls>']
+}, granted => granted && document.getElementById('permission').classList.add('hidden'));
+

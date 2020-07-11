@@ -167,3 +167,4 @@ chrome.runtime.sendMessage({
     }
   }
 });
+Boolean(aElement) // do not add ;
