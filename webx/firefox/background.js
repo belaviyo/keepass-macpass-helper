@@ -185,7 +185,16 @@ const onMessage = (request, sender, response) => {
           matchAboutBlank: true
         }, arr => {
           if (arr.filter(o => o).length === 0) {
-            notify(`No login box is detected! To enable access to the remote frames, activate "Access Remote Frames Permission" on the options page.`);
+            chrome.permissions.contains({
+              origins: ['<all_urls>']
+            }, granted => {
+              if (granted) {
+                notify(`No login box is detected!`);
+              }
+              else {
+                notify(`No login box is detected! To enable access to the remote frames, activate "Access Remote Frames Permission" on the options page.`);
+              }
+            });
           }
         });
       });

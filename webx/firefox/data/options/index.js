@@ -191,7 +191,6 @@ document.getElementById('check').addEventListener('click', () => {
     const url = document.getElementById('host').value;
     const o = '*://' + (new URL(url)).hostname + '/';
     chrome.permissions.request({
-      permissions: ['webNavigation'],
       origins: [o]
     }, granted => {
       if (granted) {

@@ -9,7 +9,7 @@ body {
   margin: 10px;
   height: calc(100% - 20px);
   font-size: 13px;
-  font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
 body[data-top=true] {
   width: 550px;
@@ -69,6 +69,20 @@ option {
 #toolbar input:active {
   opacity: 0.5;
 }
+#host-access {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+}
+#host-access input {
+  background-color: #414141;
+  padding: 10px;
+  margin-left: 10px;
+}
 
 [hbox] {
   display: flex;
@@ -80,4 +94,7 @@ option {
 }
 [flex="1"] {
   flex: 1;
+}
+.hidden {
+  display: none;
 }

@@ -277,6 +277,7 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 // init
 const init = t => {
   tab = t;
+
   send({
     cmd: 'fetch-guesses'
   }, resp => {
@@ -307,4 +308,29 @@ else {
 // dbl-click
 list.addEventListener('dblclick', () => {
   document.querySelector('[data-cmd="insert-both"]').click();
+});
+
+// check localhost access
+chrome.storage.local.get({
+  engine: 'keepass',
+  host: 'http://localhost:19455'
+}, prefs => {
+  if (prefs.engine === 'keepass') {
+    const o = '*://' + (new URL(prefs.host)).hostname + '/';
+    chrome.permissions.contains({
+      origins: [o]
+    }, granted => {
+      if (granted === false) {
+        const parent = document.getElementById('host-access');
+        parent.classList.remove('hidden');
+        parent.querySelector('input').addEventListener('click', () => chrome.permissions.request({
+          origins: [o]
+        }, granted => {
+          if (granted) {
+            parent.classList.add('hidden');
+          }
+        }));
+      }
+    });
+  }
 });
