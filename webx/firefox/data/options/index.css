@@ -1,0 +1,48 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+textarea,
+input[type=text] {
+  width: 100%;
+  box-sizing: border-box;
+}
+input[type=button] {
+  min-width: 100px;
+}
+th span{
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 5px;
+  display: block;
+  margin: 10px 0;
+}
+thead:first-of-type th span {
+  margin-top: 0;
+}
+td:nth-child(2) {
+  text-align: right;
+}
+.hidden {
+  opacity: 0.2;
+  pointer-events: none;
+}
+#toast {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+  padding: 0 5px;
+}
+#toast:empty {
+  display: none;
+}
+.note {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.note p {
+  padding: 10px;
+}
+.hidden {
+  display: none;
+}

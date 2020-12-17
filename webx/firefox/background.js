@@ -4,18 +4,28 @@
 const storage = {};
 const keepass = new KeePass();
 
-jsOTP.exec = (secret, silent = false) => {
-  if (secret.indexOf('key=') !== -1) {
-    return (new jsOTP.totp()).getOtp(secret.split('key=')[1].split('&')[0]);
+jsOTP.exec = (string, silent = false) => {
+  const i = string.indexOf('?');
+  if (i !== -1) {
+    string = string.substr(i);
   }
-  else if (secret.indexOf('secret=') !== -1) {
-    return (new jsOTP.totp()).getOtp(secret.split('secret=')[1].split('&')[0]);
-  }
-  else {
-    if (silent === false) {
-      notify('"otp" string-field entry should have a value of "key=OTP_SECRET" format');
+  try {
+    const args = new URLSearchParams(string);
+    const secret = args.get('key') || args.get('secret');
+    if (!secret) {
+      throw Error('no secret is detected');
     }
-    return 'invalid sectet';
+    const period = args.get('period') || 30;
+    const digits = args.get('digits') || 6;
+
+    return (new jsOTP.totp(period, digits)).getOtp(secret);
+  }
+  catch (e) {
+    console.warn(e);
+    if (silent === false) {
+      notify(`"otp" string-field entry should have a value of "key=OTP_SECRET" or be otpauth-format.`);
+    }
+    return 'invalid secret';
   }
 };
 

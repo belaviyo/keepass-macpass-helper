@@ -176,6 +176,11 @@ document.getElementById('reset').addEventListener('click', e => {
   }
 });
 
+// usage
+document.getElementById('usage').addEventListener('click', () => chrome.tabs.create({
+  url: 'https://www.youtube.com/watch?v=L1Ze02XUi34'
+}));
+
 document.getElementById('permission').addEventListener('click', () => chrome.windows.create({
   url: '/data/permission/index.html',
   type: 'popup',

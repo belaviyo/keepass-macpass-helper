@@ -1,66 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>KeePassHelper :: Options</title>
-    <style>
-      body {
-        min-width: 500px;
-      }
-      @media screen and (min--moz-device-pixel-ratio:0) {
-        body {
-          min-width: unset;
-        }
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      textarea,
-      input[type=text] {
-        width: 100%;
-        box-sizing: border-box;
-      }
-      input[type=button] {
-        min-width: 100px;
-      }
-      th span{
-        background-color: rgba(0, 0, 0, 0.05);
-        padding: 5px;
-        display: block;
-        margin: 10px 0;
-      }
-      thead:first-of-type th span {
-        margin-top: 0;
-      }
-      td:nth-child(2) {
-        text-align: right;
-      }
-      .hidden {
-        opacity: 0.2;
-        pointer-events: none;
-      }
-      #toast {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background-color: #fff;
-        box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
-        padding: 0 5px;
-      }
-      #toast:empty {
-        display: none;
-      }
-      .note {
-        background-color: rgba(0, 0, 0, 0.05);
-      }
-      .note p {
-        padding: 10px;
-      }
-      .hidden {
-        display: none;
-      }
-    </style>
+    <title>KeePassHelper Password Manager :: Options Page</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
   </head>
   <body>
   <table>
@@ -93,7 +36,7 @@
       </tr>
       <tr for="xc-help" class="hidden note">
         <td colspan="2">
-          <p>For the native messaging to work, the id of this extension which is <code id="id"></code> needs to be appended to the KeePassXC manifest file of your browser. For the Google Chrome browser, the manifest is located at the following paths. For other browsers, the path format is similar. Just the name of the browser is different. To prevent the KeePassXC application from overwriting this file later, you can duplicate the manifest file and change the filename and the "name" value here and in the manifest file with a custom name (e.g. <code>com.add0n.keepasshelper</code>).
+          <p>For the native messaging to work, the id of this extension which is <code id="id"></code> needs to be appended to the KeePassXC manifest file of your browser. For the Google Chrome browser, the manifest is located at the following paths. For other browsers, the path format is similar. Just the name of the browser is different. To prevent the KeePassXC application from overwriting this file later, you can duplicate the manifest file and change the filename and the "name" value here and in the manifest file with a custom name (e.g. <code>com.add0n.keepasshelper</code>) (for instruction visit the <a href="https://add0n.com/keepass-helper.html#faq16">FAQs</a> page) (please restart the browser once).
           <br>
           <br>
           <span>Windows: <code>C:\Users\[username]\AppData\Local\keepassxc\org.keepassxc.keepassxc_browser_x.json</code></span><br>
@@ -211,6 +154,7 @@
     <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)">Access Remote Frames Permission</button>
   </p>
   <p>
+    <button id="usage">Usage Review</button>
     <button id="reset">Factory Reset</button>
     <button id="support">Support Development</button>
     <button id="save">Save</button>
