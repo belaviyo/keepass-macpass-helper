@@ -18,7 +18,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><label><input type="radio" name="method" id="keepass"> KeePassHTTP host</label></td>
+        <td><label><input type="radio" name="method" id="keepass"> <a href="https://github.com/pfn/keepasshttp/" target="_blank">KeePassHTTP</a> host</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="host">
@@ -27,7 +27,7 @@
         </td>
       </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="keepassxc"> Native Messaging (KeePassXC)</label></td>
+        <td><label><input type="radio" name="method" id="keepassxc"> Native Messaging (<a href="https://add0n.com/keepass-helper.html#faq15" target="_blank">KeePassXC</a>)</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="xc-native-id">
@@ -46,9 +46,9 @@
         </td>
       </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="kwpass"> Local File (read-only)</label></td>
+        <td><label><input type="radio" name="method" id="kwpass"> Local File (read-only) (beta)</label></td>
         <td>
-          <input type="button" id="kwpass-download" value="Download (KDBX3)">
+          <input type="button" id="kwpass-download" value="Download as KDBX3">
           <input type="button" id="kwpass-remove" value="Delete File">
           <input type="button" id="kwpass-file" value="Choose File">
           <input type="button" id="kwpass-desc" value="Toggle Desc">
@@ -56,13 +56,13 @@
       </tr>
       <tr for="kwpass-desc" class="hidden note">
         <td colspan="2">
-          <p>If on a machine you don't have access to the KeePass or KeePassXC application or you don't want to install the KeePassHttp plugin, you can use this mode. In this mode, the extension accepts a KeePass compatible database and uses an internal JS engine to read credentials from the database. Note that the original binary file will be stored in the internal IndexedDB database of the extension and you need to unlock the database once on each restart to decrypt the database and access the credentials. If your local database gets updated, it is the user's responsibility to update the internal database from this page.</p>
+          <p>If on a machine you don't have access to the KeePass or KeePassXC application or you don't want to install the KeePassHttp plugin, you can use this mode. In this mode, the extension accepts a KDBX3 or KDBX4 database and uses the <a href="https://github.com/keeweb/kdbxweb" target="_blank">KdbxWeb</a> library to read credentials from the database. Note that the original binary file will be stored in the internal IndexedDB database of the extension and you need to unlock the database once on each restart to decrypt the database and access the credentials. If your local database gets updated, it is the user's responsibility to update the internal database from this page.</p>
         </td>
       </tr>
     </tbody>
     <thead>
       <tr>
-        <th colspan="2"><span>Password generation</span></th>
+        <th colspan="2"><span>Password Generation</span></th>
       </tr>
     </thead>
     <tbody>
@@ -168,7 +168,7 @@
     <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)">Access Remote Frames Permission</button>
   </p>
   <p>
-    <button id="usage">Usage Review</button>
+    <button id="usage">YouTube Preview</button>
     <button id="reset">Factory Reset</button>
     <button id="support">Support Development</button>
     <button id="save">Save</button>

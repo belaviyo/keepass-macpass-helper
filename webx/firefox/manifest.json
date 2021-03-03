@@ -70,6 +70,12 @@
     "_execute_browser_action": {},
     "open-embedded": {
       "description": "Open credentials in the embedded mode (useful for popup windows)"
+    },
+    "generate-password": {
+      "description": "Generate a Random Password"
+    },
+    "save-form": {
+      "description": "Save a new Login Form in KeePass"
     }
   }
 }

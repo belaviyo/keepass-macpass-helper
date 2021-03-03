@@ -64,14 +64,6 @@ function onCommand(id, callback = function() {}) {
   });
 }
 chrome.browserAction.onClicked.addListener(({id}) => onCommand(id));
-chrome.commands.onCommand.addListener(() => tab().then(({id}) => {
-  chrome.tabs.executeScript(id, {
-    runAt: 'document_start',
-    matchAboutBlank: true, // some popups are actually about:blank
-    allFrames: false,
-    code: 'window.inject = true;'
-  }, () => onCommand(id));
-}));
 
 const onMessage = (request, sender, response) => {
   const id = request.tabId || (sender.tab ? sender.tab.id : -1);
@@ -409,7 +401,7 @@ login.register();
     });
     chrome.contextMenus.create({
       id: 'save-form',
-      title: 'Save a new login form in KeePass',
+      title: 'Save a new Login Form in KeePass',
       contexts: ['browser_action']
     });
     chrome.contextMenus.create({
@@ -433,7 +425,7 @@ login.register();
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);
 }
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+const onClick = (info, tab) => {
   if (info.menuItemId === 'save-form') {
     chrome.tabs.executeScript(tab.id, {
       file: '/data/save/inject.js',
@@ -503,6 +495,24 @@ To fill the credential automatically refresh the page.`);
       copy(password, tab.id, 'Generated password is copied to the clipboard');
     });
   }
+};
+chrome.contextMenus.onClicked.addListener(onClick);
+chrome.commands.onCommand.addListener(command => {
+  tab().then(tab => {
+    if (command === 'open-embedded') {
+      chrome.tabs.executeScript(tab.id, {
+        runAt: 'document_start',
+        matchAboutBlank: true, // some popups are actually about:blank
+        allFrames: false,
+        code: 'window.inject = true;'
+      }, () => onCommand(tab.id));
+    }
+    else {
+      onClick({
+        menuItemId: command
+      }, tab);
+    }
+  });
 });
 
 // panel-view modes

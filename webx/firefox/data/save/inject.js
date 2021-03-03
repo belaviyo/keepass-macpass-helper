@@ -82,7 +82,7 @@ if (isTop) {
     height: 100%;
     margin-left: auto;
     margin-right: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
     z-index: 10000000000;
   `);
   document.body.appendChild(iframe);

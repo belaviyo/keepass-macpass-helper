@@ -14,9 +14,10 @@
         align-items: center;
         justify-content: center;
         margin: 0;
+        color: #ccc;
       }
       form {
-        background-color: #fff;
+        background-color: #414141;
         padding: 10px;
         border: solid 1px #ccc;
         width: 500px;
@@ -38,28 +39,29 @@
       }
       input[type=button],
       input[type=submit] {
-        border: solid 1px #ccc;
-        background-color: transparent;
         cursor: pointer;
       }
       input[type=text],
       input[type=submit],
       input[type=button],
       input[type=password] {
-        height: 22px;
-      }
-      input {
+        background-color: #282828;
+        color: #ccc;
+        border: none;
+        border-radius: 0;
+        padding: 7px;
         outline: none;
+        min-width: 90px;
       }
       .submit {
-        width: 100%;
         display: flex;
         align-items: center;
         justify-content: flex-end;
+        padding: 0px 3px;
+        margin: 10px 0 3px 0;
       }
       .submit input {
-        margin: 10px 2px;
-        padding: 0 20px;
+        margin-left: 5px;
       }
     </style>
   </head>
@@ -88,10 +90,10 @@
           <td><input data-type="password" type="button" value="Show" data-cmd="toggle"></td>
         </tr>
       </table>
-      <div class="submit">
+      <p class="submit">
         <input type="button" value="Cancel" data-cmd="cancel">
         <input type="submit" value="Submit">
-      </div>
+      </p>
     </form>
     <script src="index.js"></script>
   </body>
