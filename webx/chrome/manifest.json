@@ -24,6 +24,8 @@
       "keepass/keepass.js",
       "keepassxc/nacl-fast.min.js",
       "keepassxc/keepassxc.js",
+      "kdbxweb/kdbxweb.js",
+      "kdbxweb/connect.js",
       "background.js"
     ]
   },

@@ -45,6 +45,20 @@
           </p>
         </td>
       </tr>
+      <tr>
+        <td><label><input type="radio" name="method" id="kwpass"> Local File (read-only)</label></td>
+        <td>
+          <input type="button" id="kwpass-download" value="Download (KDBX3)">
+          <input type="button" id="kwpass-remove" value="Delete File">
+          <input type="button" id="kwpass-file" value="Choose File">
+          <input type="button" id="kwpass-desc" value="Toggle Desc">
+        </td>
+      </tr>
+      <tr for="kwpass-desc" class="hidden note">
+        <td colspan="2">
+          <p>If on a machine you don't have access to the KeePass or KeePassXC application or you don't want to install the KeePassHttp plugin, you can use this mode. In this mode, the extension accepts a KeePass compatible database and uses an internal JS engine to read credentials from the database. Note that the original binary file will be stored in the internal IndexedDB database of the extension and you need to unlock the database once on each restart to decrypt the database and access the credentials. If your local database gets updated, it is the user's responsibility to update the internal database from this page.</p>
+        </td>
+      </tr>
     </tbody>
     <thead>
       <tr>
@@ -161,6 +175,8 @@
     <span id="toast"></span>
   </p>
 
+  <script src="/kdbxweb/kdbxweb.js"></script>
+  <script src="/kdbxweb/connect.js"></script>
   <script src="index.js"></script>
   </body>
 </html>

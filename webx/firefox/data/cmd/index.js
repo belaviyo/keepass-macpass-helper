@@ -2,6 +2,7 @@
 
 const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
+const psbox = document.getElementById('password-needed');
 
 let url;
 let tab = {};
@@ -73,6 +74,7 @@ function add(login, name, password, stringFields) {
 }
 
 function submit() {
+  console.log(new Error().stack);
   const query = search.value || url;
   search.value = query;
   list.textContent = '';
@@ -91,6 +93,7 @@ function submit() {
     }
     else {
       response.Entries = response.Entries || [];
+      console.log(response);
       response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
       if (response.Success === 'false') {
         focus();
@@ -268,7 +271,9 @@ document.addEventListener('click', e => {
       window.close();
     }
   }
-  list.focus();
+  if (psbox.classList.contains('hidden') === true) {
+    list.focus();
+  }
 });
 
 // keep focus
@@ -289,7 +294,27 @@ const init = t => {
 
   url = tab.url;
   search.value = url;
-  submit();
+
+  chrome.storage.local.get({
+    engine: 'keepass'
+  }, prefs => {
+    if (prefs.engine === 'kwpass') {
+      chrome.runtime.sendMessage({
+        cmd: 'kwpass-can-use'
+      }, resp => {
+        if (resp) {
+          submit();
+        }
+        else {
+          psbox.classList.remove('hidden');
+          psbox.querySelector('input').focus();
+        }
+      });
+    }
+    else {
+      submit();
+    }
+  });
 };
 if (window.top === window) {
   send({cmd: 'command'}, () => {
@@ -333,4 +358,22 @@ chrome.storage.local.get({
       }
     });
   }
+});
+
+psbox.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const password = e.target.querySelector('input').value;
+  chrome.runtime.sendMessage({
+    cmd: 'kwpass-open',
+    password
+  }, resp => {
+    if (resp === true) {
+      psbox.classList.add('hidden');
+      submit();
+    }
+    else {
+      alert(resp);
+    }
+  });
 });

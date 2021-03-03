@@ -10,6 +10,9 @@ input[type=text] {
 input[type=button] {
   min-width: 100px;
 }
+input[type=file] {
+  display: none;
+}
 th span{
   background-color: rgba(0, 0, 0, 0.05);
   padding: 5px;
@@ -26,17 +29,6 @@ td:nth-child(2) {
   opacity: 0.2;
   pointer-events: none;
 }
-#toast {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: #fff;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
-  padding: 0 5px;
-}
-#toast:empty {
-  display: none;
-}
 .note {
   background-color: rgba(0, 0, 0, 0.05);
 }
@@ -45,4 +37,7 @@ td:nth-child(2) {
 }
 .hidden {
   display: none;
+}
+#toast {
+  color: blue;
 }

@@ -1,3 +1,4 @@
+/* global kwpass */
 'use strict';
 
 const toast = (msg, callback = () => {}) => {
@@ -7,7 +8,7 @@ const toast = (msg, callback = () => {}) => {
   toast.id = setTimeout(() => {
     e.textContent = '';
     callback();
-  }, 1000);
+  }, 2000);
 };
 
 if (/Firefox/.test(navigator.userAgent)) {
@@ -228,3 +229,55 @@ chrome.permissions.contains({
   origins: ['<all_urls>']
 }, granted => granted && document.getElementById('permission').classList.add('hidden'));
 
+document.getElementById('kwpass-file').onclick = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.onchange = () => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      kwpass.init(() => {
+        kwpass.attach(new Uint8Array(reader.result)).then(() => {
+        }).then(() => {
+          toast('Database is stored');
+          chrome.runtime.sendMessage({
+            cmd: 'kwpass-remove'
+          });
+        }).catch(e => toast('Error: ' + e.message));
+      });
+    };
+    reader.readAsArrayBuffer(input.files[0]);
+  };
+  input.click();
+};
+document.getElementById('kwpass-remove').addEventListener('click', () => {
+  const next = () => kwpass.dettach().then(() => {
+    toast('Database is removed');
+    chrome.runtime.sendMessage({
+      cmd: 'kwpass-remove'
+    });
+  }).catch(e => toast('Error: ' + e.message));
+  if (kwpass.db) {
+    next();
+  }
+  else {
+    kwpass.init(next);
+  }
+});
+document.getElementById('kwpass-desc').addEventListener('click', () => {
+  document.querySelector('[for="kwpass-desc"').classList.toggle('hidden');
+});
+document.getElementById('kwpass-download').addEventListener('click', () => {
+  const password = prompt('Enter the password', '');
+  if (password) {
+    const next = () => kwpass.open(password).then(() => kwpass.export()).catch(e => {
+      toast('Error: ' + e.message);
+      console.warn(e);
+    });
+    if (kwpass.db) {
+      next();
+    }
+    else {
+      kwpass.init(next);
+    }
+  }
+});

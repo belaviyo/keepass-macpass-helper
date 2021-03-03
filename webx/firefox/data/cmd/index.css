@@ -61,7 +61,7 @@ option {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 10px;
+  margin: 0 0 10px 0;
 }
 #toolbar input {
   padding: 10px;
@@ -69,19 +69,36 @@ option {
 #toolbar input:active {
   opacity: 0.5;
 }
+#password-needed,
 #host-access {
   position: absolute;
   width: 100vw;
   height: 100vh;
   top: 0;
   left: 0;
+  background-color: #282828;
+}
+#host-access {
   align-items: center;
   justify-content: center;
 }
+#password-needed {
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+#password-needed input,
 #host-access input {
   background-color: #414141;
   padding: 10px;
   margin-left: 10px;
+}
+#password-needed div {
+  width: 100%;
+  box-sizing: border-box;
+}
+#password-needed input {
+  margin: 10px;
 }
 
 [hbox] {

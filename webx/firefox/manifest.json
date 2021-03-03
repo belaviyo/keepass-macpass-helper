@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.4.8",
+  "version": "0.4.9",
   "name": "KeePassHelper Password Manager",
   "description": "Helper extension for KeePass and KeePassXC to find and insert logins and passwords without copying them",
   "permissions": [
@@ -25,6 +25,8 @@
       "keepass/keepass.js",
       "keepassxc/nacl-fast.min.js",
       "keepassxc/keepassxc.js",
+      "kdbxweb/kdbxweb.js",
+      "kdbxweb/connect.js",
       "background.js"
     ]
   },

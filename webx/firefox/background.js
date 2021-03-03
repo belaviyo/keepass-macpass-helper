@@ -1,4 +1,4 @@
-/* globals KeePass, keepassxc, jsOTP, safe */
+/* globals KeePass, keepassxc, kwpass, jsOTP, safe */
 'use strict';
 
 const storage = {};
@@ -29,14 +29,13 @@ jsOTP.exec = (string, silent = false) => {
   }
 };
 
-function notify(message) {
-  chrome.notifications.create({
-    title: 'KeePassHelper',
-    type: 'basic',
-    iconUrl: 'data/icons/128.png',
-    message
-  });
-}
+const notify = e => chrome.notifications.create({
+  type: 'basic',
+  iconUrl: '/data/icons/48.png',
+  title: chrome.runtime.getManifest().name,
+  message: e.message || e
+});
+
 jsOTP.secure = (id, ensecret, silent = false) => {
   return new Promise((resolve, reject) => chrome.windows.create({
     url: 'data/prompt/index.html',
@@ -135,7 +134,17 @@ const onMessage = (request, sender, response) => {
     chrome.storage.local.get({
       engine: 'keepass'
     }, prefs => {
-      (prefs.engine === 'keepass' ? keepass : keepassxc).itl(request, (e, r) => response({
+      let engine;
+      if (prefs.engine === 'kwpass') {
+        engine = kwpass;
+      }
+      else if (prefs.engine === 'keepass') {
+        engine = keepass;
+      }
+      else {
+        engine = keepassxc;
+      }
+      engine.itl(request, (e, r) => response({
         error: e,
         response: r
       }));
@@ -146,7 +155,17 @@ const onMessage = (request, sender, response) => {
     chrome.storage.local.get({
       engine: 'keepass'
     }, prefs => {
-      (prefs.engine === 'keepass' ? keepass : keepassxc).its(request.data, e => {
+      let engine;
+      if (prefs.engine === 'kwpass') {
+        engine = kwpass;
+      }
+      else if (prefs.engine === 'keepass') {
+        engine = keepass;
+      }
+      else {
+        engine = keepassxc;
+      }
+      engine.its(request.data, e => {
         if (e) {
           notify(e.message || e);
         }
@@ -184,7 +203,6 @@ const onMessage = (request, sender, response) => {
         allFrames: true,
         matchAboutBlank: true
       }, arr => {
-        console.log(arr);
         if (chrome.runtime.lastError) {
           return notify(chrome.runtime.lastError.message);
         }
@@ -250,6 +268,26 @@ const onMessage = (request, sender, response) => {
     chrome.windows.update(sender.tab.windowId, {
       focused: true
     });
+  }
+  else if (cmd === 'kwpass-can-use') {
+    if (kwpass.db) {
+      response(true);
+    }
+    else {
+      response(false);
+    }
+  }
+  else if (cmd === 'kwpass-open') {
+    kwpass.init(() => {
+      kwpass.open(request.password).then(() => response(true)).catch(e => {
+        console.warn(e, request);
+        response(e.message);
+      });
+    });
+    return true;
+  }
+  else if (cmd === 'kwpass-remove') {
+    delete kwpass.db;
   }
 };
 chrome.runtime.onMessage.addListener(onMessage);
