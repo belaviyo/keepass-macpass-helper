@@ -74,7 +74,6 @@ function add(login, name, password, stringFields) {
 }
 
 function submit() {
-  console.log(new Error().stack);
   const query = search.value || url;
   search.value = query;
   list.textContent = '';
@@ -93,7 +92,6 @@ function submit() {
     }
     else {
       response.Entries = response.Entries || [];
-      console.log(response);
       response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
       if (response.Success === 'false') {
         focus();

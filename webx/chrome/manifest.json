@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.4.9",
+  "version": "0.5.0",
   "name": "KeePassHelper Password Manager",
   "description": "Helper extension for KeePass to find and insert logins and passwords without copying them",
   "permissions": [
@@ -29,22 +29,7 @@
       "background.js"
     ]
   },
-  "browser_action": {
-    "browser_style": true,
-    "theme_icons": [{
-      "light": "data/icons/light/16.png",
-      "dark": "data/icons/16.png",
-      "size": 16
-    }, {
-      "light": "data/icons/light/32.png",
-      "dark": "data/icons/32.png",
-      "size": 32
-    }, {
-      "light": "data/icons/light/64.png",
-      "dark": "data/icons/64.png",
-      "size": 64
-    }]
-  },
+  "browser_action": {},
   "icons": {
     "16": "data/icons/16.png",
     "32": "data/icons/32.png",

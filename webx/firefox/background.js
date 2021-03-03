@@ -272,7 +272,7 @@ const onMessage = (request, sender, response) => {
   else if (cmd === 'kwpass-open') {
     kwpass.init(() => {
       kwpass.open(request.password).then(() => response(true)).catch(e => {
-        console.warn(e, request);
+        console.warn(e);
         response(e.message);
       });
     });
@@ -411,7 +411,7 @@ login.register();
     });
     chrome.contextMenus.create({
       id: 'encrypt-data',
-      title: 'Encrypt or decrypt a string data',
+      title: 'Encrypt or Decrypt a String',
       contexts: ['browser_action']
     });
     if (chrome.contextMenus.ContextType.PASSWORD) {
@@ -543,10 +543,11 @@ chrome.commands.onCommand.addListener(command => {
         if (reason === 'install' || (prefs.faqs && reason === 'update')) {
           const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
           if (doUpdate && previousVersion !== version) {
-            tabs.create({
+            tabs.query({active: true, currentWindow: true}, tbs => tabs.create({
               url: page + '?version=' + version + (previousVersion ? '&p=' + previousVersion : '') + '&type=' + reason,
-              active: reason === 'install'
-            });
+              active: reason === 'install',
+              ...(tbs && tbs.length && {index: tbs[0].index + 1})
+            }));
             storage.local.set({'last-update': Date.now()});
           }
         }
