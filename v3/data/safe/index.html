@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      font-family: "Helvetica Neue",Helvetica,sans-serif;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      color: #ccc;
+    }
+    form {
+      background-color: #414141;
+      padding: 10px;
+      border: solid 1px #ccc;
+      width: 500px;
+    }
+    form > div:first-child {
+      display: grid;
+      grid-template-columns: min-content 1fr;
+      grid-gap: 5px 10px;
+      white-space: nowrap;
+      align-items: center;
+    }
+    table {
+      width: 100%;
+    }
+    td {
+      white-space: nowrap;
+    }
+    td:last-child {
+      text-align: right;
+    }
+    input[type=text],
+    input[type=submit],
+    input[type=button],
+    input[type=password] {
+      background-color: #282828;
+      color: #ccc;
+      border: none;
+      border-radius: 0;
+      padding: 7px;
+      outline: none;
+      min-width: 90px;
+    }
+    input[type=text],
+    input[type=password] {
+      width: 100%;
+      box-sizing: border-box;
+      text-indent: 5px;
+    }
+    input[type=button],
+    input[type=submit] {
+      cursor: pointer;
+    }
+    input {
+      outline: none;
+    }
+    .submit {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 2px;
+      margin-top: 10px;
+    }
+  </style>
+  </head>
+  <body>
+    <form action="#">
+      <div>
+        <td>Passphrase</td>
+        <td><input type="password" id="passphrase" required></td>
+        <td>String</td>
+        <td><input type="text" id="data" required></td>
+        <td>Result</td>
+        <td><input type="text" id="result" readonly="true"></td>
+      </div>
+
+      <div class="submit">
+        <input type="button" value="Cancel" id="cancel">
+        <input type="submit" value="Decrypt" id="decrypt">
+        <input type="submit" value="Encrypt" id="encrypt">
+      </div>
+    </form>
+    <script src="/tools/safe.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>

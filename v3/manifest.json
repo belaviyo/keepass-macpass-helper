@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "version": "0.6.0",
+  "name": "KeePassHelper Password Manager",
+  "description": "Helper extension for KeePass application to find and insert logins and passwords without copying them",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus",
+    "scripting"
+  ],
+  "optional_permissions": [
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "http://localhost:19455/"
+  ],
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "action": {
+    "default_popup": "data/cmd/index.html"
+  },
+  "icons": {
+    "16": "data/icons/16.png",
+    "32": "data/icons/32.png",
+    "48": "data/icons/48.png",
+    "64": "data/icons/64.png",
+    "128": "data/icons/128.png",
+    "256": "data/icons/256.png",
+    "512": "data/icons/512.png"
+  },
+  "web_accessible_resources": [{
+    "resources": [
+      "data/save/index.html",
+      "data/safe/index.html"
+    ],
+    "matches": ["*://*/*"]
+  }],
+  "homepage_url": "https://add0n.com/keepass-helper.html",
+  "options_ui": {
+    "page": "data/options/index.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "_execute_action": {
+      "description": "Press the action button"
+    },
+    "generate-password": {
+      "description": "Generate a Random Password"
+    },
+    "save-form": {
+      "description": "Save a new Login Form in KeePass"
+    }
+  }
+}

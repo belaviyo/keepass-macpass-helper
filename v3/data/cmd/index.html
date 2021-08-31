@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body vbox>
+    <div>
+      <input type="search">
+    </div>
+    <select flex=1 id="list" size=5 title="Double-click on an entry or press 'Enter' key to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence"></select>
+    <div id="toolbar">
+      <input type="button" value="Close (ESC)" data-cmd="close">
+      <input type="button" value="Username (U)" title="To insert the selected username either:&#013;  - Press Alt + U on Windows&#013;  - Press Command + U on Mac&#013;  - Click on the button" data-cmd="insert-login" disabled="true">
+      <input type="button" value="Password (P)" title="To insert the selected password either:&#013;  - Press Alt + P on Windows&#013;  - Press Command + P on Mac&#013;  - Click on the button" data-cmd="insert-password" disabled="true">
+      <input type="button" value="Both (B)" title="To perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence either:&#013;  - Click on the button&#013;  - Press Alt + Shift + B on Windows&#013;  - Press Command + Shift + B on Mac&#013;&#013;To perform {USERNAME}{TAB}{PASSWORD} sequence either:&#013;  - Ctrl + Click on the button&#013;  - Press Alt + B on Windows&#013;  - Press Command + B on Mac" data-cmd="insert-both" disabled="true">
+      <input type="button" value="OTP (O)" title="To copy the one-time password token (OTP) to the clipboard either:&#013;  - Press Alt + O on Windows&#013;  - Press Command + O on Mac&#013;  - Click on the button" data-cmd="otp" disabled="true">
+      -
+      <input type="button" value="Copy (C/X)" title="To copy username to the clipboard either:&#013;  - Press Alt + C on Windows&#013;  - Press Command + C on Mac&#013;  - Click on the button&#013;&#013;To copy password to the clipboard either:&#013;  - Press Alt + X on Windows&#013;  - Press Command + X on Mac&#013;  - Meta + Click the button" data-cmd="copy" disabled="true">
+    </div>
+    <div id="host-access" hbox class="hidden">
+      <div>
+        Grant access to the KeePassHttp plugin: <input type="button" value="Proceed">
+      </div>
+    </div>
+    <form id="password-needed" hbox class="hidden">
+      <div vbox align="center">
+        <span></span> <input type="password" placeholder="Insert the Password and hit Enter" required>
+      </div>
+    </form>
+    <div id="message"></div>
+
+    <script src="/connect/keepass/sjcl.js"></script>
+    <script src="/connect/keepass/keepass.js"></script>
+    <script src="/connect/keepassxc/nacl-fast.min.js"></script>
+    <script src="/connect/keepassxc/keepassxc.js"></script>
+    <script src="/connect/kdbxweb/kdbxweb.js"></script>
+    <script src="/connect/kdbxweb/connect.js"></script>
+    <script src="/connect/jsOTP.js"></script>
+    <script src="/tools/safe.js"></script>
+    <script src="/connect/api.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>

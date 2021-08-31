@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>KeePassHelper Password Manager :: Options Page</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
+  </head>
+  <body>
+  <table>
+    <colgroup>
+      <col width="220">
+      <col>
+    </colgroup>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Connection</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><label><input type="radio" name="method" id="keepass"> <a href="https://github.com/pfn/keepasshttp/" target="_blank">KeePassHTTP</a> host</label></td>
+        <td>
+          <div style="display: flex; align-items: center;">
+            <input type="text" id="host">
+            <input type="button" id="check" value="Check" title="Check permission access and port availability">
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td><label><input type="radio" name="method" id="keepassxc"> Native Messaging (<a href="https://add0n.com/keepass-helper.html#faq15" target="_blank">KeePassXC</a>)</label></td>
+        <td>
+          <div style="display: flex; align-items: center;">
+            <input type="text" id="xc-native-id">
+            <input type="button" id="xc-help" value="Toggle Desc">
+          </div>
+      </tr>
+      <tr for="xc-help" class="hidden note">
+        <td colspan="2">
+          <p>For the native messaging to work, the id of this extension which is <code id="id"></code> needs to be appended to the KeePassXC manifest file of your browser. For the Google Chrome browser, the manifest is located at the following paths. For other browsers, the path format is similar. Just the name of the browser is different. To prevent the KeePassXC application from overwriting this file later, you can duplicate the manifest file and change the filename and the "name" value here and in the manifest file with a custom name (e.g. <code>com.add0n.keepasshelper</code>) (for instruction visit the <a href="https://add0n.com/keepass-helper.html#faq16">FAQs</a> page) (please restart the browser once).
+          <br>
+          <br>
+          <span>Windows: <code>C:\Users\[username]\AppData\Local\keepassxc\org.keepassxc.keepassxc_browser_x.json</code></span><br>
+          <span>OS X: <code>~/Library/Application Support/Google/Chrome/NativeMessagingHosts/org.keepassxc.keepassxc_browser.json</code></span><br>
+          <span>Linux: <code>~/.config/google-chrome/NativeMessagingHosts/org.keepassxc.keepassxc_browser.json</code></span>
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td><label><input type="radio" name="method" id="kwpass"> Local File (read-only) (beta)</label></td>
+        <td>
+          <input type="button" id="kwpass-download" value="Download as KDBX3">
+          <input type="button" id="kwpass-remove" value="Delete File">
+          <input type="button" id="kwpass-file" value="Choose File">
+          <input type="button" id="kwpass-desc" value="Toggle Desc">
+        </td>
+      </tr>
+      <tr for="kwpass-desc" class="hidden note">
+        <td colspan="2">
+          <p>If on a machine you don't have access to the KeePass or KeePassXC application or you don't want to install the KeePassHttp plugin, you can use this mode. In this mode, the extension accepts a KDBX3 or KDBX4 database and uses the <a href="https://github.com/keeweb/kdbxweb" target="_blank">KdbxWeb</a> library to read credentials from the database. Note that the original binary file will be stored in the internal IndexedDB database of the extension and you need to unlock the database once on each restart to decrypt the database and access the credentials. If your local database gets updated, it is the user's responsibility to update the internal database from this page.</p>
+        </td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Password Generation</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Password generation character set</td>
+        <td><input type="text" id="charset"></td>
+      </tr>
+      <tr>
+        <td>Password generation length</td>
+        <td><input type="number" id="length"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>AutoFill (for one credential)</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fill login form and close the panel</td>
+        <td><input type="checkbox" id="auto-login"></td>
+      </tr>
+      <tr>
+        <td>Then submit the form</td>
+        <td><input type="checkbox" id="auto-submit"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Auto Login</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2">A JSON array to fill login forms automatically without the need to use the panel at all. <a href="#" id=example>Insert an example</a></td>
+      </tr>
+      <tr>
+        <td colspan="2"><textarea rows="4" id="json"></textarea></td>
+      </tr>
+      <tr>
+        <td>Then submit the form</td>
+        <td><input type="checkbox" id="auto-submit-auto-login"></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Panel Styling</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2"><textarea rows="4" id="cmd-style" placeholder="style panel with CSS; e.g.: body {background: #fff !important;}"></textarea></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Save Dialog Styling</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2"><textarea rows="4" id="save-dialog-style"></textarea></td>
+      </tr>
+    </tbody>
+    <thead>
+      <tr>
+        <th colspan="2"><span>Misc</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="2">
+          <div style="display: flex">
+            <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials</label>
+            <input type="checkbox" id="embedded">
+          </div>
+        </td>
+      </tr>
+      <tr class="chrome">
+        <td colspan="2">
+          <div style="display: flex">
+            <label for="minilogin" style="flex: 1">Display login button next to password fields</label>
+            <input type="checkbox" id="minilogin">
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          <div style="display: flex">
+            <label for="faqs" style="flex: 1">Open FAQs on updates</label>
+            <input type="checkbox" id="faqs">
+          </div>
+        </td>
+      </tr>
+      <tr style="display: none;">
+        <td>Display format</td>
+        <td><input type="text" id="format"></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    <button id="permission" title="Grant permissions needed for monitoring websites and performing auto-login">Auto-Login Permission</button>
+    <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)">Access Remote Frames Permission</button>
+  </p>
+  <p>
+    <button id="usage">YouTube Preview</button>
+    <button id="reset">Factory Reset</button>
+    <button id="support">Support Development</button>
+    <button id="save">Save</button>
+    <span id="toast"></span>
+  </p>
+
+  <script src="/connect/kdbxweb/kdbxweb.js"></script>
+  <script src="/connect/kdbxweb/connect.js"></script>
+  <script src="index.js"></script>
+  </body>
+</html>
