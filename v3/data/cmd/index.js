@@ -36,10 +36,6 @@ const decrypt = async sotp => {
 
 document.body.dataset.top = window.top === window;
 
-const send = (obj, callback) => chrome.runtime.sendMessage(Object.assign(obj, {
-  tabId: tab.id
-}), callback);
-
 const storage = {
   get(name) {
     try {
@@ -97,17 +93,32 @@ function add(login, name, password, stringFields) {
   });
   entry.dataset.password = password || '';
   entry.stringFields = stringFields;
+  if (password) {
+    entry.title = `Username: ${login}
+Name: ${name || ''}
+String Fields: ${(stringFields || []).length}`;
+  }
+  else {
+    entry.title = login;
+  }
+
   list.appendChild(entry);
 }
 
 async function submit() {
-  const query = search.value = search.value || url;
+  let query = search.value = search.value || url;
+  if (query.indexOf('://') === -1) {
+    try {
+      // try to construct and validate URL from user input
+      new URL('https://' + query);
+      search.value = query = 'https://' + query;
+    }
+    catch (e) {}
+  }
 
   list.textContent = '';
   [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
-    if (input.dataset.cmd !== 'close') {
-      input.disabled = true;
-    }
+    input.disabled = true;
   });
 
   try {
@@ -146,16 +157,8 @@ async function submit() {
   }
   catch (e) {
     console.warn(e);
-    document.getElementById('message').textContent = e.message;
+    add(e.message);
   }
-}
-
-function copy(str) {
-  document.oncopy = event => {
-    event.clipboardData.setData('text/plain', str);
-    event.preventDefault();
-  };
-  document.execCommand('Copy', false, null);
 }
 
 document.addEventListener('search', submit);
@@ -165,18 +168,13 @@ document.addEventListener('change', e => {
   if (target.nodeName === 'SELECT') {
     const disabled = target.selectedOptions.length === 0 || !target.selectedOptions[0].dataset.password;
     [...document.getElementById('toolbar').querySelectorAll('input')]
-      .filter(input => input.dataset.cmd !== 'close')
       .forEach(input => input.disabled = disabled);
   }
 });
 
 document.addEventListener('keydown', e => {
   const metaKey = e.metaKey || e.altKey || e.ctrlKey;
-  if (e.code === 'Escape') {
-    document.querySelector('[data-cmd="close"]').click();
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyC') {
+  if (metaKey && e.code === 'KeyC') {
     document.querySelector('[data-cmd="copy"]').click();
     e.preventDefault();
   }
@@ -217,6 +215,7 @@ document.addEventListener('keydown', e => {
   }
   else if (metaKey && e.code === 'KeyF') {
     search.focus();
+    search.select();
     e.preventDefault();
   }
   else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
@@ -229,7 +228,7 @@ document.addEventListener('keydown', e => {
 const insert = {};
 insert.fields = async stringFields => {
   // do we need to use otp or sotp
-  if (stringFields.some(o => o.Value.indexOf('{{TOTP}') !== -1)) {
+  if (stringFields.some(o => typeof(o.Value) === 'string' && o.Value.indexOf('{{TOTP}') !== -1)) {
     let otp = stringFields.filter(o => o.Key === 'KPH: otp' || o.Key === 'KPH:otp' || o.Key === 'otp').shift();
     const sotp = stringFields.filter(o => o.Key === 'KPH: sotp' || o.Key === 'KPH:sotp' || o.Key === 'sotp').shift();
 
@@ -322,12 +321,11 @@ insert.username = username => chrome.scripting.executeScript({
       aElement.dispatchEvent(new Event('input', {bubbles: true}));
     };
     const {aElement} = window;
-    let inserted = false;
+
     if (aElement) {
       [aElement].flat().forEach(e => {
         e.focus();
         once(e);
-        inserted = true;
       });
 
       return true;
@@ -394,7 +392,10 @@ insert.submit = () => chrome.scripting.executeScript({
     const {aElement} = window;
     const form = window.detectForm(aElement);
     if (form) {
-      const button = form.querySelector('input[type=submit]') ||
+      const button =
+        form.querySelector('input[type=submit], button[type=submit]') ||
+        form.querySelector('input[name=submit], button[name=submit]') ||
+        form.querySelector('input[name=Submit], button[name=Submit]') ||
         form.querySelector('button:not([type=reset i]):not([type=button i])');
 
       if (button) {
@@ -468,25 +469,44 @@ document.addEventListener('click', async e => {
       inserted = inserted || r.reduce((p, c) => p || c.result, false);
     }
     if (inserted !== true) {
-      notify('Cannot find login form on this page');
+      // do we have a CORS frame
+      const r = await chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id
+        },
+        func: () => [...document.querySelectorAll('iframe[src]')]
+          .map(e => e.src)
+          .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
+      });
+      const origins = r[0].result;
+      if (origins.length) {
+        chrome.permissions.request({
+          origins
+        }, granted => {
+          if (granted) {
+            e.target.dispatchEvent(new Event('click', {
+              bubbles: true
+            }));
+          }
+        });
+      }
+      else {
+        notify('Cannot find any login forms on this page');
+      }
     }
     // submit
     if (cmd === 'insert-both' && alt === false && inserted) {
       await insert.submit();
     }
+    window.close();
   }
   else if (cmd && cmd.startsWith('copy')) {
+    let content = list.value;
     if (e.detail === 'password' || alt) {
       const checked = list.selectedOptions[0];
-      copy(checked.dataset.password);
+      content = checked.dataset.password;
     }
-    else {
-      copy(list.value);
-    }
-    send({
-      cmd: 'notify',
-      message: (e.detail === 'password' || alt ? 'Password' : 'Login name') + ' is copied to the clipboard'
-    });
+    navigator.clipboard.writeText(content).then(() => window.close()).catch(e => alert(e.message));
   }
   else if (cmd === 'otp') {
     const checked = list.selectedOptions[0];
@@ -507,7 +527,7 @@ document.addEventListener('click', async e => {
       else {
         alert(`No string-field entry with either "otp" or "sotp" key is detected.
 
-To generate one-time password tokens, save a new string-field entry with "otp" key and "key=OTP_SECRET" value.`);
+To generate one-time password tokens, save a new string-field entry with "KPH: otp" name and SECRET as value.`);
       }
     }
     catch (e) {
@@ -515,16 +535,10 @@ To generate one-time password tokens, save a new string-field entry with "otp" k
       alert(e.message || 'cannot decrypt');
     }
   }
-  else if (cmd === 'close') {
-    send({
-      cmd: 'close-me',
-      tabId: tab.id
-    });
+  else if (cmd === 'options-page') {
+    chrome.runtime.openOptionsPage();
   }
-  if (cmd === 'close' || cmd.startsWith('insert-')) {
-    // window.close();
-  }
-  if (psbox.classList.contains('hidden') === true) {
+  if (psbox.classList.contains('hidden') === true && e.target.type !== 'search') {
     list.focus();
   }
 });
@@ -534,30 +548,11 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
 // init
 (async () => {
+  // prepare the engine engine
+  const prefs = await storage.remote({
+    engine: 'keepass'
+  });
   try {
-    const tabs = await chrome.tabs.query({
-      currentWindow: true,
-      active: true
-    });
-    if (tabs.length < 1) {
-      throw Error('Cannot detect active tab');
-    }
-    tab = tabs[0];
-    search.value = url = tab.url;
-
-    const r = await chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id,
-        allFrames: true
-      },
-      files: ['data/cmd/inject.js']
-    });
-    usernames = r.map(r => r.result).flat().filter((s, i, l) => s && l.indexOf(s) === i);
-    // select engine
-    const prefs = await storage.remote({
-      engine: 'keepass'
-    });
-
     await engine.prepare(prefs.engine);
 
     if (prefs.engine === 'kwpass') {
@@ -579,15 +574,60 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
         'kw:password': password
       });
     }
+    // select tab
+    const tabs = await new Promise(resolve => chrome.tabs.query({
+      currentWindow: true,
+      active: true
+    }, resolve));
+    if (tabs.length < 1) {
+      throw Error('Cannot detect active tab');
+    }
+    tab = tabs[0];
+    search.value = url = tab.url;
+
+    const r = await chrome.scripting.executeScript({
+      target: {
+        tabId: tab.id,
+        allFrames: true
+      },
+      files: ['data/cmd/inject.js']
+    });
+    usernames = r.map(r => r.result).flat().filter((s, i, l) => s && l.indexOf(s) === i);
+
     submit();
   }
   catch (e) {
-    console.warn(e);
-    document.getElementById('message').textContent = e.message;
+    add(e.message);
+    add('Use options page to connect to KeePass, KeePassXC, or use a local database');
   }
 })();
 
 // dbl-click
 list.addEventListener('dblclick', () => {
   document.querySelector('[data-cmd="insert-both"]').click();
+});
+
+// check localhost access
+chrome.storage.local.get({
+  engine: 'keepass',
+  host: 'http://localhost:19455'
+}, prefs => {
+  if (prefs.engine === 'keepass') {
+    const o = '*://' + (new URL(prefs.host)).hostname + '/';
+    chrome.permissions.contains({
+      origins: [o]
+    }, granted => {
+      if (granted === false) {
+        const parent = document.getElementById('host-access');
+        parent.classList.remove('hidden');
+        parent.querySelector('input').addEventListener('click', () => chrome.permissions.request({
+          origins: [o]
+        }, granted => {
+          if (granted) {
+            parent.classList.add('hidden');
+          }
+        }));
+      }
+    });
+  }
 });

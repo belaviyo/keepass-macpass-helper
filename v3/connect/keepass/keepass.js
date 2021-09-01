@@ -4,12 +4,12 @@
 class KeePass {
   constructor() {
     this.host = null;
-    this.timeout = 5000;
+    this.timeout = 20000;
   }
-  post(obj) {
+  post(obj, timeout = this.timeout) {
     const controller = new AbortController();
 
-    setTimeout(() => controller.abort(), this.timeout);
+    setTimeout(() => controller.abort(), timeout);
     return fetch(this.host, {
       method: 'POST',
       headers: {
@@ -117,7 +117,7 @@ class KeePass {
       'RequestType': 'associate',
       'Key': this.key
     });
-    const r = await this.post(request);
+    const r = await this.post(request, 120000);
     this.id = r.Id;
     chrome.storage.local.set({
       [r.Hash]: {

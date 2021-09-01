@@ -108,7 +108,7 @@ class KWPASS {
     const files = await this.file.read();
 
     if (files.length < 1) {
-      throw Error('Go to options page and provide a database');
+      throw Error('No database. Use options page to add a database');
     }
     password = kdbxweb.ProtectedValue.fromString(password);
     const credentials = new kdbxweb.Credentials(password);

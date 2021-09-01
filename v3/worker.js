@@ -1,7 +1,10 @@
+/* global importScripts */
+importScripts('./v2.js');
+
 const notify = (tab, e) => {
   chrome.action.setBadgeText({
     tabId: tab.id,
-    text: 'E'
+    text: 'Error'
   });
   chrome.action.setTitle({
     tabId: tab.id,
@@ -75,7 +78,8 @@ chrome.runtime.onMessage.addListener((request, sender) => {
     chrome.contextMenus.create({
       id: 'auto-login',
       title: 'Perform auto-login for this URL',
-      contexts: ['action']
+      contexts: ['action'],
+      enabled: false
     });
     chrome.contextMenus.create({
       id: 'encrypt-data',
@@ -164,12 +168,17 @@ const onCommand = async (info, tab) => {
     });
   }
   else if (info.menuItemId === 'encrypt-data') {
-    chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id
-      },
-      files: ['/data/safe/inject.js']
-    }, () => chrome.runtime.lastError && notify(chrome.runtime.lastError.message));
+    try {
+      await chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id
+        },
+        files: ['/data/safe/inject.js']
+      });
+    }
+    catch (e) {
+      notify(tab, e);
+    }
   }
   else if (info.menuItemId === 'generate-password') {
     chrome.storage.local.get({
@@ -195,6 +204,56 @@ const onCommand = async (info, tab) => {
       }).catch(() => copy(password));
     });
   }
+  else if (info.menuItemId === 'auto-login') {
+    const {origin} = new URL(tab.url);
+    chrome.permissions.request({
+      origins: [origin + '/']
+    }, granted => {
+      if (granted) {
+        chrome.storage.local.get({
+          'json': []
+        }, async prefs => {
+          const o = prefs.json.filter(o => o.url.startsWith(origin)).shift();
+          try {
+            const r = await chrome.scripting.executeScript({
+              target: {
+                tabId: tab.id
+              },
+              func: (value = '') => {
+                return prompt(
+                  'What is the username to match with KeePass database?\n\nThis username must exactly match with one of the credentials stored in your KeePass database for this URL',
+                  value
+                );
+              },
+              args: [o?.username || '']
+            });
+            if (r[0].result) {
+              if (o) {
+                o.username = r[0].result;
+              }
+              else {
+                prefs.json.push({
+                  url: origin,
+                  username: r[0].result
+                });
+              }
+            }
+            else {
+              if (o) {
+                const n = prefs.json.indexOf(o);
+                prefs.json.splice(n, 1);
+              }
+            }
+            chrome.storage.local.set(prefs);
+          }
+          catch (e) {
+            console.warn(e);
+            notify(tab, e);
+          }
+        });
+      }
+    });
+  }
 };
 chrome.contextMenus.onClicked.addListener(onCommand);
 chrome.commands.onCommand.addListener(command => chrome.tabs.query({
@@ -203,3 +262,31 @@ chrome.commands.onCommand.addListener(command => chrome.tabs.query({
 }, tabs => onCommand({
   menuItemId: command
 }, tabs[0])));
+
+/* FAQs & Feedback */
+{
+  const {management, runtime: {onInstalled, setUninstallURL, getManifest}, storage, tabs} = chrome;
+  if (navigator.webdriver !== true) {
+    const page = getManifest().homepage_url;
+    const {name, version} = getManifest();
+    onInstalled.addListener(({reason, previousVersion}) => {
+      management.getSelf(({installType}) => installType === 'normal' && storage.local.get({
+        'faqs': true,
+        'last-update': 0
+      }, prefs => {
+        if (reason === 'install' || (prefs.faqs && reason === 'update')) {
+          const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
+          if (doUpdate && previousVersion !== version) {
+            tabs.query({active: true, currentWindow: true}, tbs => tabs.create({
+              url: page + '?version=' + version + (previousVersion ? '&p=' + previousVersion : '') + '&type=' + reason,
+              active: reason === 'install',
+              ...(tbs && tbs.length && {index: tbs[0].index + 1})
+            }));
+            storage.local.set({'last-update': Date.now()});
+          }
+        }
+      }));
+    });
+    setUninstallURL(page + '?rd=feedback&name=' + encodeURIComponent(name) + '&version=' + version);
+  }
+}

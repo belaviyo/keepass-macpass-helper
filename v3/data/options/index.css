@@ -14,6 +14,7 @@ body {
 
 textarea {
   padding: 5px;
+  border: solid 1px #d4d4d4;
 }
 button,
 input[type=submit],
@@ -24,11 +25,12 @@ input[type=button] {
   text-shadow: rgb(240, 240, 240) 0 1px 0;
 }
 button,
+input[type=number],
 input[type=submit],
 input[type=button],
 input[type=text] {
-  border: solid 1px rgba(0, 0, 0, 0.25);
-  height: 24px;
+  border: solid 1px #d4d4d4;
+  height: 26px;
 }
 
 input[type=button]:disabled {
@@ -39,6 +41,7 @@ table {
   border-collapse: collapse;
 }
 textarea,
+input[type=number],
 input[type=text] {
   width: 100%;
   box-sizing: border-box;
@@ -50,7 +53,7 @@ input[type=button] {
 input[type=file] {
   display: none;
 }
-th span{
+th span {
   background-color: rgba(0, 0, 0, 0.05);
   padding: 5px;
   display: block;
@@ -75,6 +78,7 @@ td:nth-child(2) {
 .hidden {
   display: none;
 }
-#toast {
-  color: blue;
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }

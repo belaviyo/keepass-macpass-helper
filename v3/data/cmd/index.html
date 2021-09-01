@@ -10,7 +10,6 @@
     </div>
     <select flex=1 id="list" size=5 title="Double-click on an entry or press 'Enter' key to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence"></select>
     <div id="toolbar">
-      <input type="button" value="Close (ESC)" data-cmd="close">
       <input type="button" value="Username (U)" title="To insert the selected username either:&#013;  - Press Alt + U on Windows&#013;  - Press Command + U on Mac&#013;  - Click on the button" data-cmd="insert-login" disabled="true">
       <input type="button" value="Password (P)" title="To insert the selected password either:&#013;  - Press Alt + P on Windows&#013;  - Press Command + P on Mac&#013;  - Click on the button" data-cmd="insert-password" disabled="true">
       <input type="button" value="Both (B)" title="To perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence either:&#013;  - Click on the button&#013;  - Press Alt + Shift + B on Windows&#013;  - Press Command + Shift + B on Mac&#013;&#013;To perform {USERNAME}{TAB}{PASSWORD} sequence either:&#013;  - Ctrl + Click on the button&#013;  - Press Alt + B on Windows&#013;  - Press Command + B on Mac" data-cmd="insert-both" disabled="true">
@@ -22,6 +21,7 @@
       <div>
         Grant access to the KeePassHttp plugin: <input type="button" value="Proceed">
       </div>
+      <p>If you prefer to use KeePassXC or local database, use the <a href="#" data-cmd="options-page">options page</a> to configure</p>
     </div>
     <form id="password-needed" hbox class="hidden">
       <div vbox align="center">
@@ -30,6 +30,7 @@
     </form>
     <div id="message"></div>
 
+    <script src="/v2.js"></script>
     <script src="/connect/keepass/sjcl.js"></script>
     <script src="/connect/keepass/keepass.js"></script>
     <script src="/connect/keepassxc/nacl-fast.min.js"></script>

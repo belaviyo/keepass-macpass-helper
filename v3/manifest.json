@@ -1,24 +1,21 @@
 {
-  "manifest_version": 3,
-  "version": "0.6.0",
+  "manifest_version": 2,
+  "version": "0.6.1",
   "name": "KeePassHelper Password Manager",
   "description": "Helper extension for KeePass application to find and insert logins and passwords without copying them",
   "permissions": [
     "storage",
     "activeTab",
-    "contextMenus",
-    "scripting"
+    "contextMenus"
   ],
   "optional_permissions": [
-    "nativeMessaging"
-  ],
-  "host_permissions": [
-    "http://localhost:19455/"
+    "nativeMessaging",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "worker.js"
   },
-  "action": {
+  "browser_action": {
     "default_popup": "data/cmd/index.html"
   },
   "icons": {
@@ -30,13 +27,10 @@
     "256": "data/icons/256.png",
     "512": "data/icons/512.png"
   },
-  "web_accessible_resources": [{
-    "resources": [
-      "data/save/index.html",
-      "data/safe/index.html"
-    ],
-    "matches": ["*://*/*"]
-  }],
+  "web_accessible_resources": [
+    "data/save/index.html",
+    "data/safe/index.html"
+  ],
   "homepage_url": "https://add0n.com/keepass-helper.html",
   "options_ui": {
     "page": "data/options/index.html",

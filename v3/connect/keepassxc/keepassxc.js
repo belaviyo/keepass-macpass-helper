@@ -41,10 +41,8 @@ class KeePassXC {
       }
     }
     catch (e) {
-      const id = chrome.runtime.getURL('').split('//')[1].split('/')[0];
-      throw Error(e.message + `
-
-Does KeePassHelper ("${id}") have access to the native application?`);
+      // const id = chrome.runtime.getURL('').split('//')[1].split('/')[0];
+      throw Error(e.message + `. Do I have access to the native application?`);
     }
   }
   // tools
@@ -157,6 +155,9 @@ Does KeePassHelper ("${id}") have access to the native application?`);
       'keys': [this.key],
       url
     }).then(resp => {
+      if (resp.errorCode === '15') { // no match
+        return [];
+      }
       if (resp.success === 'true') {
         return resp.entries;
       }
