@@ -631,3 +631,13 @@ chrome.storage.local.get({
     });
   }
 });
+
+// on embedded
+if (window.top !== window) {
+  const close = () => chrome.runtime.sendMessage({
+    cmd: 'close-me'
+  });
+
+  window.addEventListener('keydown', e => e.code === 'Escape' && close());
+  window.addEventListener('blur', close);
+}

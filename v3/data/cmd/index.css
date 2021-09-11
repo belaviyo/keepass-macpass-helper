@@ -6,12 +6,13 @@ html {
   height: 100%;
 }
 body {
-  margin: 10px;
-  height: calc(100% - 20px);
+  margin: 10px 10px 0 10px;
+  height: calc(100% - 10px);
   font-size: 13px;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
 body[data-top=true] {
+  margin: 10px;
   width: 550px;
   height: 400px;
   background-color: #414141;
@@ -47,6 +48,7 @@ select {
   border: none;
   margin: 10px 0;
   width: 100%;
+  overscroll-behavior: contain;
 }
 select:empty {
   background-image: url('loading.svg');

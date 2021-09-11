@@ -2,7 +2,8 @@
   "manifest_version": 2,
   "version": "0.6.1",
   "name": "KeePassHelper Password Manager",
-  "description": "Helper extension for KeePass application to find and insert logins and passwords without copying them",
+  "description": "__MSG_description__",
+  "default_locale": "en",
   "permissions": [
     "storage",
     "activeTab",
@@ -37,8 +38,8 @@
     "open_in_tab": true
   },
   "commands": {
-    "_execute_action": {
-      "description": "Press the action button"
+    "open-embedded": {
+      "description": "Open credentials in the embedded mode (useful for popup windows)"
     },
     "generate-password": {
       "description": "Generate a Random Password"
@@ -46,5 +47,8 @@
     "save-form": {
       "description": "Save a new Login Form in KeePass"
     }
-  }
+  },
+  "web_accessible_resources": [
+    "data/cmd/index.html"
+  ]
 }

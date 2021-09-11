@@ -1,0 +1,5 @@
+{
+  "description": {
+    "message": "Extensão auxiliar para o KeePass encontrar e inserir credenciais, gerar senhas, ou salvar novos logins sem copiar e colar manualmente"
+  }
+}

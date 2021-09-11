@@ -1,0 +1,5 @@
+{
+  "description": {
+    "message": "Helper extension for KeePass to find and insert credentials, generate passwords, or save new logins without manual copy and paste"
+  }
+}

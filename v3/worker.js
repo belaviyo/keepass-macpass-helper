@@ -254,6 +254,34 @@ const onCommand = async (info, tab) => {
       }
     });
   }
+  else if (info.menuItemId === 'open-embedded') {
+    chrome.scripting.executeScript({
+      target: {
+        tabId: tab.id
+      },
+      func: () => {
+        window.iframe = document.createElement('iframe');
+        window.iframe.setAttribute('style', `
+          color-scheme: none;
+          border: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          width: 550px;
+          height: 400px;
+          max-width: 80%;
+          margin-left: auto;
+          margin-right: auto;
+          background-color: #414141;
+          z-index: 2147483647;
+        `);
+        window.iframe.tabindex = 0;
+        document.body.appendChild(window.iframe);
+        window.iframe.src = chrome.runtime.getURL('data/cmd/index.html');
+      }
+    });
+  }
 };
 chrome.contextMenus.onClicked.addListener(onCommand);
 chrome.commands.onCommand.addListener(command => chrome.tabs.query({
