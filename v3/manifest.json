@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "0.6.2",
+  "version": "0.6.4",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",
@@ -28,10 +28,6 @@
     "256": "data/icons/256.png",
     "512": "data/icons/512.png"
   },
-  "web_accessible_resources": [
-    "data/save/index.html",
-    "data/safe/index.html"
-  ],
   "homepage_url": "https://add0n.com/keepass-helper.html",
   "options_ui": {
     "page": "data/options/index.html",
@@ -49,6 +45,8 @@
     }
   },
   "web_accessible_resources": [
-    "data/cmd/index.html"
+    "data/cmd/index.html",
+    "data/save/index.html",
+    "data/safe/index.html"
   ]
 }

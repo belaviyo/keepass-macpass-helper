@@ -38,6 +38,7 @@
     td:last-child {
       text-align: right;
     }
+    textarea,
     input[type=text],
     input[type=submit],
     input[type=button],
@@ -78,9 +79,9 @@
         <td>Passphrase</td>
         <td><input type="password" id="passphrase" required></td>
         <td>String</td>
-        <td><input type="text" id="data" required></td>
+        <td><textarea rows="4" id="data" required></textarea></td>
         <td>Result</td>
-        <td><input type="text" id="result" readonly="true"></td>
+        <td><textarea rows="4" id="result" readonly="true"></textarea></td>
       </div>
 
       <div class="submit">
