@@ -40,7 +40,7 @@ const copy = content => chrome.windows.getCurrent().then(win => {
   chrome.runtime.onStartup.addListener(once);
 }
 // messaging
-chrome.runtime.onMessage.addListener((request, sender) => {
+chrome.runtime.onMessage.addListener((request, sender, response) => {
   if (request.cmd === 'close-me') {
     chrome.scripting.executeScript({
       target: {
@@ -59,6 +59,37 @@ chrome.runtime.onMessage.addListener((request, sender) => {
   }
   else if (request.cmd === 'copy') {
     copy(request.password);
+  }
+  // since brings the KeePass to the front, the popup might get closed. So we need to do this in bg
+  else if (request.cmd === 'associate') {
+    const controller = new AbortController();
+
+    setTimeout(() => controller.abort(), request.timeout);
+    fetch(request.host, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request.obj),
+      signal: controller.signal
+    }).then(r => {
+      if (r.ok) {
+        return r.json();
+      }
+      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+    }).then(r => {
+      chrome.storage.local.set({
+        [r.Hash]: {
+          id: r.Id,
+          key: request.key
+        }
+      });
+      response(r);
+    }).catch(e => response({
+      error: e.message
+    }));
+
+    return true;
   }
 });
 

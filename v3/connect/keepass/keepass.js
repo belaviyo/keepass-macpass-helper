@@ -6,23 +6,35 @@ class KeePass {
     this.host = null;
     this.timeout = 20000;
   }
-  post(obj, timeout = this.timeout) {
-    const controller = new AbortController();
+  post(obj, timeout = this.timeout, type = '') {
+    // in some browsers, when KeePass is focused, the popup closes! we are going to save credentials anyway
+    if (type === 'associate') {
+      return new Promise((resolve, reject) => chrome.runtime.sendMessage({
+        cmd: 'associate',
+        obj,
+        timeout,
+        host: this.host,
+        key: this.key
+      }, r => r.error ? reject(Error(r.error)) : resolve(r)));
+    }
+    else {
+      const controller = new AbortController();
 
-    setTimeout(() => controller.abort(), timeout);
-    return fetch(this.host, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(obj),
-      signal: controller.signal
-    }).then(r => {
-      if (r.ok) {
-        return r.json();
-      }
-      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
-    });
+      setTimeout(() => controller.abort(), timeout);
+      return fetch(this.host, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(obj),
+        signal: controller.signal
+      }).then(r => {
+        if (r.ok) {
+          return r.json();
+        }
+        throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+      });
+    }
   }
   // tools
   iv(n = 16) {
@@ -117,14 +129,10 @@ class KeePass {
       'RequestType': 'associate',
       'Key': this.key
     });
-    const r = await this.post(request, 120000);
+    // we are going to run this function in background; in case the popup get closed
+    const r = await this.post(request, 120000, 'associate');
     this.id = r.Id;
-    chrome.storage.local.set({
-      [r.Hash]: {
-        id: r.Id,
-        key: this.key
-      }
-    });
+
     return r;
   }
   async logins({url, submiturl, realm}) {
