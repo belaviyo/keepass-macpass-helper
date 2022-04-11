@@ -8,8 +8,8 @@ chrome.scripting = chrome.scripting || {
       props.file = files[0];
     }
     if (func) {
-      const s = btoa(JSON.stringify(args));
-      props.code = '(' + func.toString() + `)(...JSON.parse(atob('${s}')))`;
+      const s = btoa(encodeURIComponent(JSON.stringify(args)));
+      props.code = '(' + func.toString() + `)(...JSON.parse(decodeURIComponent(atob('${s}'))))`;
     }
     if (target.allFrames) {
       props.allFrames = true;
