@@ -20,6 +20,36 @@ const notify = e => {
   });
 };
 
+const timebased = {
+  async get(stringFields) {
+    const otp = stringFields.filter(o => ['KPH: otp', 'KPH:otp', 'otp'].includes(o.Key)).shift();
+    const sotp = stringFields.filter(o => ['KPH: sotp', 'KPH:sotp', 'sotp'].includes(o.Key)).shift();
+
+    if (sotp) {
+      return engine.otp(await decrypt(sotp.Value));
+    }
+    else if (otp) {
+      return engine.otp(otp.Value);
+    }
+
+    // built-in OTP of KeePass
+    const secret = stringFields.filter(o => ['TimeOtp-Secret-Base32'].includes(o.Key)).shift();
+    const period = stringFields.filter(o => ['TimeOtp-Period'].includes(o.Key)).shift();
+    const digits = stringFields.filter(o => ['TimeOtp-Length'].includes(o.Key)).shift();
+
+    if (secret) {
+      const args = new URLSearchParams();
+      args.set('secret', secret.Value);
+      args.set('period', period?.Value || 30);
+      args.set('digits', digits?.Value || 6);
+
+      return engine.otp(args.toString());
+    }
+
+    throw Error(Error('NO_OTP_Provided'));
+  }
+};
+
 const decrypt = async sotp => {
   psbox.querySelector('span').textContent = 'Enter password to decrypt the secure OTP';
   psbox.classList.remove('hidden');
@@ -229,21 +259,10 @@ const insert = {};
 insert.fields = async stringFields => {
   // do we need to use otp or sotp
   if (stringFields.some(o => typeof(o.Value) === 'string' && o.Value.indexOf('{{TOTP}') !== -1)) {
-    let otp = stringFields.filter(o => o.Key === 'KPH: otp' || o.Key === 'KPH:otp' || o.Key === 'otp').shift();
-    const sotp = stringFields.filter(o => o.Key === 'KPH: sotp' || o.Key === 'KPH:sotp' || o.Key === 'sotp').shift();
-
     try {
-      if (sotp) {
-        otp = await decrypt(sotp.Value);
-      }
-      else {
-        otp = otp.Value;
-      }
-      if (otp) {
-        const s = engine.otp(otp);
-        for (const o of stringFields) {
-          o.Value = o.Value.replace('{{TOTP}}', s);
-        }
+      const s = await timebased.get(stringFields);
+      for (const o of stringFields) {
+        o.Value = o.Value.replace('{{TOTP}}', s);
       }
     }
     catch (e) {
@@ -510,17 +529,11 @@ document.addEventListener('click', async e => {
   }
   else if (cmd === 'otp') {
     const checked = list.selectedOptions[0];
-    let otp = checked.stringFields.filter(o => o.Key === 'otp')
-      .map(o => o.Value).shift();
-    const sotp = checked.stringFields.filter(o => o.Key === 'sotp')
-      .map(o => o.Value).shift();
 
     try {
-      if (sotp) {
-        otp = await decrypt(sotp);
-      }
-      if (otp) {
-        const s = engine.otp(otp);
+      const s = await timebased.get(checked.stringFields);
+
+      if (s) {
         await navigator.clipboard.writeText(s);
         window.close();
       }

@@ -2,10 +2,17 @@
 const engine = {};
 
 engine.otp = string => {
+  // otpauth://hotp/Secure%20App:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Secure%20App&counter=0
+
   const i = string.indexOf('?');
   if (i !== -1) {
     string = string.substr(i);
   }
+  // what if only secret is provided
+  if (string.includes('secret=') === false) {
+    string = 'secret=' + encodeURIComponent(string);
+  }
+
   const args = new URLSearchParams(string);
   const secret = args.get('key') || args.get('secret');
   if (!secret) {
