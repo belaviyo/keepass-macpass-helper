@@ -15,8 +15,6 @@ if (/Firefox/.test(navigator.userAgent)) {
   [...document.querySelectorAll('.chrome')].forEach(e => e.classList.add('hidden'));
 }
 
-document.getElementById('id').textContent = chrome.runtime.id;
-
 document.getElementById('keepassxc').addEventListener('change', e => {
   if (e.target.checked) {
     chrome.permissions.request({
@@ -126,11 +124,6 @@ document.getElementById('check').addEventListener('click', () => {
   }
 });
 
-//
-document.getElementById('xc-help').addEventListener('click', () => {
-  document.querySelector('[for="xc-help"').classList.toggle('hidden');
-});
-
 document.getElementById('all-frames').addEventListener('click', () => chrome.permissions.request({
   origins: ['<all_urls>']
 }));
@@ -180,9 +173,7 @@ document.getElementById('kwpass-remove').addEventListener('click', () => {
     kwpass.init(next);
   }
 });
-document.getElementById('kwpass-desc').addEventListener('click', () => {
-  document.querySelector('[for="kwpass-desc"').classList.toggle('hidden');
-});
+
 document.getElementById('kwpass-download').addEventListener('click', () => {
   const password = prompt('Enter the password', '');
   if (password) {
@@ -198,3 +189,10 @@ document.getElementById('kwpass-download').addEventListener('click', () => {
     }
   }
 });
+
+// links
+for (const a of [...document.querySelectorAll('[data-href]')]) {
+  if (a.hasAttribute('href') === false) {
+    a.href = chrome.runtime.getManifest().homepage_url + '#' + a.dataset.href;
+  }
+}

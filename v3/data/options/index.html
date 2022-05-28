@@ -18,7 +18,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><label><input type="radio" name="method" id="keepass"> <a href="https://github.com/pfn/keepasshttp/" target="_blank">KeePassHTTP</a> host</label></td>
+        <td><label><input type="radio" name="method" id="keepass"> <a data-href="faq2" target="_blank">KeePassHTTP</a> host</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="host">
@@ -27,36 +27,18 @@
         </td>
       </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="keepassxc"> Native Messaging (<a href="https://add0n.com/keepass-helper.html#faq15" target="_blank">KeePassXC</a>)</label></td>
+        <td><label><input type="radio" name="method" id="keepassxc"> <a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="xc-native-id">
-            <input type="button" id="xc-help" value="Toggle Desc">
           </div>
       </tr>
-      <tr for="xc-help" class="hidden note">
-        <td colspan="2">
-          <p>For the native messaging to work, the id of this extension which is <code id="id"></code> needs to be appended to the KeePassXC manifest file of your browser. For the Google Chrome browser, the manifest is located at the following paths. For other browsers, the path format is similar. Just the name of the browser is different. To prevent the KeePassXC application from overwriting this file later, you can duplicate the manifest file and change the filename and the "name" value here and in the manifest file with a custom name (e.g. <code>com.add0n.keepasshelper</code>) (for instruction visit the <a href="https://add0n.com/keepass-helper.html#faq16">FAQs</a> page) (please restart the browser once).
-          <br>
-          <br>
-          <span>Windows: <code>C:\Users\[username]\AppData\Local\keepassxc\org.keepassxc.keepassxc_browser_x.json</code></span><br>
-          <span>OS X: <code>~/Library/Application Support/Google/Chrome/NativeMessagingHosts/org.keepassxc.keepassxc_browser.json</code></span><br>
-          <span>Linux: <code>~/.config/google-chrome/NativeMessagingHosts/org.keepassxc.keepassxc_browser.json</code></span>
-          </p>
-        </td>
-      </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="kwpass"> Local File (read-only) (beta)</label></td>
+        <td><label><input type="radio" name="method" id="kwpass"> <a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label></td>
         <td>
           <input type="button" id="kwpass-download" value="Download as KDBX3">
           <input type="button" id="kwpass-remove" value="Delete File">
           <input type="button" id="kwpass-file" value="Choose File">
-          <input type="button" id="kwpass-desc" value="Toggle Desc">
-        </td>
-      </tr>
-      <tr for="kwpass-desc" class="hidden note">
-        <td colspan="2">
-          <p>If on a machine you don't have access to the KeePass or KeePassXC application or you don't want to install the KeePassHttp plugin, you can use this mode. In this mode, the extension accepts a KDBX3 or KDBX4 database and uses the <a href="https://github.com/keeweb/kdbxweb" target="_blank">KdbxWeb</a> library to read credentials from the database. Note that the original binary file will be stored in the internal IndexedDB database of the extension and you need to unlock the database once on each restart to decrypt the database and access the credentials. If your local database gets updated, it is the user's responsibility to update the internal database from this page.</p>
         </td>
       </tr>
     </tbody>
@@ -136,7 +118,7 @@
       <tr>
         <td colspan="2" class="disabled">
           <div style="display: flex">
-            <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials</label>
+            <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials (not available)</label>
             <input type="checkbox" id="embedded">
           </div>
         </td>
@@ -144,7 +126,7 @@
       <tr class="chrome disabled">
         <td colspan="2">
           <div style="display: flex">
-            <label for="minilogin" style="flex: 1">Display login button next to password fields</label>
+            <label for="minilogin" style="flex: 1">Display login button next to password fields (not available)</label>
             <input type="checkbox" id="minilogin">
           </div>
         </td>

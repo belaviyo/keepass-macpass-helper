@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "version": "0.6.7",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
@@ -7,16 +7,19 @@
   "permissions": [
     "storage",
     "activeTab",
+    "scripting",
     "contextMenus"
   ],
   "optional_permissions": [
-    "nativeMessaging",
+    "nativeMessaging"
+  ],
+  "optional_host_permissions": [
     "<all_urls>"
   ],
   "background": {
     "service_worker": "worker.js"
   },
-  "browser_action": {
+  "action": {
     "default_popup": "data/cmd/index.html"
   },
   "icons": {
@@ -34,6 +37,7 @@
     "open_in_tab": true
   },
   "commands": {
+    "_execute_action": {},
     "open-embedded": {
       "description": "Open credentials in the embedded mode (useful for popup windows)"
     },
@@ -44,9 +48,12 @@
       "description": "Save a new Login Form in KeePass"
     }
   },
-  "web_accessible_resources": [
-    "data/cmd/index.html",
-    "data/save/index.html",
-    "data/safe/index.html"
-  ]
+  "web_accessible_resources": [{
+    "resources": [
+      "data/cmd/index.html",
+      "data/save/index.html",
+      "data/safe/index.html"
+    ],
+    "matches": ["*://*/*"]
+  }]
 }

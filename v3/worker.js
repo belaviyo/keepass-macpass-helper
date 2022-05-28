@@ -1,6 +1,3 @@
-/* global importScripts */
-importScripts('./v2.js');
-
 const notify = (tab, e) => {
   chrome.action.setBadgeText({
     tabId: tab.id,

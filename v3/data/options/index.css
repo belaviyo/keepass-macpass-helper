@@ -2,14 +2,8 @@ body {
   background-color: #fff;
   font-family: "Helvetica Neue", Helvetica, sans-serif;
   font-size: 13px;
-  max-width: 80%;
   margin: 10px auto;
-}
-@media screen and (max-width: 600px) {
-  body {
-    margin: 10px;
-    max-width: unset;
-  }
+  width: min(800px, 100% - 2rem);
 }
 
 textarea {
@@ -47,9 +41,6 @@ input[type=text] {
   box-sizing: border-box;
   padding: 0 5px;
 }
-input[type=button] {
-  min-width: 100px;
-}
 input[type=file] {
   display: none;
 }
@@ -65,6 +56,10 @@ thead:first-of-type th span {
 td:nth-child(2) {
   text-align: right;
 }
+a {
+  text-decoration: none;
+  color: #07c;
+}
 .hidden {
   opacity: 0.2;
   pointer-events: none;
@@ -74,9 +69,6 @@ td:nth-child(2) {
 }
 .note p {
   padding: 10px;
-}
-.hidden {
-  display: none;
 }
 .disabled {
   opacity: 0.4;
