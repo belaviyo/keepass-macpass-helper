@@ -277,6 +277,7 @@ insert.fields = async stringFields => {
       allFrames: true
     },
     func: stringFields => {
+      console.log(stringFields);
       const {aElement} = window;
       if (!aElement) {
         return false;
@@ -289,14 +290,24 @@ insert.fields = async stringFields => {
           const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
           if (custom) {
             custom.focus();
-            document.execCommand('selectAll', false, '');
-            const v = document.execCommand('insertText', false, o.Value);
-            if (!v) {
-              try {
-                custom.value = o.Value;
-              }
-              catch (e) {}
+            if (custom.type === 'radio' || custom.type === 'checkbox') {
+              custom.checked = true;
             }
+            else if ('selectedIndex' in custom) {
+              custom.value = o.Value;
+            }
+            else {
+              document.execCommand('selectAll', false, '');
+              const v = document.execCommand('insertText', false, o.Value);
+              console.log(v, custom);
+              if (!v) {
+                try {
+                  custom.value = o.Value;
+                }
+                catch (e) {}
+              }
+            }
+
             custom.dispatchEvent(new Event('change', {bubbles: true}));
             custom.dispatchEvent(new Event('input', {bubbles: true}));
             inserted = true;
@@ -323,7 +334,20 @@ insert.username = username => chrome.scripting.executeScript({
           const e = [ // first use type=email
             ...form.querySelectorAll('input[type=email]'),
             ...form.querySelectorAll('input[type=text]')
-          ].filter(e => e.offsetParent).shift();
+          ].filter(e => e.offsetParent).sort((a, b) => {
+            // try to find the best matched username field
+            const keys = ['user', 'usr', 'login'];
+
+            const av = keys.some(s => (a.name || '').includes(s) || (a.id || '').includes(s));
+            const bv = keys.some(s => (b.name || '').includes(s) || (b.id || '').includes(s));
+
+            if (av && bv === false) {
+              return -1;
+            }
+            if (av === false && bv) {
+              return 1;
+            }
+          }).shift();
 
           if (e) {
             aElement = e;

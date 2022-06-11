@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.6.7",
+  "version": "0.6.8",
+  "minimum_chrome_version": "102",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",
