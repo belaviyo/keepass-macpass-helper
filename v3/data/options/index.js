@@ -37,7 +37,7 @@ function restore() {
     'auto-submit': true,
     'faqs': true,
     'engine': 'keepass',
-    'xc-native-id': 'org.keepassxc.keepassxc_browser'
+    'xc-native-id': 'org.keepasshelper.extension'
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
     document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
