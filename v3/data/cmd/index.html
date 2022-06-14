@@ -5,8 +5,9 @@
     <link rel="stylesheet" href="index.css">
   </head>
   <body vbox>
-    <div>
+    <div id="search-container">
       <input type="search">
+      <input type="button" value="Rate Me" id="rate" data-hide="true">
     </div>
     <select flex=1 id="list" size=5 title="Double-click on an entry or press 'Enter' key to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence"></select>
     <div id="toolbar">
@@ -22,6 +23,7 @@
         Grant access to the KeePassHttp plugin: <input type="button" value="Proceed">
       </div>
       <p>If you prefer to use KeePassXC or local database, use the <a href="#" data-cmd="options-page">options page</a> to configure</p>
+      <p>If you are new to KeePassHelper, Watch the <a href="https://www.youtube.com/watch?v=L1Ze02XUi34" target="_blank">usage instruction</a> on YouTube</p>
     </div>
     <form id="password-needed" hbox class="hidden">
       <div vbox align="center">
@@ -40,5 +42,6 @@
     <script src="/tools/safe.js"></script>
     <script src="/connect/api.js"></script>
     <script src="index.js"></script>
+    <script src="rate.js"></script>
   </body>
 </html>

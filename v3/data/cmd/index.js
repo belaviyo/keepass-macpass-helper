@@ -277,7 +277,6 @@ insert.fields = async stringFields => {
       allFrames: true
     },
     func: stringFields => {
-      console.log(stringFields);
       const {aElement} = window;
       if (!aElement) {
         return false;
@@ -287,11 +286,17 @@ insert.fields = async stringFields => {
       let inserted = false;
       if (form) {
         for (const o of stringFields) {
-          const custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
+          let custom = form.querySelector('[id="' + o.Key + '"]') || form.querySelector('[name="' + o.Key + '"]');
+          if (!custom) {
+            try {
+              custom = form.querySelector(o.Key);
+            }
+            catch (e) {}
+          }
           if (custom) {
             custom.focus();
             if (custom.type === 'radio' || custom.type === 'checkbox') {
-              custom.checked = true;
+              custom.checked = o.Value === 'false' || o.Value === '' ? false : true;
             }
             else if ('selectedIndex' in custom) {
               custom.value = o.Value;
@@ -299,7 +304,6 @@ insert.fields = async stringFields => {
             else {
               document.execCommand('selectAll', false, '');
               const v = document.execCommand('insertText', false, o.Value);
-              console.log(v, custom);
               if (!v) {
                 try {
                   custom.value = o.Value;

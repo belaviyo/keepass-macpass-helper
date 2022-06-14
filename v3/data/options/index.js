@@ -196,3 +196,23 @@ for (const a of [...document.querySelectorAll('[data-href]')]) {
     a.href = chrome.runtime.getManifest().homepage_url + '#' + a.dataset.href;
   }
 }
+
+// rate
+document.getElementById('rate').onclick = () => {
+  let url = 'https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj/reviews/';
+  if (/Edg/.test(navigator.userAgent)) {
+    url = 'https://microsoftedge.microsoft.com/addons/detail/bfmglfdehkodoiinbclgoppembjfgjkj';
+  }
+  else if (/Firefox/.test(navigator.userAgent)) {
+    url = 'https://addons.mozilla.org/firefox/addon/keepasshelper/reviews/';
+  }
+  else if (/OPR/.test(navigator.userAgent)) {
+    url = 'https://addons.opera.com/extensions/details/keepasshelper/';
+  }
+
+  chrome.storage.local.set({
+    'rate': false
+  }, () => chrome.tabs.create({
+    url
+  }));
+};
