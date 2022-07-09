@@ -457,137 +457,151 @@ insert.submit = () => chrome.scripting.executeScript({
   }
 });
 
+const copy = content => navigator.clipboard.writeText(content).then(() => {
+  chrome.runtime.sendMessage({
+    cmd: 'notify',
+    message: 'Done',
+    badge: '✓',
+    color: 'green'
+  }, () => window.close());
+}).catch(e => alert(e.message));
+
 document.addEventListener('click', async e => {
-  const target = e.target;
-  const cmd = target.dataset.cmd || '';
-  const alt = e.metaKey || e.ctrlKey;
+  try {
+    const target = e.target;
+    const cmd = target.dataset.cmd || '';
+    const alt = e.metaKey || e.ctrlKey;
 
-  // cache
-  if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
-    cookie.set(list.value);
-  }
-  //
-  if (cmd && cmd.startsWith('insert-')) {
-    const checked = list.selectedOptions[0];
-    // insert helper function
-    await chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id,
-        allFrames: true
-      },
-      func: () => {
-        window.detectForm = e => {
-          const form = e.closest('form');
-          if (form) {
-            return form;
-          }
-          // what if there is no form element
-          let parent = e;
-          for (let i = 0; i < 5; i += 1) {
-            parent = parent.parentElement;
-            if (parent.querySelector('[type=password]')) {
-              return parent;
-            }
-          }
-          return parent;
-        };
-      }
-    });
-
-    let inserted = false;
-    // insert StringFields
-    if (checked.stringFields) {
-      const r = await insert.fields(checked.stringFields);
-      inserted = inserted || r.reduce((p, c) => p || c.result, false);
+    // cache
+    if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
+      cookie.set(list.value);
     }
-    // insert username
-    if (cmd === 'insert-login' || cmd === 'insert-both') {
-      const r = await insert.username(list.value);
-      inserted = inserted || r.reduce((p, c) => p || c.result, false);
-    }
-    // insert password
-    if (cmd === 'insert-password' || cmd === 'insert-both') {
-      const r = await insert.password(checked.dataset.password);
-      inserted = inserted || r.reduce((p, c) => p || c.result, false);
-    }
-
-    // do we have a CORS frame
-    // does not work in Firefox since the user-action is not detected!
-    if (inserted !== true) {
-      const origins = [];
-      if (e.isTrusted && /Firefox/.test(navigator.userAgent) === false) {
-        const r = await chrome.scripting.executeScript({
-          target: {
-            tabId: tab.id
-          },
-          func: () => [...document.querySelectorAll('iframe[src]')]
-            .map(e => e.src)
-            .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
-        });
-
-        origins.push(...r[0].result);
-      }
-
-      if (origins.length) {
-        chrome.permissions.request({
-          origins
-        }).then(granted => {
-          if (granted) {
-            e.target.dispatchEvent(new Event('click', {
-              bubbles: true
-            }));
-          }
-        });
-      }
-      else {
-        chrome.runtime.sendMessage({
-          cmd: 'notify',
-          message: `Cannot find any login forms on this page!
-
-For cross-origin login forms, use the options page to permit access`
-        });
-      }
-    }
-    // submit
-    if (cmd === 'insert-both' && alt === false && inserted) {
-      await insert.submit();
-    }
-    window.close();
-  }
-  else if (cmd && cmd.startsWith('copy')) {
-    let content = list.value;
-    if (e.detail === 'password' || alt) {
+    //
+    if (cmd && cmd.startsWith('insert-')) {
       const checked = list.selectedOptions[0];
-      content = checked.dataset.password;
-    }
-    navigator.clipboard.writeText(content).then(() => window.close()).catch(e => alert(e.message));
-  }
-  else if (cmd === 'otp') {
-    const checked = list.selectedOptions[0];
+      // insert helper function
+      await chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id,
+          allFrames: true
+        },
+        func: () => {
+          window.detectForm = e => {
+            const form = e.closest('form');
+            if (form) {
+              return form;
+            }
+            // what if there is no form element
+            let parent = e;
+            for (let i = 0; i < 5; i += 1) {
+              parent = parent.parentElement;
+              if (parent.querySelector('[type=password]')) {
+                return parent;
+              }
+            }
+            return parent;
+          };
+        }
+      });
 
-    try {
-      const s = await timebased.get(checked.stringFields);
-
-      if (s) {
-        await navigator.clipboard.writeText(s);
-        window.close();
+      let inserted = false;
+      // insert StringFields
+      if (checked.stringFields) {
+        const r = await insert.fields(checked.stringFields);
+        inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
-      else {
-        alert(`No string-field entry with either "otp" or "sotp" key is detected.
+      // insert username
+      if (cmd === 'insert-login' || cmd === 'insert-both') {
+        const r = await insert.username(list.value);
+        inserted = inserted || r.reduce((p, c) => p || c.result, false);
+      }
+      // insert password
+      if (cmd === 'insert-password' || cmd === 'insert-both') {
+        const r = await insert.password(checked.dataset.password);
+        inserted = inserted || r.reduce((p, c) => p || c.result, false);
+      }
 
-To generate one-time password tokens, save a new string-field entry with "KPH: otp" name and SECRET as value.`);
+      // do we have a CORS frame
+      // does not work in Firefox since the user-action is not detected!
+      if (inserted !== true) {
+        const origins = [];
+        if (e.isTrusted && /Firefox/.test(navigator.userAgent) === false) {
+          const r = await chrome.scripting.executeScript({
+            target: {
+              tabId: tab.id
+            },
+            func: () => [...document.querySelectorAll('iframe[src]')]
+              .map(e => e.src)
+              .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
+          });
+
+          origins.push(...r[0].result);
+        }
+
+        if (origins.length) {
+          chrome.permissions.request({
+            origins
+          }).then(granted => {
+            if (granted) {
+              e.target.dispatchEvent(new Event('click', {
+                bubbles: true
+              }));
+            }
+          });
+        }
+        else {
+          chrome.runtime.sendMessage({
+            cmd: 'notify',
+            message: `Cannot find any login forms on this page!
+
+  For cross-origin login forms, use the options page to permit access`
+          });
+        }
+      }
+      // submit
+      if (cmd === 'insert-both' && alt === false && inserted) {
+        await insert.submit();
+      }
+      window.close();
+    }
+    else if (cmd && cmd.startsWith('copy')) {
+      let content = list.value;
+      if (e.detail === 'password' || alt) {
+        const checked = list.selectedOptions[0];
+        content = checked.dataset.password;
+      }
+      copy(content);
+    }
+    else if (cmd === 'otp') {
+      const checked = list.selectedOptions[0];
+
+      try {
+        const s = await timebased.get(checked.stringFields);
+
+        if (s) {
+          await copy(s);
+        }
+        else {
+          alert(`No string-field entry with either "otp" or "sotp" key is detected.
+
+  To generate one-time password tokens, save a new string-field entry with "KPH: otp" name and SECRET as value.`);
+        }
+      }
+      catch (e) {
+        console.warn(e);
+        alert(e.message || 'cannot decrypt');
       }
     }
-    catch (e) {
-      console.warn(e);
-      alert(e.message || 'cannot decrypt');
+    else if (cmd === 'options-page') {
+      chrome.runtime.openOptionsPage();
+    }
+    if (psbox.classList.contains('hidden') === true && e.target.type !== 'search') {
+      list.focus();
     }
   }
-  else if (cmd === 'options-page') {
-    chrome.runtime.openOptionsPage();
-  }
-  if (psbox.classList.contains('hidden') === true && e.target.type !== 'search') {
-    list.focus();
+  catch (e) {
+    console.warn(e);
+    alert(e.message);
   }
 });
 
@@ -633,15 +647,24 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
     tab = tabs[0];
     search.value = url = tab.url;
 
-    const r = await chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id,
-        allFrames: true
-      },
-      files: ['/data/cmd/inject.js']
-    });
-    usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
-    const aElement = r.map(r => r.result?.aElement).flat().some(a => a);
+    let aElement = false;
+    try {
+      const r = await chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id,
+          allFrames: true
+        },
+        files: ['/data/cmd/inject.js']
+      });
+      usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
+      aElement = r.map(r => r.result?.aElement).flat().some(a => a);
+    }
+    catch (e) {
+      if (tab.url.startsWith('http') === false) {
+        throw Error(e);
+      }
+      console.log(e);
+    }
 
     // in case there is no active element show the toast
     if (aElement === false) {
