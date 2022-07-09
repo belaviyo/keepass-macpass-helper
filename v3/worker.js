@@ -1,24 +1,98 @@
-const notify = (tab, e) => {
+/* global KeePassXC, KeePass */
+self.importScripts('./connect/keepassxc/nacl-fast.min.js');
+self.importScripts('./connect/keepassxc/keepassxc.js');
+self.importScripts('./connect/keepass/sjcl.js');
+self.importScripts('./connect/keepass/keepass.js');
+
+const current = () => chrome.tabs.query({
+  currentWindow: true,
+  active: true,
+  windowType: 'normal'
+}).then(tbs => {
+  if (tbs.length === 0) {
+    return chrome.tabs.query({
+      active: true,
+      windowType: 'normal'
+    }).then(tbs => tbs[0]);
+  }
+  return tbs[0];
+});
+
+const notify = async (tab, e, badge = 'E', color = '#d93025') => {
+  tab = tab || await current();
+
   chrome.action.setBadgeText({
     tabId: tab.id,
-    text: 'Error'
+    text: badge
+  });
+  chrome.action.setBadgeBackgroundColor({
+    tabId: tab.id,
+    color
   });
   chrome.action.setTitle({
     tabId: tab.id,
     title: e.message || e
   });
+
+  clearTimeout(notify.id);
+  notify.id = setTimeout(() => chrome.action.setBadgeText({
+    tabId: tab.id,
+    text: ''
+  }), 3000);
 };
-// badge
-{
-  const once = () => chrome.action.setBadgeBackgroundColor({
-    color: '#d93025'
-  });
 
-  chrome.runtime.onInstalled.addListener(once);
-  chrome.runtime.onStartup.addListener(once);
-}
+// eslint-disable-next-line no-unused-vars
+const storage = { // used by "associate"
+  get(name) {
+    try {
+      return localStorage.getItem(name);
+    }
+    catch (e) {
+      return undefined;
+    }
+  },
+  set(name, value) {
+    try {
+      localStorage.setItem(name, value);
+    }
+    catch (e) {}
+  },
+  remote: o => new Promise(resolve => chrome.storage.local.get(o, resolve))
+};
 
-const copy = content => chrome.windows.getCurrent().then(win => {
+const copy = async (content, tab) => {
+  // Firefox
+  try {
+    await navigator.clipboard.writeText(content);
+    notify(undefined, 'Done', '✓', 'green');
+  }
+  catch (e) {
+    try {
+      await chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id
+        },
+        func: password => {
+          navigator.clipboard.writeText(password).then(() => chrome.runtime.sendMessage({
+            cmd: 'notify',
+            message: 'Done',
+            badge: '✓',
+            color: 'green'
+          })).catch(() => chrome.runtime.sendMessage({
+            cmd: 'copy-interface',
+            password
+          }));
+        },
+        args: [content]
+      });
+    }
+    catch (e) {
+      copy.interface(content);
+    }
+  }
+};
+copy.interface = async content => {
+  const win = await chrome.windows.getCurrent();
   chrome.windows.create({
     url: 'data/copy/index.html?content=' + encodeURIComponent(content),
     width: 400,
@@ -27,7 +101,7 @@ const copy = content => chrome.windows.getCurrent().then(win => {
     top: win.top + Math.round((win.height - 300) / 2),
     type: 'popup'
   });
-});
+};
 
 // remove password for KW
 {
@@ -54,37 +128,54 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       }
     });
   }
-  else if (request.cmd === 'copy') {
-    copy(request.password);
+  else if (request.cmd === 'notify') {
+    notify(undefined, request.message, request.badge, request.color);
+  }
+  else if (request.cmd === 'copy-interface') {
+    copy.interface(request.password);
   }
   // since brings the KeePass to the front, the popup might get closed. So we need to do this in bg
   else if (request.cmd === 'associate') {
-    const controller = new AbortController();
+    if (request.type === 'xc') {
+      const core = new KeePassXC();
+      core.prepare().then(() => {
+        core.clientID = request.clientID;
+        core.nativeID = request.nativeID;
+        core.db = request.db;
 
-    setTimeout(() => controller.abort(), request.timeout);
-    fetch(request.host, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(request.obj),
-      signal: controller.signal
-    }).then(r => {
-      if (r.ok) {
-        return r.json();
-      }
-      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
-    }).then(r => {
-      chrome.storage.local.set({
-        [r.Hash]: {
-          id: r.Id,
-          key: request.key
+        return core.associate();
+      }).then(() => response({
+        key: core.key,
+        serverPublicKey: Array.from(core.serverPublicKey),
+        keyPair: {
+          publicKey: Array.from(core.keyPair.publicKey),
+          secretKey: Array.from(core.keyPair.secretKey)
         }
+      })).catch(e => response({
+        error: e.message
+      }));
+    }
+    else {
+      const core = new KeePass();
+      core.prepare().then(() => {
+        core.associate().then(r => {
+          chrome.storage.local.set({
+            [r.Hash]: {
+              id: r.Id,
+              key: core.key
+            }
+          });
+
+          response({
+            r,
+            id: r.Id,
+            key: core.key
+          });
+        }).catch(e => response({
+          error: e.message
+        }));
       });
-      response(r);
-    }).catch(e => response({
-      error: e.message
-    }));
+    }
 
     return true;
   }
@@ -114,16 +205,27 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       title: 'Encrypt or Decrypt a String',
       contexts: ['action']
     });
-    chrome.contextMenus.create({
-      id: 'open-keyboards',
-      title: 'Keyboard Shortcut Settings',
-      contexts: ['action']
-    });
+    if (/Firefox/.test(navigator.userAgent)) {
+      chrome.contextMenus.create({
+        id: 'open-options',
+        title: 'Open Options Page',
+        contexts: ['action']
+      });
+    }
+    else {
+      chrome.contextMenus.create({
+        id: 'open-keyboards',
+        title: 'Keyboard Shortcut Settings',
+        contexts: ['action']
+      });
+    }
   };
   chrome.runtime.onInstalled.addListener(callback);
   chrome.runtime.onStartup.addListener(callback);
 }
 const onCommand = async (info, tab) => {
+  tab = tab || await current();
+
   if (info.menuItemId === 'save-form') {
     const target = {
       tabId: tab.id
@@ -170,7 +272,7 @@ const onCommand = async (info, tab) => {
         }
       });
 
-      const pairs = r.map(o => o.result).flat();
+      const pairs = r.map(o => o.result).flat().filter(a => a);
 
       await chrome.scripting.executeScript({
         target,
@@ -189,6 +291,9 @@ const onCommand = async (info, tab) => {
       console.warn(e);
       notify(tab, e);
     }
+  }
+  else if (info.menuItemId === 'open-options') {
+    chrome.runtime.openOptionsPage();
   }
   else if (info.menuItemId === 'open-keyboards') {
     chrome.tabs.create({
@@ -218,18 +323,7 @@ const onCommand = async (info, tab) => {
       const password = [...array].map(n => Math.floor(n / 256 * prefs.charset.length) - 1)
         .map(n => prefs.charset[n]).join('');
       // copy to clipboard
-      chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id
-        },
-        func: password => {
-          navigator.clipboard.writeText(password).catch(() => chrome.runtime.sendMessage({
-            cmd: 'copy',
-            password
-          }));
-        },
-        args: [password]
-      }).catch(() => copy(password));
+      copy(password, tab);
     });
   }
   else if (info.menuItemId === 'auto-login') {
@@ -312,12 +406,18 @@ const onCommand = async (info, tab) => {
   }
 };
 chrome.contextMenus.onClicked.addListener(onCommand);
-chrome.commands.onCommand.addListener(command => chrome.tabs.query({
-  currentWindow: true,
-  active: true
-}, tabs => onCommand({
+chrome.commands.onCommand.addListener(command => onCommand({
   menuItemId: command
-}, tabs[0])));
+}));
+
+/* in KeePassXC mode check */
+chrome.storage.onChanged.addListener(ps => {
+  if (ps.engine && ps.engine.newValue === 'keepassxc') {
+    if (typeof chrome.runtime.sendNativeMessage === 'undefined') {
+      chrome.runtime.reload();
+    }
+  }
+});
 
 /* FAQs & Feedback */
 {

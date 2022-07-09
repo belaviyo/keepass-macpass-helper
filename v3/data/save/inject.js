@@ -4,10 +4,9 @@ try {
   document.body.removeChild(window.iframe);
 }
 catch (e) {}
-var iframe;
 
-iframe = document.createElement('iframe');
-iframe.setAttribute('style', `
+window.iframe = document.createElement('iframe');
+window.iframe.setAttribute('style', `
   color-scheme: none;
   border: none;
   position: fixed;
@@ -21,10 +20,10 @@ iframe.setAttribute('style', `
   background-color: rgba(0, 0, 0, 0.8);
   z-index: 10000000000;
 `);
-document.body.appendChild(iframe);
-iframe.onload = () => iframe.contentWindow.postMessage({
+window.document.body.appendChild(window.iframe);
+window.iframe.onload = () => window.iframe.contentWindow.postMessage({
   pairs: window.pairs
 }, '*');
-iframe.src = chrome.runtime.getURL('/data/save/index.html') +
+window.iframe.src = chrome.runtime.getURL('/data/save/index.html') +
   '?url=' + encodeURIComponent(document.location.href);
 

@@ -36,5 +36,8 @@ window.aElement = isEditable(document.activeElement) ? document.activeElement : 
   }
 
   // return (do not add ;)
-  usernames.map(e => e.value)
+  ({
+    usernames: usernames.map(e => e.value),
+    aElement: Boolean(window.aElement)
+  })
 }

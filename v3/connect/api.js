@@ -21,6 +21,7 @@ engine.otp = string => {
   const period = args.get('period') || 30;
   const digits = args.get('digits') || 6;
 
+  // eslint-disable-next-line new-cap
   return (new jsOTP.totp(period, digits)).getOtp(secret);
 };
 
@@ -44,4 +45,45 @@ engine.search = async query => {
 
 engine.set = async query => {
   return engine.core.set(query);
+};
+
+// perform "associate" in background since the interface might get closed on some browsers
+KeePassXC.prototype.associate = function() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      cmd: 'associate',
+      type: 'xc',
+      clientID: this.clientID,
+      nativeID: this.nativeID,
+      db: this.db
+    }, o => {
+      if (o.error) {
+        return reject(Error(o.error));
+      }
+      console.log(o);
+
+      this.serverPublicKey = new Uint8Array(o.serverPublicKey);
+      this.keyPair = {
+        publicKey: new Uint8Array(o.keyPair.publicKey),
+        secretKey: new Uint8Array(o.keyPair.secretKey)
+      };
+      this.key = o.key;
+      resolve();
+    });
+  });
+};
+KeePass.prototype.associate = function() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      cmd: 'associate',
+      type: 'kp'
+    }, o => {
+      if (o.error) {
+        return reject(Error(o.error));
+      }
+      this.id = o.id;
+      this.key = o.key;
+      resolve(o.r);
+    });
+  });
 };

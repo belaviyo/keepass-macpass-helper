@@ -7,34 +7,22 @@ class KeePass {
     this.timeout = 20000;
   }
   post(obj, timeout = this.timeout, type = '') {
-    // in some browsers, when KeePass is focused, the popup closes! we are going to save credentials anyway
-    if (type === 'associate') {
-      return new Promise((resolve, reject) => chrome.runtime.sendMessage({
-        cmd: 'associate',
-        obj,
-        timeout,
-        host: this.host,
-        key: this.key
-      }, r => r.error ? reject(Error(r.error)) : resolve(r)));
-    }
-    else {
-      const controller = new AbortController();
+    const controller = new AbortController();
 
-      setTimeout(() => controller.abort(), timeout);
-      return fetch(this.host, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(obj),
-        signal: controller.signal
-      }).then(r => {
-        if (r.ok) {
-          return r.json();
-        }
-        throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
-      });
-    }
+    setTimeout(() => controller.abort(), timeout);
+    return fetch(this.host, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(obj),
+      signal: controller.signal
+    }).then(r => {
+      if (r.ok) {
+        return r.json();
+      }
+      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+    });
   }
   // tools
   iv(n = 16) {

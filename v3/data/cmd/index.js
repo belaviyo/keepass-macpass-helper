@@ -9,17 +9,6 @@ let url;
 let tab = {};
 let usernames = [];
 
-const notify = e => {
-  chrome.action.setBadgeText({
-    tabId: tab.id,
-    text: 'E'
-  });
-  chrome.action.setTitle({
-    tabId: tab.id,
-    title: e.message || e
-  });
-};
-
 const timebased = {
   async get(stringFields) {
     const otp = stringFields.filter(o => ['KPH: otp', 'KPH:otp', 'otp'].includes(o.Key)).shift();
@@ -116,7 +105,7 @@ catch (e) {
   console.warn(e);
 }
 
-function add(login, name, password, stringFields) {
+function add(login, name, password, stringFields, select = false) {
   const entry = Object.assign(document.createElement('option'), {
     textContent: login + (name ? ` - ${name}` : ''),
     value: login
@@ -133,6 +122,10 @@ String Fields: ${(stringFields || []).length}`;
   }
 
   list.appendChild(entry);
+  list.focus();
+  if (select) {
+    list.value = login;
+  }
 }
 
 async function submit() {
@@ -156,7 +149,7 @@ async function submit() {
       url: query
     });
     if (response.Entries.length === 0) {
-      add('No match!');
+      add('No credential for this page!', undefined, undefined, undefined, true);
     }
     else { // select an item
       response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
@@ -182,12 +175,10 @@ async function submit() {
         }
       }
     }
-    window.focus();
-    list.focus();
   }
   catch (e) {
     console.warn(e);
-    add(e.message);
+    add(e.message, undefined, undefined, undefined, true);
   }
 }
 
@@ -437,6 +428,10 @@ insert.submit = () => chrome.scripting.executeScript({
   },
   func: () => {
     const {aElement} = window;
+    if (!aElement) {
+      return false;
+    }
+
     const form = window.detectForm(aElement);
     if (form) {
       const button =
@@ -515,21 +510,28 @@ document.addEventListener('click', async e => {
       const r = await insert.password(checked.dataset.password);
       inserted = inserted || r.reduce((p, c) => p || c.result, false);
     }
+
+    // do we have a CORS frame
+    // does not work in Firefox since the user-action is not detected!
     if (inserted !== true) {
-      // do we have a CORS frame
-      const r = await chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id
-        },
-        func: () => [...document.querySelectorAll('iframe[src]')]
-          .map(e => e.src)
-          .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
-      });
-      const origins = r[0].result;
+      const origins = [];
+      if (e.isTrusted && /Firefox/.test(navigator.userAgent) === false) {
+        const r = await chrome.scripting.executeScript({
+          target: {
+            tabId: tab.id
+          },
+          func: () => [...document.querySelectorAll('iframe[src]')]
+            .map(e => e.src)
+            .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
+        });
+
+        origins.push(...r[0].result);
+      }
+
       if (origins.length) {
         chrome.permissions.request({
           origins
-        }, granted => {
+        }).then(granted => {
           if (granted) {
             e.target.dispatchEvent(new Event('click', {
               bubbles: true
@@ -538,7 +540,12 @@ document.addEventListener('click', async e => {
         });
       }
       else {
-        notify('Cannot find any login forms on this page');
+        chrome.runtime.sendMessage({
+          cmd: 'notify',
+          message: `Cannot find any login forms on this page!
+
+For cross-origin login forms, use the options page to permit access`
+        });
       }
     }
     // submit
@@ -631,16 +638,32 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
         tabId: tab.id,
         allFrames: true
       },
-      files: ['data/cmd/inject.js']
+      files: ['/data/cmd/inject.js']
     });
-    usernames = r.map(r => r.result).flat().filter((s, i, l) => s && l.indexOf(s) === i);
+    usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
+    const aElement = r.map(r => r.result?.aElement).flat().some(a => a);
+
+    // in case there is no active element show the toast
+    if (aElement === false) {
+      chrome.permissions.contains({
+        origins: ['<all_urls>']
+      }).then(granted => {
+        if (granted) {
+          document.querySelector('#toast input').style.visibility = 'hidden';
+        }
+        document.querySelector('#toast span').textContent = 'No active form found!' + (granted ? ' Focus an element and retry.' : '');
+        document.getElementById('toast').classList.remove('hidden');
+      });
+    }
 
     submit();
   }
   catch (e) {
-    add(e.message);
-    add('Use options page to connect to KeePass, KeePassXC, or use a local database');
+    console.warn(e);
+    add(e.message, undefined, undefined, undefined, true);
+    add('Use the options page to connect to KeePass, KeePassXC, or a local database');
   }
+  window.focus();
 })();
 
 // dbl-click
@@ -682,3 +705,12 @@ if (window.top !== window) {
   window.addEventListener('keydown', e => e.code === 'Escape' && close());
   window.addEventListener('blur', close);
 }
+
+// permission
+document.querySelector('#toast input').onclick = () => chrome.permissions.request({
+  origins: ['<all_urls>']
+}, granted => {
+  if (granted) {
+    window.close();
+  }
+});

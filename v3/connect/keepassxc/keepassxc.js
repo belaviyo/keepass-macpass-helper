@@ -130,6 +130,7 @@ class KeePassXC {
       idKey
     };
     const resp = await this.securePost(messageData);
+
     if (resp && resp.success === 'true') {
       this.key = {
         id: resp.id,

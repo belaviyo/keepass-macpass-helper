@@ -9,7 +9,11 @@
       <input type="search">
       <input type="button" value="Rate Me" id="rate" data-hide="true">
     </div>
-    <select flex=1 id="list" size=5 title="Double-click on an entry or press 'Enter' key to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence"></select>
+    <select flex=1 id="list" size=5 title="Double-click on an entry or press 'Enter' key to perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence" tabindex="0"></select>
+    <div id="toast" class="hidden">
+      <span></span>
+      <input type="button" value="Check Remote Frames">
+    </div>
     <div id="toolbar">
       <input type="button" value="Username (U)" title="To insert the selected username either:&#013;  - Press Alt + U on Windows&#013;  - Press Command + U on Mac&#013;  - Click on the button" data-cmd="insert-login" disabled="true">
       <input type="button" value="Password (P)" title="To insert the selected password either:&#013;  - Press Alt + P on Windows&#013;  - Press Command + P on Mac&#013;  - Click on the button" data-cmd="insert-password" disabled="true">

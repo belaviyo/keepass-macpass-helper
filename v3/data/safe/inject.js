@@ -4,10 +4,9 @@ try {
   document.body.removeChild(window.iframe);
 }
 catch (e) {}
-var iframe;
 
-iframe = document.createElement('iframe');
-iframe.setAttribute('style', `
+window.iframe = document.createElement('iframe');
+window.iframe.setAttribute('style', `
   border: none;
   position: fixed;
   top: 0;
@@ -21,6 +20,6 @@ iframe.setAttribute('style', `
   z-index: 10000000000;
   color-scheme: none;
 `);
-document.body.appendChild(iframe);
-iframe.src = chrome.runtime.getURL('/data/safe/index.html') +
+document.body.appendChild(window.iframe);
+window.iframe.src = chrome.runtime.getURL('/data/safe/index.html') +
   '?url=' + encodeURIComponent(document.location.href);

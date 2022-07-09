@@ -74,3 +74,10 @@ a {
   opacity: 0.4;
   pointer-events: none;
 }
+.save {
+  text-align: center;
+  border: solid 1px #e5e5b7;
+  background: #ffffc8;
+  color: #5f5f4b;
+  padding: 10px;
+}
