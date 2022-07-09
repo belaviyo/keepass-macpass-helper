@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "0.7.2",
+  "version": "0.7.2.1",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",

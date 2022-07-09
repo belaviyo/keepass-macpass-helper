@@ -60,7 +60,6 @@ KeePassXC.prototype.associate = function() {
       if (o.error) {
         return reject(Error(o.error));
       }
-      console.log(o);
 
       this.serverPublicKey = new Uint8Array(o.serverPublicKey);
       this.keyPair = {

@@ -660,10 +660,10 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
       aElement = r.map(r => r.result?.aElement).flat().some(a => a);
     }
     catch (e) {
+      console.warn(e);
       if (tab.url.startsWith('http') === false) {
         throw Error(e);
       }
-      console.log(e);
     }
 
     // in case there is no active element show the toast
