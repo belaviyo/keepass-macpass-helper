@@ -384,7 +384,7 @@ const onCommand = async (info, tab) => {
       func: () => {
         window.iframe = document.createElement('iframe');
         window.iframe.setAttribute('style', `
-          color-scheme: none;
+          color-scheme: dark;
           border: none;
           position: fixed;
           top: 0;
@@ -400,7 +400,7 @@ const onCommand = async (info, tab) => {
         `);
         window.iframe.tabindex = 0;
         document.body.appendChild(window.iframe);
-        window.iframe.src = chrome.runtime.getURL('data/cmd/index.html');
+        window.iframe.src = chrome.runtime.getURL('/data/cmd/index.html');
       }
     });
   }

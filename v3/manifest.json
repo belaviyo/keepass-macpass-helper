@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "0.7.2.1",
+  "version": "0.7.2.2",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",
@@ -39,7 +39,7 @@
   "commands": {
     "_execute_action": {},
     "open-embedded": {
-      "description": "Open credentials in the embedded mode (useful for popup windows)"
+      "description": "Open credentials in the embedded mode (useful for popup windows) (does not yet work in Firefox browser)"
     },
     "generate-password": {
       "description": "Generate a Random Password"

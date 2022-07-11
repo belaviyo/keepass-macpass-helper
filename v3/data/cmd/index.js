@@ -727,6 +727,15 @@ if (window.top !== window) {
 
   window.addEventListener('keydown', e => e.code === 'Escape' && close());
   window.addEventListener('blur', close);
+
+  // make sure the needed APIs are available on embedded mode
+  try {
+    chrome.scripting.executeScript;
+    chrome.tabs.query;
+  }
+  catch (e) {
+    alert('Something went wrong! Instead of the embedded mode, open the interface from the toolbar button. Error:\n\n' + e.message);
+  }
 }
 
 // permission
