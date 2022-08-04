@@ -15,10 +15,10 @@ const timebased = {
     const sotp = stringFields.filter(o => ['KPH: sotp', 'KPH:sotp', 'sotp'].includes(o.Key)).shift();
 
     if (sotp) {
-      return engine.otp(await decrypt(sotp.Value));
+      return await engine.otp(await decrypt(sotp.Value));
     }
     else if (otp) {
-      return engine.otp(otp.Value);
+      return await engine.otp(otp.Value);
     }
 
     // built-in OTP of KeePass
@@ -32,7 +32,7 @@ const timebased = {
       args.set('period', period?.Value || 30);
       args.set('digits', digits?.Value || 6);
 
-      return engine.otp(args.toString());
+      return await engine.otp(args.toString());
     }
 
     throw Error(Error('NO_OTP_Provided'));

@@ -61,6 +61,7 @@ select {
   margin: 10px 0;
   width: 100%;
   overscroll-behavior: contain;
+  overflow: auto;
 }
 select:empty {
   background-image: url('loading.svg');

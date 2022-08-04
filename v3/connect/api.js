@@ -1,4 +1,4 @@
-/* global KeePass, KeePassXC, KWPASS, jsOTP */
+/* global KeePass, KeePassXC, KWPASS, TOTP */
 const engine = {};
 
 engine.otp = string => {
@@ -21,8 +21,8 @@ engine.otp = string => {
   const period = args.get('period') || 30;
   const digits = args.get('digits') || 6;
 
-  // eslint-disable-next-line new-cap
-  return (new jsOTP.totp(period, digits)).getOtp(secret);
+  const totp = new TOTP();
+  return totp.generate(secret, period, digits);
 };
 
 engine.prepare = async type => {
