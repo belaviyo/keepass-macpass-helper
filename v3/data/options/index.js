@@ -148,7 +148,7 @@ document.getElementById('kwpass-file').onclick = () => {
         await kwpass.prepare();
         kwpass.attach(new Uint8Array(reader.result));
         toast('Database is stored');
-        chrome.storage.local.remove('kw:password');
+        chrome.storage.session.remove('kw:password');
       }
       catch (e) {
         console.warn(e);
@@ -170,7 +170,7 @@ document.getElementById('kwpass-remove').addEventListener('click', () => {
     next();
   }
   else {
-    kwpass.init(next);
+    kwpass.prepare().then(next);
   }
 });
 
@@ -185,7 +185,7 @@ document.getElementById('kwpass-download').addEventListener('click', () => {
       next();
     }
     else {
-      kwpass.init(next);
+      kwpass.prepare().then(next);
     }
   }
 });

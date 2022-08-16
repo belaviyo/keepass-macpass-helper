@@ -70,7 +70,7 @@ const storage = {
     }
     catch (e) {}
   },
-  remote: o => new Promise(resolve => chrome.storage.local.get(o, resolve))
+  remote: (o, type = 'local') => new Promise(resolve => chrome.storage[type].get(o, resolve))
 };
 const cookie = {
   get host() {
@@ -608,14 +608,46 @@ document.addEventListener('click', async e => {
 // keep focus
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
+
+// check HTTP access
+const access = () => new Promise(resolve => chrome.storage.local.get({
+  host: 'http://localhost:19455'
+}, prefs => {
+  const o = '*://' + (new URL(prefs.host)).hostname + '/';
+  chrome.permissions.contains({
+    origins: [o]
+  }, granted => {
+    if (granted === false) {
+      const parent = document.getElementById('host-access');
+      parent.classList.remove('hidden');
+      parent.querySelector('input').addEventListener('click', () => chrome.permissions.request({
+        origins: [o]
+      }, granted => {
+        if (granted) {
+          parent.classList.add('hidden');
+          resolve();
+        }
+      }));
+    }
+    else {
+      resolve();
+    }
+  });
+}));
+
 // init
 (async () => {
   // prepare the engine engine
   const prefs = await storage.remote({
     engine: 'keepass'
   });
+
   try {
+    if (prefs.engine === 'keepass') {
+      await access();
+    }
     await engine.prepare(prefs.engine);
+    await engine.connected(prefs.engine);
 
     if (prefs.engine === 'kwpass') {
       psbox.querySelector('span').textContent = 'Unlock Internal Database';
@@ -624,7 +656,7 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
       const password = (await storage.remote({
         'kw:password': ''
-      }))['kw:password'] || await new Promise(resolve => psbox.onsubmit = e => {
+      }, 'session'))['kw:password'] || await new Promise(resolve => psbox.onsubmit = e => {
         e.preventDefault();
         resolve(psbox.querySelector('input').value);
       });
@@ -632,7 +664,7 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
       await engine.core.open(password);
 
-      chrome.storage.local.set({
+      chrome.storage.session.set({
         'kw:password': password
       });
     }
@@ -661,7 +693,7 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
     }
     catch (e) {
       console.warn(e);
-      if (tab.url.startsWith('http') === false) {
+      if (!tab.url || tab.url.startsWith('http') === false) {
         throw Error(e);
       }
     }
@@ -678,7 +710,6 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
         document.getElementById('toast').classList.remove('hidden');
       });
     }
-
     submit();
   }
   catch (e) {
@@ -692,31 +723,6 @@ window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 // dbl-click
 list.addEventListener('dblclick', () => {
   document.querySelector('[data-cmd="insert-both"]').click();
-});
-
-// check localhost access
-chrome.storage.local.get({
-  engine: 'keepass',
-  host: 'http://localhost:19455'
-}, prefs => {
-  if (prefs.engine === 'keepass') {
-    const o = '*://' + (new URL(prefs.host)).hostname + '/';
-    chrome.permissions.contains({
-      origins: [o]
-    }, granted => {
-      if (granted === false) {
-        const parent = document.getElementById('host-access');
-        parent.classList.remove('hidden');
-        parent.querySelector('input').addEventListener('click', () => chrome.permissions.request({
-          origins: [o]
-        }, granted => {
-          if (granted) {
-            parent.classList.add('hidden');
-          }
-        }));
-      }
-    });
-  }
 });
 
 // on embedded

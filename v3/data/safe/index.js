@@ -1,4 +1,4 @@
-/* globals safe */
+/* global safe */
 'use strict';
 
 document.getElementById('encrypt').addEventListener('click', () => {
@@ -19,4 +19,9 @@ document.addEventListener('submit', e => {
 
   safe[e.target.dataset.action](data, passphrase).then(s => result.value = s)
     .catch(e => result.value = e.message || 'Operation was unsuccessful');
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.focus();
+  document.getElementById('passphrase').focus();
 });

@@ -1,19 +1,21 @@
-/* globals nacl, storage */
+/* global nacl, SimpleStorage */
 
 // https://github.com/keepassxreboot/keepassxc-browser/blob/develop/keepassxc-protocol.md
 
 'use strict';
 
-class KeePassXC {
+class KeePassXC extends SimpleStorage {
   constructor() {
+    super();
+
     this.textEncoder = new TextEncoder(); // always utf-8
     this.textDecoder = new TextDecoder('utf-8');
   }
   async prepare() {
     this.nonce = this.btoa(crypto.getRandomValues(new Uint8Array(24)));
 
-    const prefs = await storage.remote({
-      'xc-native-id': 'org.keepassxc.keepassxc_browser',
+    const prefs = await this.read({
+      'xc-native-id': 'org.keepasshelper.extension',
       'xc-client-id': 'keepass-helper-' + Math.random().toString(36).substring(7)
     });
 
@@ -21,7 +23,8 @@ class KeePassXC {
     this.clientID = prefs['xc-client-id'];
 
     this.keyPair = nacl.box.keyPair();
-    chrome.storage.local.set({
+
+    this.write({
       'xc-client-id': this.clientID
     });
 
@@ -71,7 +74,18 @@ class KeePassXC {
     return JSON.parse(this.textDecoder.decode(res));
   }
   post(request) {
-    return new Promise(resolve => chrome.runtime.sendNativeMessage(this.nativeID, request, resolve));
+    return new Promise(resolve => {
+      if (window.top !== window && /Firefox/.test(navigator.userAgent)) {
+        chrome.runtime.sendMessage({
+          cmd: 'native',
+          id: this.nativeID,
+          request
+        }, resolve);
+      }
+      else {
+        chrome.runtime.sendNativeMessage(this.nativeID, request, resolve);
+      }
+    });
   }
   securePost(messageData) {
     return this.post({
@@ -103,7 +117,7 @@ class KeePassXC {
     }
     this.db = resp;
 
-    const prefs = await storage.remote({
+    const prefs = await this.read({
       ['xc-' + this.db.hash]: {}
     });
     if (prefs['xc-' + this.db.hash]) {
@@ -136,8 +150,9 @@ class KeePassXC {
         id: resp.id,
         key: idKey
       };
-      chrome.storage.local.set({
-        ['xc-' + this.db.hash]: this.key
+
+      await this.write({
+        ['xc-' + resp.hash]: this.key
       });
       return;
     }

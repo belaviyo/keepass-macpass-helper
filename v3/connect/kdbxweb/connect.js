@@ -55,7 +55,7 @@ class KWPASS {
     this.file = new KWFILE();
     return this.file.open();
   }
-  async search({url, submiturl}) {
+  search({url, submiturl}) {
     const {hostname} = new URL(url || submiturl);
 
     const matches = [];
@@ -73,17 +73,17 @@ class KWPASS {
       step(group);
     }
 
-    return {
+    return Promise.resolve({
       Entries: matches.map(e => ({
         Login: e.fields.UserName,
         Name: e.fields.Title,
         Password: e.fields.Password ? e.fields.Password.getText() : '',
         StringFields: Object.entries(e.fields).map(([key, value]) => ({
           Key: key.replace(/^KPH:\s*/, ''),
-          Value: value
+          Value: typeof value === 'object' ? value.getText() : value
         }))
       }))
-    };
+    });
   }
   async set(query) {
     const {url, submiturl, login, password} = query;
@@ -97,8 +97,8 @@ class KWPASS {
       entry.times.update();
       // downgrade to KDBX3
       this.db.setVersion(3);
-      return this.db.save()
-        .then(ab => this.attach(new Uint8Array(ab)));
+      const ab = await this.db.save();
+      return this.attach(new Uint8Array(ab));
     }
     catch (e) {
       throw Error('Is database unlocked? ' + e.message);

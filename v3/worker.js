@@ -1,9 +1,3 @@
-/* global KeePassXC, KeePass */
-self.importScripts('./connect/keepassxc/nacl-fast.min.js');
-self.importScripts('./connect/keepassxc/keepassxc.js');
-self.importScripts('./connect/keepass/sjcl.js');
-self.importScripts('./connect/keepass/keepass.js');
-
 const current = () => chrome.tabs.query({
   currentWindow: true,
   active: true,
@@ -94,7 +88,7 @@ const copy = async (content, tab) => {
 copy.interface = async content => {
   const win = await chrome.windows.getCurrent();
   chrome.windows.create({
-    url: 'data/copy/index.html?content=' + encodeURIComponent(content),
+    url: '/data/copy/index.html?content=' + encodeURIComponent(content),
     width: 400,
     height: 300,
     left: win.left + Math.round((win.width - 400) / 2),
@@ -103,13 +97,6 @@ copy.interface = async content => {
   });
 };
 
-// remove password for KW
-{
-  const once = () => chrome.storage.local.remove('kw:password');
-
-  chrome.runtime.onInstalled.addListener(once);
-  chrome.runtime.onStartup.addListener(once);
-}
 // messaging
 chrome.runtime.onMessage.addListener((request, sender, response) => {
   if (request.cmd === 'close-me') {
@@ -134,49 +121,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
   else if (request.cmd === 'copy-interface') {
     copy.interface(request.password);
   }
-  // since brings the KeePass to the front, the popup might get closed. So we need to do this in bg
-  else if (request.cmd === 'associate') {
-    if (request.type === 'xc') {
-      const core = new KeePassXC();
-      core.prepare().then(() => {
-        core.clientID = request.clientID;
-        core.nativeID = request.nativeID;
-        core.db = request.db;
-
-        return core.associate();
-      }).then(() => response({
-        key: core.key,
-        serverPublicKey: Array.from(core.serverPublicKey),
-        keyPair: {
-          publicKey: Array.from(core.keyPair.publicKey),
-          secretKey: Array.from(core.keyPair.secretKey)
-        }
-      })).catch(e => response({
-        error: e.message
-      }));
-    }
-    else {
-      const core = new KeePass();
-      core.prepare().then(() => {
-        core.associate().then(r => {
-          chrome.storage.local.set({
-            [r.Hash]: {
-              id: r.Id,
-              key: core.key
-            }
-          });
-
-          response({
-            r,
-            id: r.Id,
-            key: core.key
-          });
-        }).catch(e => response({
-          error: e.message
-        }));
-      });
-    }
-
+  else if (request.cmd === 'native') {
+    chrome.runtime.sendNativeMessage(request.id, request.request, response);
     return true;
   }
 });

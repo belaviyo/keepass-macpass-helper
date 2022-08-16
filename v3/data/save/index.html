@@ -1,110 +1,46 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <style>
-      html,
-      body {
-        height: 100%;
-      }
-      body {
-        font-family: "Helvetica Neue",Helvetica,sans-serif;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
-        color: #ccc;
-      }
-      form {
-        background-color: #414141;
-        padding: 10px;
-        border: solid 1px #ccc;
-        width: 500px;
-      }
-      table {
-        width: 100%;
-      }
-      td {
-        white-space: nowrap;
-      }
-      td:last-child {
-        text-align: right;
-      }
-      input[type=text],
-      input[type=password] {
-        width: 100%;
-        box-sizing: border-box;
-        text-indent: 5px;
-      }
-      input[type=button],
-      input[type=submit] {
-        cursor: pointer;
-      }
-      input[type=text],
-      input[type=submit],
-      input[type=button],
-      input[type=password] {
-        background-color: #282828;
-        color: #ccc;
-        border: none;
-        border-radius: 0;
-        padding: 7px;
-        outline: none;
-        min-width: 90px;
-      }
-      input:disabled {
-        opacity: 0.4;
-      }
-      .submit {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding: 0px 3px;
-        margin: 10px 0 3px 0;
-      }
-      .submit input {
-        margin-left: 5px;
-      }
-    </style>
-  </head>
-  <body>
-    <form action="#">
-      <table>
-        <colgroup>
-          <col width="10px"></col>
-          <col></col>
-          <col width="10px"></col>
-        </colgroup>
-        <tr>
-          <td>URL</td>
-          <td><input type="text" name="url"></td>
-          <td><input type="button" data-cmd="simplify" value="Simplify"></td>
-        </tr>
-        <tr>
-          <td>Submit URL</td>
-          <td><input type="text" name="submiturl"></td>
-          <td><input type="button" data-cmd="simplify" value="Simplify"></td>
-        </tr>
-        <tr><td>Login</td><td colspan="2"><input type="text" name="login"></td></tr>
-        <tr>
-          <td>Password</td>
-          <td><input type="password" name="password"></td>
-          <td><input data-type="password" type="button" value="Show" data-cmd="toggle"></td>
-        </tr>
-      </table>
-      <p class="submit">
-        <input type="button" value="Cancel" data-cmd="cancel">
-        <input type="submit" value="Submit">
-      </p>
-    </form>
-    <script src="/connect/keepass/sjcl.js"></script>
-    <script src="/connect/keepass/keepass.js"></script>
-    <script src="/connect/keepassxc/nacl-fast.min.js"></script>
-    <script src="/connect/keepassxc/keepassxc.js"></script>
-    <script src="/connect/kdbxweb/kdbxweb.js"></script>
-    <script src="/connect/kdbxweb/connect.js"></script>
-    <script src="/connect/api.js"></script>
-    <script src="index.js"></script>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+<body>
+  <form action="#" autocomplete="off">
+    <table>
+      <colgroup>
+        <col width="10px"></col>
+        <col></col>
+        <col width="10px"></col>
+      </colgroup>
+      <tr>
+        <td>URL</td>
+        <td><input type="text" name="url"></td>
+        <td><input type="button" data-cmd="simplify" value="Simplify"></td>
+      </tr>
+      <tr>
+        <td>Submit URL</td>
+        <td><input type="text" name="submiturl"></td>
+        <td><input type="button" data-cmd="simplify" value="Simplify"></td>
+      </tr>
+      <tr><td>Login</td><td colspan="2"><input type="text" name="login"></td></tr>
+      <tr>
+        <td>Password</td>
+        <td><input type="password" name="password" autocomplete="off"></td>
+        <td><input data-type="password" type="button" value="Show" data-cmd="toggle"></td>
+      </tr>
+    </table>
+    <p class="submit">
+      <input type="button" value="Cancel" data-cmd="cancel">
+      <input type="submit" value="Submit">
+    </p>
+  </form>
+  <script src="/connect/api.js"></script>
+  <script src="/connect/keepass/keepass.js"></script>
+  <script src="/connect/keepassxc/nacl-fast.min.js"></script>
+  <script src="/connect/keepassxc/keepassxc.js"></script>
+  <script src="/connect/kdbxweb/kdbxweb.js"></script>
+  <script src="/connect/kdbxweb/connect.js"></script>
+  <script src="index.js"></script>
+</body>
 </html>

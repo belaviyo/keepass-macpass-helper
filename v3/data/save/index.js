@@ -1,10 +1,6 @@
 /* global engine */
 'use strict';
 
-const storage = {
-  remote: o => new Promise(resolve => chrome.storage.local.get(o, resolve))
-};
-
 // styling
 try { // https://github.com/belaviyo/keepass-macpass-helper/issues/27
   const style = localStorage.getItem('save-dialog-style');
@@ -61,9 +57,10 @@ document.addEventListener('submit', e => {
   for (const [key, value] of formData.entries()) {
     query[key] = value;
   }
-  storage.remote({
+
+  chrome.storage.local.get({
     engine: 'keepass'
-  }).then(async prefs => {
+  }, async prefs => {
     try {
       await engine.prepare(prefs.engine);
 

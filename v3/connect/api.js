@@ -1,9 +1,8 @@
 /* global KeePass, KeePassXC, KWPASS, TOTP */
 const engine = {};
 
+// otpauth://hotp/Secure%20App:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Secure%20App&counter=0
 engine.otp = string => {
-  // otpauth://hotp/Secure%20App:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Secure%20App&counter=0
-
   const i = string.indexOf('?');
   if (i !== -1) {
     string = string.substr(i);
@@ -25,7 +24,17 @@ engine.otp = string => {
   return totp.generate(secret, period, digits);
 };
 
-engine.prepare = async type => {
+// eslint-disable-next-line no-unused-vars
+class SimpleStorage {
+  read(prefs) {
+    return new Promise(resolve => chrome.storage.local.get(prefs, resolve));
+  }
+  write(prefs) {
+    return new Promise(resolve => chrome.storage.local.set(prefs, resolve));
+  }
+}
+
+engine.prepare = type => {
   engine.type = type;
   if (type === 'keepass') {
     engine.core = new KeePass();
@@ -36,53 +45,31 @@ engine.prepare = async type => {
   else if (type === 'kwpass') {
     engine.core = new KWPASS();
   }
-  await engine.core.prepare();
+  return engine.core.prepare();
 };
 
-engine.search = async query => {
-  return engine.core.search(query);
-};
+engine.search = query => engine.core.search(query);
 
-engine.set = async query => {
-  return engine.core.set(query);
-};
+engine.set = query => engine.core.set(query);
 
-// perform "associate" in background since the interface might get closed on some browsers
-KeePassXC.prototype.associate = function() {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({
-      cmd: 'associate',
-      type: 'xc',
-      clientID: this.clientID,
-      nativeID: this.nativeID,
-      db: this.db
-    }, o => {
-      if (o.error) {
-        return reject(Error(o.error));
-      }
-
-      this.serverPublicKey = new Uint8Array(o.serverPublicKey);
-      this.keyPair = {
-        publicKey: new Uint8Array(o.keyPair.publicKey),
-        secretKey: new Uint8Array(o.keyPair.secretKey)
-      };
-      this.key = o.key;
-      resolve();
-    });
-  });
-};
-KeePass.prototype.associate = function() {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({
-      cmd: 'associate',
-      type: 'kp'
-    }, o => {
-      if (o.error) {
-        return reject(Error(o.error));
-      }
-      this.id = o.id;
-      this.key = o.key;
-      resolve(o.r);
-    });
-  });
+engine.connected = async type => {
+  try {
+    if (type === 'keepass') {
+      await engine.core.test(false);
+    }
+    else if (type === 'keepassxc') {
+      await engine.core['test-associate']();
+    }
+  }
+  catch (e) {
+    const win = await chrome.windows.getCurrent();
+    chrome.windows.create({
+      url: '/connect/interface/index.html',
+      width: 400,
+      height: 300,
+      left: win.left + Math.round((win.width - 400) / 2),
+      top: win.top + Math.round((win.height - 300) / 2),
+      type: 'popup'
+    }, () => window.close());
+  }
 };
