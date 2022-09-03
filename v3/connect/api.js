@@ -62,6 +62,8 @@ engine.connected = async type => {
     }
   }
   catch (e) {
+    console.warn(e);
+
     const win = await chrome.windows.getCurrent();
     chrome.windows.create({
       url: '/connect/interface/index.html',

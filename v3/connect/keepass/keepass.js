@@ -1,18 +1,16 @@
 /* global SimpleStorage */
+
 'use strict';
 
+// eslint-disable-next-line no-unused-vars
 class KeePass extends SimpleStorage {
   // convert String to Uint8Array
   static s2u(s) {
     return new Uint8Array(s.split('').map(c => c.charCodeAt(0)));
   }
-  // converts b64 to Uint8Array
-  static b2u(b64) {
-    return KeePass.s2u(atob(b64));
-  }
-  // converts Array Buffer to String
-  static b2s(ab) {
-    return [...new Uint8Array(ab)].map(n => String.fromCharCode(n)).join('');
+  // convert unit8 to base64
+  static u2b(unit8) {
+    return btoa([...unit8].map(n => String.fromCharCode(n)).join(''));
   }
 
   constructor() {
@@ -21,70 +19,82 @@ class KeePass extends SimpleStorage {
     this.host = null;
     this.timeout = 20000;
   }
-  post(obj, timeout = this.timeout) {
+  async post(obj, timeout = this.timeout, sign = false, names = []) {
     const controller = new AbortController();
 
+    if (this.id) {
+      obj.Id = this.id;
+    }
+    if (sign) {
+      const iv = this.iv();
+      const e = await this.encrypt(iv);
+
+      obj.Nonce = KeePass.u2b(iv);
+      obj.Verifier = await e(obj.Nonce);
+
+      for (const name of names) {
+        if (obj[name]) {
+          obj[name] = await e(obj[name], true);
+        }
+        else {
+          delete obj[name];
+        }
+      }
+    }
+
     setTimeout(() => controller.abort(), timeout);
-    return fetch(this.host, {
+    const r = await fetch(this.host, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(obj),
       signal: controller.signal
-    }).then(r => {
-      if (r.ok) {
-        return r.json();
-      }
-      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
     });
+    if (r.ok) {
+      return r.json();
+    }
+    let j;
+    try {
+      j = await r.json();
+    }
+    catch (e) {
+      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+    }
+    throw Error(j.Error || 'Unknown Error');
   }
   // tools
   iv(n = 16) {
-    const iv = [...crypto.getRandomValues(new Uint8Array(n))].map(n => String.fromCharCode(n)).join('');
-    return btoa(iv);
+    return crypto.getRandomValues(new Uint8Array(n));
   }
   encrypt(iv) {
-    const {b2u} = KeePass;
+    const utf8encoder = new TextEncoder();
 
-    const aiv = b2u(iv);
-    return crypto.subtle.importKey('raw', b2u(this.key), 'AES-CBC', true, ['encrypt']).then(key => {
-      return data => crypto.subtle.encrypt({
-        name: 'AES-CBC',
-        iv: aiv
-      }, key, KeePass.s2u(data)).then(s => btoa(KeePass.b2s(s)));
+    return crypto.subtle.importKey('raw', this.key, 'AES-CBC', true, ['encrypt']).then(key => {
+      return (data, native) => {
+        data = native ? utf8encoder.encode(data) : KeePass.s2u(data);
+
+        return crypto.subtle.encrypt({
+          name: 'AES-CBC',
+          iv
+        }, key, data).then(ab => {
+          return KeePass.u2b(new Uint8Array(ab));
+        });
+      };
     });
   }
   decrypt(iv) {
-    const {b2u} = KeePass;
+    const utf8decoder = new TextDecoder();
 
-    return crypto.subtle.importKey('raw', b2u(this.key), 'AES-CBC', true, ['decrypt']).then(key => {
-      const aiv = b2u(iv);
-      return data => crypto.subtle.decrypt({
-        name: 'AES-CBC',
-        iv: aiv
-      }, key, b2u(data)).then(ab => KeePass.b2s(ab));
-    });
-  }
-  // internals
-  async verify(request) {
-    const iv = this.iv();
+    return crypto.subtle.importKey('raw', this.key, 'AES-CBC', true, ['decrypt']).then(key => {
+      return b64 => {
+        const data = atob(b64);
 
-    request = {
-      ...request,
-      Nonce: iv,
-      Verifier: await this.encrypt(iv).then(e => e(iv))
-    };
-    if (this.id) {
-      request.Id = this.id;
-    }
-    return request;
-  }
-  // test
-  blind() {
-    return this.post({
-      'RequestType': 'test-associate',
-      'TriggerUnlock': false
+        return crypto.subtle.decrypt({
+          name: 'AES-CBC',
+          iv
+        }, key, KeePass.s2u(data)).then(ab => utf8decoder.decode(ab));
+      };
     });
   }
   async prepare() {
@@ -95,7 +105,10 @@ class KeePass extends SimpleStorage {
     // find database hash
     let r;
     try {
-      r = await this.blind();
+      r = await this.post({
+        'RequestType': 'test-associate',
+        'TriggerUnlock': false
+      });
     }
     catch (e) {
       throw Error(`Cannot connect to the database at "${host}"`);
@@ -109,26 +122,24 @@ class KeePass extends SimpleStorage {
       });
       // overwrite based on database
       if (prefs[r.Hash].id && prefs[r.Hash].key) {
-        Object.assign(this, prefs[r.Hash]);
+        this.id = prefs[r.Hash].id;
+        this.key = KeePass.s2u(atob(prefs[r.Hash].key));
       }
       else {
-        Object.assign(this, {
-          id: prefs.id,
-          key: prefs.key
-        });
+        this.id = prefs.id;
+        this.key = KeePass.s2u(atob(prefs.key));
       }
     }
     else {
       throw Error(`Cannot detect database's hash`);
     }
   }
-  async test() {
+  test() {
     if (this.key) {
-      const request = await this.verify({
+      return this.post({
         'RequestType': 'test-associate',
         'TriggerUnlock': true
-      });
-      return this.post(request);
+      }, undefined, true);
     }
     else {
       throw Error('There is no saved key');
@@ -136,12 +147,13 @@ class KeePass extends SimpleStorage {
   }
   async associate() {
     this.key = this.iv(32);
-    const request = await this.verify({
-      'RequestType': 'associate',
-      'Key': this.key
-    });
+    const Key = KeePass.u2b(this.key);
+
     // we are going to run this function in background; in case the popup get closed
-    const r = await this.post(request, 120000, 'associate');
+    const r = await this.post({
+      'RequestType': 'associate',
+      Key
+    }, 120000, true);
 
     if (r && r.Success) {
       this.id = r.Id;
@@ -149,7 +161,7 @@ class KeePass extends SimpleStorage {
         id: r.Id,
         [r.Hash]: {
           id: r.Id,
-          key: this.key
+          key: Key
         }
       });
     }
@@ -157,24 +169,17 @@ class KeePass extends SimpleStorage {
     return r;
   }
   async logins({url, submiturl, realm}) {
-    const request = await this.verify({
+    const r = await this.post({
       'RequestType': 'get-logins',
       'TriggerUnlock': 'true',
-      'SortSelection': 'false'
-    });
-    const iv = request.Nonce;
-    const e = await this.encrypt(iv);
-
-    request.Url = await e(url);
-    if (submiturl) {
-      request.SubmitUrl = await e(submiturl);
-    }
-    if (realm) {
-      request.Realm = await e(realm);
-    }
-    const r = await this.post(request);
+      'SortSelection': 'false',
+      'Url': url,
+      'SubmitUrl': submiturl,
+      'Realm': realm
+    }, undefined, true, ['Url', 'SubmitUrl', 'Realm']);
     if (r && r.Entries) {
-      const iv = r.Nonce;
+      const iv = KeePass.s2u(atob(r.Nonce));
+
       const d = await this.decrypt(iv);
 
       for (let n = 0; n < r.Entries.length; n += 1) {
@@ -193,19 +198,14 @@ class KeePass extends SimpleStorage {
     }
     return r;
   }
-  async set({url, submiturl, login, password}) {
-    const request = await this.verify({
-      'RequestType': 'set-login'
-    });
-    const iv = request.Nonce;
-    const e = await this.encrypt(iv);
-    Object.assign(request, {
-      'Login': await e(login),
-      'Password': await e(password),
-      'Url': await e(url),
-      'SubmitUrl': await e(submiturl)
-    });
-    return this.post(request);
+  set({url, submiturl, login, password}) {
+    return this.post({
+      'RequestType': 'set-login',
+      'Login': login,
+      'Password': password,
+      'Url': url,
+      'SubmitUrl': submiturl
+    }, undefined, true, ['Login', 'Password', 'Url', 'SubmitUrl']);
   }
   // high-level access
   async search(query) {

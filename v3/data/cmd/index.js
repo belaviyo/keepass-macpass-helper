@@ -148,6 +148,7 @@ async function submit() {
     const response = await engine.search({
       url: query
     });
+
     if (response.Entries.length === 0) {
       add('No credential for this page!', undefined, undefined, undefined, true);
     }
@@ -178,7 +179,7 @@ async function submit() {
   }
   catch (e) {
     console.warn(e);
-    add(e.message, undefined, undefined, undefined, true);
+    add(e.message || 'Unknown Error', undefined, undefined, undefined, true);
   }
 }
 
