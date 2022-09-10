@@ -106,26 +106,26 @@ catch (e) {
 }
 
 function add(login, name, password, stringFields, select = false) {
-  const entry = Object.assign(document.createElement('option'), {
-    textContent: login + (name ? ` - ${name}` : ''),
-    value: login
-  });
-  entry.dataset.password = password || '';
-  entry.stringFields = stringFields;
+  const {option} = list.add([{
+    name: login || '',
+    part: 'login',
+    title: login || '',
+    password,
+    stringFields
+  }, {
+    name: name || ''
+  }], login, login, select);
+
   if (password) {
-    entry.title = `Username: ${login}
+    option.title = `Username: ${login}
 Name: ${name || ''}
 String Fields: ${(stringFields || []).length}`;
   }
   else {
-    entry.title = login;
+    option.title = login;
   }
 
-  list.appendChild(entry);
   list.focus();
-  if (select) {
-    list.value = login;
-  }
 }
 
 async function submit() {
@@ -139,7 +139,8 @@ async function submit() {
     catch (e) {}
   }
 
-  list.textContent = '';
+  list.clear();
+
   [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
     input.disabled = true;
   });
@@ -185,13 +186,16 @@ async function submit() {
 
 document.addEventListener('search', submit);
 
-document.addEventListener('change', e => {
+list.addEventListener('change', e => {
   const target = e.target;
-  if (target.nodeName === 'SELECT') {
-    const disabled = target.selectedOptions.length === 0 || !target.selectedOptions[0].dataset.password;
-    [...document.getElementById('toolbar').querySelectorAll('input')]
-      .forEach(input => input.disabled = disabled);
-  }
+
+  const disabled =
+    target.selectedValues.length === 0 ||
+    !target.selectedValues[0] ||
+    !target.selectedValues[0][0].password;
+
+  [...document.getElementById('toolbar').querySelectorAll('input')]
+    .forEach(input => input.disabled = disabled);
 });
 
 document.addEventListener('keydown', e => {
@@ -479,7 +483,7 @@ document.addEventListener('click', async e => {
     }
     //
     if (cmd && cmd.startsWith('insert-')) {
-      const checked = list.selectedOptions[0];
+      const checked = list.selectedValues[0][0];
       // insert helper function
       await chrome.scripting.executeScript({
         target: {
@@ -507,7 +511,7 @@ document.addEventListener('click', async e => {
 
       let inserted = false;
       // insert StringFields
-      if (checked.stringFields) {
+      if (checked.stringFields && checked.stringFields.length) {
         const r = await insert.fields(checked.stringFields);
         inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
@@ -518,7 +522,7 @@ document.addEventListener('click', async e => {
       }
       // insert password
       if (cmd === 'insert-password' || cmd === 'insert-both') {
-        const r = await insert.password(checked.dataset.password);
+        const r = await insert.password(checked.password);
         inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
 
@@ -566,15 +570,15 @@ document.addEventListener('click', async e => {
       window.close();
     }
     else if (cmd && cmd.startsWith('copy')) {
-      let content = list.value;
       if (e.detail === 'password' || alt) {
-        const checked = list.selectedOptions[0];
-        content = checked.dataset.password;
+        copy(list.selectedValues.map(a => a[0].password).join('\n'));
       }
-      copy(content);
+      else {
+        copy(list.selectedValues.map(a => a[0].name).join('\n'));
+      }
     }
     else if (cmd === 'otp') {
-      const checked = list.selectedOptions[0];
+      const checked = list.selectedValues[0][0];
 
       try {
         const s = await timebased.get(checked.stringFields);

@@ -53,27 +53,25 @@ div {
   background-color: #282828;
 }
 
-select {
-  outline: none;
-  background-color: #282828;
-  color: #fff;
-  border: none;
-  margin: 10px 0;
-  width: 100%;
+#list {
+  --color: #fff;
+  --selected-bg: #4875bf;
+  --selected-inactive-bg: #5f5f5f;
+
   overscroll-behavior: contain;
   overflow: auto;
+  background-color: #282828;
+  margin: 10px 0;
 }
-select:empty {
+#list::part(login) {
+  padding-left: 10px;
+}
+#list:not([size]) {
   background-image: url('loading.svg');
   background-repeat: no-repeat;
   background-position: center center;
 }
-option {
-  padding: 5px;
-}
-select:not(:focus-within) option:checked {
-  opacity: 0.6;
-}
+
 a {
   text-decoration: none;
   color: #2db0ff;
