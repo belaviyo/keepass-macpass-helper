@@ -10,9 +10,19 @@ let tab = {};
 let usernames = [];
 
 const timebased = {
+  words: {
+    otp: ['KPH: otp', 'KPH:otp', 'otp'],
+    sotp: ['KPH: sotp', 'KPH:sotp', 'sotp'],
+    bopt: ['TimeOtp-Secret-Base32']
+  },
+  includes(stringFields) {
+    return stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
+      stringFields.some(o => timebased.words.sotp.includes(o.Key)) ||
+      stringFields.some(o => timebased.words.botp.includes(o.Key));
+  },
   async get(stringFields) {
-    const otp = stringFields.filter(o => ['KPH: otp', 'KPH:otp', 'otp'].includes(o.Key)).shift();
-    const sotp = stringFields.filter(o => ['KPH: sotp', 'KPH:sotp', 'sotp'].includes(o.Key)).shift();
+    const otp = stringFields.filter(o => timebased.words.otp.includes(o.Key)).shift();
+    const sotp = stringFields.filter(o => timebased.words.sotp.includes(o.Key)).shift();
 
     if (sotp) {
       return await engine.otp(await decrypt(sotp.Value));
@@ -22,7 +32,7 @@ const timebased = {
     }
 
     // built-in OTP of KeePass
-    const secret = stringFields.filter(o => ['TimeOtp-Secret-Base32'].includes(o.Key)).shift();
+    const secret = stringFields.filter(o => timebased.words.botp.includes(o.Key)).shift();
     const period = stringFields.filter(o => ['TimeOtp-Period'].includes(o.Key)).shift();
     const digits = stringFields.filter(o => ['TimeOtp-Length'].includes(o.Key)).shift();
 
@@ -113,7 +123,8 @@ function add(login, name, password, stringFields, select = false) {
     password,
     stringFields
   }, {
-    name: name || ''
+    name: name || '',
+    part: 'name'
   }], login, login, select);
 
   if (password) {
@@ -129,6 +140,8 @@ String Fields: ${(stringFields || []).length}`;
 }
 
 async function submit() {
+  document.getElementById('title').setAttribute('width', '1fr');
+
   let query = search.value = search.value || url;
   if (query.indexOf('://') === -1) {
     try {
@@ -196,6 +209,14 @@ list.addEventListener('change', e => {
 
   [...document.getElementById('toolbar').querySelectorAll('input')]
     .forEach(input => input.disabled = disabled);
+
+  const o = e.target.selectedValues[0];
+  if (o && o[0]) {
+    const stringFields = o[0].stringFields;
+    if (stringFields) {
+      document.querySelector('#toolbar [data-cmd="otp"]').disabled = timebased.includes(stringFields) === false;
+    }
+  }
 });
 
 document.addEventListener('keydown', e => {
@@ -613,7 +634,6 @@ document.addEventListener('click', async e => {
 // keep focus
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
 
-
 // check HTTP access
 const access = () => new Promise(resolve => chrome.storage.local.get({
   host: 'http://localhost:19455'
@@ -721,6 +741,7 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
     console.warn(e);
     add(e.message, undefined, undefined, undefined, true);
     add('Use the options page to connect to KeePass, KeePassXC, or a local database');
+    document.getElementById('title').setAttribute('width', 0);
   }
   window.focus();
 })();

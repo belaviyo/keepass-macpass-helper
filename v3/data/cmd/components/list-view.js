@@ -22,7 +22,7 @@ class SimpleListView extends HTMLElement {
   #parent;
   #select;
 
-  static version = '0.1.3';
+  static version = '0.1.4';
 
   constructor() {
     super();
@@ -55,7 +55,6 @@ class SimpleListView extends HTMLElement {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          color: var(--color);
         }
         ::slotted(*),
         #parent > div > * {
@@ -70,6 +69,10 @@ class SimpleListView extends HTMLElement {
         ::slotted(*) {
           z-index: 2;
           overflow: hidden;
+        }
+        #header > [width="0"],
+        ::slotted([width="0"]) {
+          display: none;
         }
         select {
           position: absolute;
@@ -88,7 +91,7 @@ class SimpleListView extends HTMLElement {
           height: var(--height);
         }
         select[multiple]:focus option:checked {
-          background: var(--selected-bg) linear-gradient(0deg, var(--selected-bg) 0%, var(--selected-bg) 100%);
+          background: var(--selected-bg) linear-gradient(0deg, var(--selected-bg) 0%, var(--selected-bg) 500%);
         }
         select[multiple] option:checked {
           background: var(--selected-inactive-bg);
@@ -98,6 +101,7 @@ class SimpleListView extends HTMLElement {
           display: none;
         }
       </style>
+      <style id="extra"></style>
       <div id="parent">
         <select multiple id="select" tabindex="1">
           <option disabled part=header>header</option>
@@ -111,7 +115,7 @@ class SimpleListView extends HTMLElement {
     this.#parent = this.shadowRoot.getElementById('parent');
     this.#select = this.shadowRoot.getElementById('select');
   }
-  slots(method = 'both') { // native, user, both
+  #slots(method = 'both') { // native, user, both
     const es = [];
     if (method === 'both' || method === 'native') {
       es.push(...this.#header.querySelectorAll('#header > :not(slot)'));
@@ -128,8 +132,8 @@ class SimpleListView extends HTMLElement {
     }));
   }
   #watch(e) {
-    const observer = new MutationObserver(() => this.resize());
-    observer.observe(e, {attributes: true, attributeFilter: ['width']});
+    const observer = new MutationObserver(() => this.#resize());
+    observer.observe(e, {attributes: true, childList: true, attributeFilter: ['width']});
   }
   #scrollIntoViewIfNeeded() {
     const e = this.#select.options[this.#select.selectedIndex];
@@ -147,7 +151,19 @@ class SimpleListView extends HTMLElement {
     }
   }
   #resize() {
-    const c = this.slots('both').map(e => e.getAttribute('width') || '1fr').join(' ');
+    const ns = [];
+    const c = this.#slots('both').map((e, n) => {
+      const w = e.getAttribute('width');
+      if (w === '0') {
+        ns.push(n);
+        return '';
+      }
+      return w || '1fr';
+    }).join(' ');
+    this.shadowRoot.getElementById('extra').textContent = ns
+      .map(n => `#parent > div > span:nth-child(${n + 1}) {display: none}`)
+      .join('\n');
+
     this.#parent.style.setProperty('--structure', c);
   }
   #adjust() {
@@ -156,11 +172,11 @@ class SimpleListView extends HTMLElement {
   }
   add(parts, name, value, selected = false) {
     const div = document.createElement('div');
-    this.slots('native').forEach(e => {
+    this.#slots('native').forEach(e => {
       const ne = e.cloneNode(true);
       div.append(ne);
     });
-    this.slots('user').forEach((e, n) => {
+    this.#slots('user').forEach((e, n) => {
       const ne = document.createElement('span');
       const part = parts[n] || {};
       ne.textContent = part.name;
@@ -211,31 +227,42 @@ class SimpleListView extends HTMLElement {
       this.#emit(this, 'change');
     });
     // resize
-    this.slots('user').forEach(e => this.#watch(e));
+    this.#slots('both').forEach(e => this.#watch(e));
   }
   focus() {
     this.#select.focus();
-  }
-  get selectedIndex() {
-    return this.#select.selectedIndex;
-  }
-  get selectedValues() {
-    return [...this.#select.selectedOptions].map(o => o.parts);
   }
   get value() {
     return this.#select.value;
   }
   set value(v) {
     this.#select.value = v;
+    this.#emit(this.#select, 'change');
+  }
+  get selectedIndex() {
+    return this.#select.selectedIndex;
+  }
+  set selectedIndex(n) {
+    this.#select.selectedIndex = n;
+    this.#emit(this.#select, 'change');
+  }
+  get selectedValues() {
+    return [...this.#select.selectedOptions].map(o => o.parts);
+  }
+  static get observedAttributes() {
+    return ['headers', 'width'];
+  }
+  attributeChangedCallback(name) {
+    if (name === 'headers') {
+      this.#adjust();
+    }
   }
 }
+customElements.define('simple-list-view', SimpleListView);
+
 class DragListView extends SimpleListView {
   constructor(...args) {
     super(...args);
-
-    if (this.getAttribute('drag') === 'false') {
-      return;
-    }
 
     const style = document.createElement('style');
     style.textContent = `
@@ -344,6 +371,17 @@ class DragListView extends SimpleListView {
     }
     return r;
   }
+  static get observedAttributes() {
+    return ['drag', ...super.observedAttributes];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'drag') {
+      const e = this.shadowRoot.querySelector('#header span[part=drag]');
+      e.setAttribute('width', newValue === 'true' ? '20px' : '0');
+    }
+    else {
+      super.attributeChangedCallback(name, oldValue, newValue);
+    }
+  }
 }
-class ListView extends DragListView {}
-window.customElements.define('list-view', ListView);
+customElements.define('list-view', DragListView);
