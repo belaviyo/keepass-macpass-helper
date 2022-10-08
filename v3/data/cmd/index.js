@@ -13,7 +13,7 @@ const timebased = {
   words: {
     otp: ['KPH: otp', 'KPH:otp', 'otp'],
     sotp: ['KPH: sotp', 'KPH:sotp', 'sotp'],
-    bopt: ['TimeOtp-Secret-Base32']
+    botp: ['TimeOtp-Secret-Base32']
   },
   includes(stringFields) {
     return stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
@@ -116,6 +116,9 @@ catch (e) {
 }
 
 function add(login, name, password, stringFields, select = false) {
+  document.getElementById('title').setAttribute('width', '1fr');
+  list.classList.remove('error');
+
   const {option} = list.add([{
     name: login || '',
     part: 'login',
@@ -138,10 +141,25 @@ String Fields: ${(stringFields || []).length}`;
 
   list.focus();
 }
+function error(e) {
+  document.getElementById('title').setAttribute('width', 0);
+  list.classList.add('error');
+
+  console.warn(e);
+
+  list.add([{
+    name: e.message || e || 'Unknown Error',
+    part: 'login'
+  }], undefined, undefined, true);
+  const {option} = list.add([{
+    name: 'Use the options page to connect to KeePass, KeePassXC, or a local database',
+    part: 'login'
+  }]);
+  option.disabled = true;
+  list.focus();
+}
 
 async function submit() {
-  document.getElementById('title').setAttribute('width', '1fr');
-
   let query = search.value = search.value || url;
   if (query.indexOf('://') === -1) {
     try {
@@ -193,7 +211,7 @@ async function submit() {
   }
   catch (e) {
     console.warn(e);
-    add(e.message || 'Unknown Error', undefined, undefined, undefined, true);
+    error(e);
   }
 }
 
@@ -211,9 +229,12 @@ list.addEventListener('change', e => {
     .forEach(input => input.disabled = disabled);
 
   const o = e.target.selectedValues[0];
+  // otp
+  document.querySelector('#toolbar [data-cmd="otp"]').disabled = true;
   if (o && o[0]) {
     const stringFields = o[0].stringFields;
     if (stringFields) {
+      console.log(stringFields);
       document.querySelector('#toolbar [data-cmd="otp"]').disabled = timebased.includes(stringFields) === false;
     }
   }
@@ -266,7 +287,8 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
   }
   else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    if (e.target.nodeName === 'SELECT') {
+    console.log(e.target.nodeName);
+    if (e.target.nodeName === 'SIMPLE-LIST-VIEW') {
       document.querySelector('[data-cmd="insert-both"]').click();
     }
   }
@@ -731,17 +753,14 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
         if (granted) {
           document.querySelector('#toast input').style.visibility = 'hidden';
         }
-        document.querySelector('#toast span').textContent = 'No active form found!' + (granted ? ' Focus an element and retry.' : '');
+        document.querySelector('#toast span').textContent = 'No active form found!' + (granted ? ' Focus an element on the page and retry.' : '');
         document.getElementById('toast').classList.remove('hidden');
       });
     }
     submit();
   }
   catch (e) {
-    console.warn(e);
-    add(e.message, undefined, undefined, undefined, true);
-    add('Use the options page to connect to KeePass, KeePassXC, or a local database');
-    document.getElementById('title').setAttribute('width', 0);
+    error(e);
   }
   window.focus();
 })();
