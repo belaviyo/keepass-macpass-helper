@@ -139,25 +139,45 @@ chrome.permissions.contains({
 const kwpass = new KWPASS();
 
 document.getElementById('kwpass-file').onclick = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.onchange = () => {
+  const read = file => new Promise(resolve => {
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        await kwpass.prepare();
-        kwpass.attach(new Uint8Array(reader.result));
-        toast('Database is stored');
-        chrome.storage.session.remove('kw:password');
+    reader.onloadend = () => resolve(new Uint8Array(reader.result));
+    reader.readAsArrayBuffer(file);
+  });
+  const open = () => new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = () => resolve(input.files);
+    input.click();
+  });
+
+  open().then(async files => {
+    if (files.length === 1) {
+      const file = await read(files[0]);
+      await kwpass.prepare();
+      await kwpass.attach(file);
+    }
+    else if (files.length === 2) {
+      const key = [...files].filter(f => f.name.includes('.key')).shift();
+      if (!key) {
+        throw Error('Cannot detect the key file (*.key*)');
       }
-      catch (e) {
-        console.warn(e);
-        toast('Error: ' + e.message);
-      }
-    };
-    reader.readAsArrayBuffer(input.files[0]);
-  };
-  input.click();
+      const file = [...files].filter(f => f !== key).shift();
+
+      const args = [
+        await read(file),
+        await read(key)
+      ];
+      await kwpass.prepare();
+      await kwpass.attach(...args);
+    }
+    else {
+      throw Error('Please provide the database file and key file (optional)');
+    }
+    toast('Database is stored');
+    chrome.storage.session.remove('kw:password');
+  }).catch(e => alert(e.message));
 };
 document.getElementById('kwpass-remove').addEventListener('click', () => {
   const next = () => kwpass.dettach().then(() => {

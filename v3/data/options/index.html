@@ -19,7 +19,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><label><input type="radio" name="method" id="keepass"> <a data-href="faq2" target="_blank">KeePassHTTP</a> host</label></td>
+        <td><label class="algn"><input type="radio" name="method" id="keepass"> <a data-href="faq2" target="_blank">KeePassHTTP</a> host</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="host">
@@ -28,18 +28,18 @@
         </td>
       </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="keepassxc"> <a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label></td>
+        <td><label class="algn"><input type="radio" name="method" id="keepassxc"> <a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label></td>
         <td>
           <div style="display: flex; align-items: center;">
             <input type="text" id="xc-native-id">
           </div>
       </tr>
       <tr>
-        <td><label><input type="radio" name="method" id="kwpass"> <a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label></td>
+        <td><label class="algn"><input type="radio" name="method" id="kwpass"> <a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label></td>
         <td>
           <input type="button" id="kwpass-download" value="Download as KDBX3">
-          <input type="button" id="kwpass-remove" value="Delete File">
-          <input type="button" id="kwpass-file" value="Choose File">
+          <input type="button" id="kwpass-remove" value="Delete File(s)">
+          <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
         </td>
       </tr>
     </tbody>

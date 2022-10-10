@@ -81,3 +81,10 @@ a {
   color: #5f5f4b;
   padding: 10px;
 }
+.algn {
+  display: flex;
+  gap: 5px;
+}
+.algn input[type=radio] {
+  margin: 0;
+}

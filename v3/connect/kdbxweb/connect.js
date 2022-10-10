@@ -105,13 +105,14 @@ class KWPASS {
     }
   }
   async open(password) {
+    password = kdbxweb.ProtectedValue.fromString(password);
+
     const files = await this.file.read();
 
     if (files.length < 1) {
       throw Error('No database. Use options page to add a database');
     }
-    password = kdbxweb.ProtectedValue.fromString(password);
-    const credentials = new kdbxweb.Credentials(password);
+    const credentials = new kdbxweb.Credentials(password, files[1]);
     return kdbxweb.Kdbx.load(files[0].buffer, credentials).then(db => {
       this.db = db;
     }).catch(e => {
@@ -119,9 +120,12 @@ class KWPASS {
       throw Error('Cannot open database; ' + e.message);
     });
   }
-  async attach(bytes) {
+  async attach(fileBytes, keyBytes) {
     await this.dettach();
-    return this.file.write(bytes);
+    await this.file.write(fileBytes);
+    if (keyBytes) {
+      await this.file.write(keyBytes);
+    }
   }
   dettach() {
     return this.file.clear();
