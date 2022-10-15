@@ -1,0 +1,17 @@
+dialog.kphelper {
+  width: 500px;
+  height: 500px;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+}
+dialog.kphelper::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+dialog.kphelper iframe {
+  color-scheme: none;
+  border: none;
+  width: 100%;
+  height: 100%;
+}

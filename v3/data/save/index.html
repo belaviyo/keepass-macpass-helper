@@ -7,29 +7,19 @@
 </head>
 <body>
   <form action="#" autocomplete="off">
-    <table>
-      <colgroup>
-        <col width="10px"></col>
-        <col></col>
-        <col width="10px"></col>
-      </colgroup>
-      <tr>
-        <td>URL</td>
-        <td><input type="text" name="url"></td>
-        <td><input type="button" data-cmd="simplify" value="Simplify"></td>
-      </tr>
-      <tr>
-        <td>Submit URL</td>
-        <td><input type="text" name="submiturl"></td>
-        <td><input type="button" data-cmd="simplify" value="Simplify"></td>
-      </tr>
-      <tr><td>Login</td><td colspan="2"><input type="text" name="login" required></td></tr>
-      <tr>
-        <td>Password</td>
-        <td><input type="password" name="password" autocomplete="off" required></td>
-        <td><input data-type="password" type="button" value="Show" data-cmd="toggle"></td>
-      </tr>
-    </table>
+    <div>
+      <span>URL</span>
+      <input type="text" name="url" autofocus>
+      <input type="button" data-cmd="simplify" value="Simplify">
+      <span>Submit URL</span>
+      <input type="text" name="submiturl">
+      <input type="button" data-cmd="simplify" value="Simplify">
+      <span>Login</span>
+      <input type="text" name="login" required style="grid-column: 2/4;">
+      <span>Password</span>
+      <input type="password" name="password" autocomplete="off" required>
+      <input data-type="password" type="button" value="Show" data-cmd="toggle">
+    </div>
     <p class="submit">
       <input type="button" value="Cancel" data-cmd="cancel">
       <input type="submit" value="Submit">

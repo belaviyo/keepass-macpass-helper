@@ -39,5 +39,6 @@ window.aElement = isEditable(document.activeElement) ? document.activeElement : 
   ({
     usernames: usernames.map(e => e.value),
     aElement: Boolean(window.aElement)
+  // eslint-disable-next-line semi
   })
 }

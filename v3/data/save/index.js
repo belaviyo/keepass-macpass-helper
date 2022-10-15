@@ -27,7 +27,7 @@ document.addEventListener('click', e => {
     target.value = target.dataset.type === 'password' ? 'Show' : 'Hide';
   }
   else if (cmd === 'simplify') {
-    const input = target.closest('tr').querySelector('input[type=text');
+    const input = target.previousElementSibling;
     if (input.value) {
       try {
         const url = new URL(input.value);
@@ -36,13 +36,6 @@ document.addEventListener('click', e => {
       }
       catch (e) {}
     }
-  }
-});
-
-document.addEventListener('keydown', e => {
-  if (e.code === 'Escape') {
-    document.querySelector('[data-cmd=cancel]').click();
-    e.preventDefault();
   }
 });
 
@@ -106,6 +99,3 @@ chrome.runtime.sendMessage({
 document.querySelector('[name=url]').value = args.get('url');
 document.querySelector('[name=url]').focus();
 document.querySelector('[name=url]').select();
-
-// keep focus
-window.addEventListener('blur', () => window.setTimeout(window.focus, 0));

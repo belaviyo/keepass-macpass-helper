@@ -1,3 +1,7 @@
+:root {
+  --gap: 5px;
+  --box: 10px;
+}
 html,
 body {
   height: 100%;
@@ -10,21 +14,24 @@ body {
   justify-content: center;
   margin: 0;
   color: #ccc;
+  padding: var(--box);
+  width: calc(100% - 2 * var(--box));
+  height: calc(100% - 2 * var(--box));
+  background-color: #414141;
 }
 form {
-  background-color: #414141;
-  padding: 10px;
-  border: solid 1px #ccc;
-  width: 500px;
-}
-table {
+  padding: 0;
   width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: min-content 1fr;
 }
-td {
+form > div {
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
   white-space: nowrap;
-}
-td:last-child {
-  text-align: right;
+  grid-gap: var(--gap);
+  align-items: center;
 }
 input[type=text],
 input[type=password] {
@@ -55,9 +62,7 @@ input:disabled {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 3px;
-  margin: 10px 0 3px 0;
-}
-.submit input {
-  margin-left: 5px;
+  margin: 0;
+  align-self: end;
+  gap: var(--gap);
 }

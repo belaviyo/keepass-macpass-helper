@@ -1,29 +1,19 @@
 'use strict';
 
-try {
-  document.body.removeChild(window.iframe);
+for (const e of document.querySelectorAll('dialog.kphelper')) {
+  e.remove();
 }
-catch (e) {}
 
-window.iframe = document.createElement('iframe');
-window.iframe.setAttribute('style', `
-  color-scheme: none;
-  border: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 10000000000;
-`);
-window.document.body.appendChild(window.iframe);
-window.iframe.onload = () => window.iframe.contentWindow.postMessage({
-  pairs: window.pairs
-}, '*');
-window.iframe.src = chrome.runtime.getURL('/data/save/index.html') +
-  '?url=' + encodeURIComponent(document.location.href);
-
+{
+  const dialog = document.createElement('dialog');
+  dialog.classList.add('kphelper');
+  const iframe = document.createElement('iframe');
+  dialog.append(iframe);
+  document.body.append(dialog);
+  iframe.onload = () => iframe.contentWindow.postMessage({
+    pairs: window.pairs
+  }, '*');
+  iframe.src = chrome.runtime.getURL('/data/save/index.html') +
+    '?url=' + encodeURIComponent(location.href);
+  dialog.showModal();
+}

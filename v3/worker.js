@@ -105,11 +105,10 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
         tabId: sender.tab.id
       },
       func: () => {
-        try {
-          document.body.removeChild(window.iframe);
+        for (const e of document.querySelectorAll('dialog.kphelper')) {
+          e.remove();
         }
-        catch (e) {}
-        delete window.iframe;
+
         window.focus();
         document.activeElement.focus();
       }
@@ -228,6 +227,10 @@ const onCommand = async (info, tab) => {
         args: [pairs]
       });
 
+      await chrome.scripting.insertCSS({
+        target,
+        files: ['/data/save/inject.css']
+      });
       await chrome.scripting.executeScript({
         target,
         files: ['/data/save/inject.js']
@@ -248,10 +251,15 @@ const onCommand = async (info, tab) => {
   }
   else if (info.menuItemId === 'encrypt-data') {
     try {
+      const target = {
+        tabId: tab.id
+      };
+      await chrome.scripting.insertCSS({
+        target,
+        files: ['/data/safe/inject.css']
+      });
       await chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id
-        },
+        target,
         files: ['/data/safe/inject.js']
       });
     }
@@ -328,25 +336,34 @@ const onCommand = async (info, tab) => {
         tabId: tab.id
       },
       func: () => {
-        window.iframe = document.createElement('iframe');
-        window.iframe.setAttribute('style', `
-          color-scheme: dark;
-          border: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
+        for (const e of document.querySelectorAll('dialog.kphelper')) {
+          e.remove();
+        }
+        const dialog = document.createElement('dialog');
+        dialog.classList.add('kphelper');
+        dialog.style = `
+          margin-top: 0;
           width: 550px;
           height: 400px;
-          max-width: 80%;
-          margin-left: auto;
-          margin-right: auto;
+          border: none;
+          padding: 0;
+          overflow: hidden;
+        `;
+        const iframe = document.createElement('iframe');
+        iframe.style = `
+          color-scheme: dark;
           background-color: #414141;
-          z-index: 2147483647;
-        `);
-        window.iframe.tabindex = 0;
-        document.body.appendChild(window.iframe);
-        window.iframe.src = chrome.runtime.getURL('/data/cmd/index.html');
+          border: none;
+          width: 100%;
+          height: 100%;
+        `;
+        dialog.append(iframe);
+        document.body.append(dialog);
+        iframe.onload = () => iframe.contentWindow.postMessage({
+          pairs: window.pairs
+        }, '*');
+        iframe.src = chrome.runtime.getURL('/data/cmd/index.html');
+        dialog.showModal();
       }
     });
   }
