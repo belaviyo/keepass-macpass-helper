@@ -80,10 +80,12 @@ div {
 #list::part(login) {
   padding-left: var(--gap);
 }
-#list::part(name) {
+#list::part(name),
+#list::part(group) {
   padding: 0 var(--gap);
   border-left: dashed 1px transparent;
 }
+#list:focus::part(group),
 #list:focus::part(name) {
   border-left-color: var(--bg);
 }

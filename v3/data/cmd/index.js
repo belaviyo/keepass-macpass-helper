@@ -5,6 +5,9 @@ const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
 const psbox = document.getElementById('password-needed');
 
+// can I use allFames or chrome.scripting fails?
+let allFrames = true;
+
 let url;
 let tab = {};
 let usernames = [];
@@ -115,34 +118,38 @@ catch (e) {
   console.warn(e);
 }
 
-function add(login, name, password, stringFields, select = false) {
-  document.getElementById('title').setAttribute('width', '1fr');
+function add(o, select = false) {
   list.classList.remove('error');
 
   const {option} = list.add([{
-    name: login || '',
+    name: o.Login || '',
     part: 'login',
-    title: login || '',
-    password,
-    stringFields
+    title: o.Login || '',
+    password: o.Password,
+    stringFields: o.StringFields
   }, {
-    name: name || '',
+    name: o.Name || '',
     part: 'name'
-  }], login, login, select);
+  }, {
+    name: o.group || '',
+    part: 'group'
+  }], o.Login, o.Login, select);
 
-  if (password) {
-    option.title = `Username: ${login}
-Name: ${name || ''}
-String Fields: ${(stringFields || []).length}`;
+  if (o.Password) {
+    option.title = `Username: ${o.Login}
+Name: ${o.Name || ''}
+Group: ${o.group || ''}
+String Fields: ${(o.StringFields || []).length}`;
   }
   else {
-    option.title = login;
+    option.title = o.Login;
   }
 
   list.focus();
 }
 function error(e) {
   document.getElementById('title').setAttribute('width', 0);
+  document.getElementById('group').setAttribute('width', 0);
   list.classList.add('error');
 
   console.warn(e);
@@ -181,11 +188,16 @@ async function submit() {
       url: query
     });
 
+    // hide group and title columns if no data available
+    document.getElementById('group').setAttribute('width', response.Entries.some(o => o.group) ? '1fr' : '0');
+    document.getElementById('title').setAttribute('width', response.Entries.some(o => o.Name) ? '1fr' : '0');
     if (response.Entries.length === 0) {
-      add('No credential for this page!', undefined, undefined, undefined, true);
+      add({
+        Login: 'No credential for this page!'
+      }, true);
     }
     else { // select an item
-      response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
+      response.Entries.forEach(add);
 
       const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
         cookie.get() ||
@@ -234,7 +246,6 @@ list.addEventListener('change', e => {
   if (o && o[0]) {
     const stringFields = o[0].stringFields;
     if (stringFields) {
-      console.log(stringFields);
       document.querySelector('#toolbar [data-cmd="otp"]').disabled = timebased.includes(stringFields) === false;
     }
   }
@@ -287,7 +298,6 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
   }
   else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    console.log(e.target.nodeName);
     if (e.target.nodeName === 'SIMPLE-LIST-VIEW') {
       document.querySelector('[data-cmd="insert-both"]').click();
     }
@@ -313,7 +323,7 @@ insert.fields = async stringFields => {
   return await chrome.scripting.executeScript({
     target: {
       tabId: tab.id,
-      allFrames: true
+      allFrames
     },
     func: stringFields => {
       const {aElement} = window;
@@ -366,7 +376,7 @@ insert.fields = async stringFields => {
 insert.username = username => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: username => {
     const once = aElement => {
@@ -422,7 +432,7 @@ insert.username = username => chrome.scripting.executeScript({
 insert.password = password => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: password => {
     const es = [];
@@ -472,7 +482,7 @@ insert.password = password => chrome.scripting.executeScript({
 insert.submit = () => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: () => {
     const {aElement} = window;
@@ -531,7 +541,7 @@ document.addEventListener('click', async e => {
       await chrome.scripting.executeScript({
         target: {
           tabId: tab.id,
-          allFrames: true
+          allFrames
         },
         func: () => {
           window.detectForm = e => {
@@ -728,13 +738,28 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
 
     let aElement = false;
     try {
-      const r = await chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id,
-          allFrames: true
-        },
-        files: ['/data/cmd/inject.js']
-      });
+      // sometimes "chrome.scripting.executeScript" does not resolve when there are cross-origin frames
+      let r = await Promise.race([
+        chrome.scripting.executeScript({
+          target: {
+            tabId: tab.id,
+            allFrames: true
+          },
+          files: ['/data/cmd/inject.js']
+        }),
+        new Promise(resolve => setTimeout(() => resolve(false), 2000))
+      ]);
+      if (r === false) {
+        allFrames = false;
+        r = await chrome.scripting.executeScript({
+          target: {
+            tabId: tab.id,
+            allFrames: false
+          },
+          files: ['/data/cmd/inject.js']
+        });
+      }
+
       usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
       aElement = r.map(r => r.result?.aElement).flat().some(a => a);
     }
