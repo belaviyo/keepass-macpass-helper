@@ -62,8 +62,6 @@ engine.connected = async type => {
     }
   }
   catch (e) {
-    console.warn(e);
-
     const win = await chrome.windows.getCurrent();
     chrome.windows.create({
       url: '/connect/interface/index.html',
@@ -73,5 +71,7 @@ engine.connected = async type => {
       top: win.top + Math.round((win.height - 300) / 2),
       type: 'popup'
     }, () => window.close());
+
+    throw Error(e);
   }
 };
