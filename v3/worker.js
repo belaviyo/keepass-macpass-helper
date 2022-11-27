@@ -110,7 +110,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
         }
 
         window.focus();
-        document.activeElement.focus();
+        try {
+          window.aElement.focus();
+        }
+        catch (e) {
+          document.activeElement.focus();
+        }
       }
     });
   }
@@ -339,6 +344,7 @@ const onCommand = async (info, tab) => {
         for (const e of document.querySelectorAll('dialog.kphelper')) {
           e.remove();
         }
+
         const dialog = document.createElement('dialog');
         dialog.classList.add('kphelper');
         dialog.style = `
@@ -348,8 +354,11 @@ const onCommand = async (info, tab) => {
           border: none;
           padding: 0;
           overflow: hidden;
+          top: 0;
+          z-index: 1000000000;
         `;
         const iframe = document.createElement('iframe');
+        iframe.activeElement = document.activeElement;
         iframe.style = `
           color-scheme: dark;
           background-color: #414141;
@@ -363,7 +372,8 @@ const onCommand = async (info, tab) => {
           pairs: window.pairs
         }, '*');
         iframe.src = chrome.runtime.getURL('/data/cmd/index.html');
-        dialog.showModal();
+        // Do not use showModal since we are injecting into the DOM
+        dialog.show();
       }
     });
   }

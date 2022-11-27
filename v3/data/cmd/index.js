@@ -408,6 +408,7 @@ insert.username = username => chrome.scripting.executeScript({
           }
         }
       }
+
       const r = document.execCommand('selectAll', false, '') &&
         document.execCommand('insertText', false, username);
       if (r === false) {
@@ -803,6 +804,15 @@ if (window.top !== window) {
 
   window.addEventListener('keydown', e => e.code === 'Escape' && close());
   window.addEventListener('blur', close);
+
+  window.close = new Proxy(window.close, {
+    apply(target, self, args) {
+      close();
+
+      return Reflect.apply(target, self, args);
+    }
+  });
+
 
   // make sure the needed APIs are available on embedded mode
   try {

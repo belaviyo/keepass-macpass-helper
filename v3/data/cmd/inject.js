@@ -1,16 +1,16 @@
 'use strict';
 
-function isEditable(e) {
+function editable(e) {
   const node = e && e.nodeName.toLowerCase();
   if (e && e.nodeType === 1 && (node === 'textarea' ||
     (node === 'input' && /^(?:text|email|number|search|tel|url|password)$/i.test(e.type)))) {
-    return true;
+    return e;
   }
-  return e ? e.isContentEditable : false;
+  return e ? (e.isContentEditable ? e : null) : null;
 }
 
 // will be used to focus the element after text insertion
-window.aElement = isEditable(document.activeElement) ? document.activeElement : null;
+window.aElement = editable(document.activeElement);
 
 // try to find used usernames
 {
