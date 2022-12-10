@@ -11,7 +11,7 @@ Helper extension for KeePass to find and insert credentials, generate passwords,
 
 ### Links
 
-  * Homepage: https://add0n.com/keepass-helper.html
+  * Homepage: https://webextension.org/listing/keepass-helper.html
   * Chrome: https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj
   * Edge: https://microsoftedge.microsoft.com/addons/detail/bfmglfdehkodoiinbclgoppembjfgjkj
   * Firefox: https://addons.mozilla.org/firefox/addon/keepasshelper/

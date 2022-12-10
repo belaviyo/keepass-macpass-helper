@@ -31,7 +31,7 @@
     "256": "data/icons/256.png",
     "512": "data/icons/512.png"
   },
-  "homepage_url": "https://add0n.com/keepass-helper.html",
+  "homepage_url": "https://webextension.org/listing/keepass-helper.html",
   "options_ui": {
     "page": "data/options/index.html",
     "open_in_tab": true
