@@ -138,36 +138,36 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       id: 'generate-password',
       title: 'Generate a Random Password',
       contexts: ['action']
-    });
+    }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'save-form',
       title: 'Save a new Login Form in KeePass',
       contexts: ['action']
-    });
+    }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'auto-login',
       title: 'Perform auto-login for this URL',
       contexts: ['action'],
       enabled: false
-    });
+    }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'encrypt-data',
       title: 'Encrypt or Decrypt a String',
       contexts: ['action']
-    });
+    }, () => chrome.runtime.lastError);
     if (/Firefox/.test(navigator.userAgent)) {
       chrome.contextMenus.create({
         id: 'open-options',
         title: 'Open Options Page',
         contexts: ['action']
-      });
+      }, () => chrome.runtime.lastError);
     }
     else {
       chrome.contextMenus.create({
         id: 'open-keyboards',
         title: 'Keyboard Shortcut Settings',
         contexts: ['action']
-      });
+      }, () => chrome.runtime.lastError);
     }
   };
   chrome.runtime.onInstalled.addListener(callback);

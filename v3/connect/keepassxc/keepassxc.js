@@ -10,6 +10,7 @@ class KeePassXC extends SimpleStorage {
 
     this.textEncoder = new TextEncoder(); // always utf-8
     this.textDecoder = new TextDecoder('utf-8');
+    this.timeout = 5000;
   }
   async prepare() {
     this.nonce = this.btoa(crypto.getRandomValues(new Uint8Array(24)));
@@ -83,7 +84,10 @@ class KeePassXC extends SimpleStorage {
         }, resolve);
       }
       else {
-        chrome.runtime.sendNativeMessage(this.nativeID, request, resolve);
+        Promise.race([
+          chrome.runtime.sendNativeMessage(this.nativeID, request),
+          new Promise(r => setTimeout(r, this.timeout, undefined))
+        ]).then(resolve);
       }
     });
   }
