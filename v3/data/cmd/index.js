@@ -18,12 +18,26 @@ const timebased = {
     sotp: ['KPH: sotp', 'KPH:sotp', 'sotp'],
     botp: ['TimeOtp-Secret-Base32']
   },
-  includes(stringFields) {
-    return stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
-      stringFields.some(o => timebased.words.sotp.includes(o.Key)) ||
-      stringFields.some(o => timebased.words.botp.includes(o.Key));
+  includes(o) {
+    const {stringFields} = o;
+
+    if (o) {
+      const b = stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
+        stringFields.some(o => timebased.words.sotp.includes(o.Key)) ||
+        stringFields.some(o => timebased.words.botp.includes(o.Key));
+
+      if (b) {
+        return Promise.resolve(true);
+      }
+      if (o.uuid) {
+        return engine.asyncOTP(o.uuid).then(totp => totp !== '');
+      }
+    }
+    return Promise.resolve(false);
   },
-  async get(stringFields) {
+  async get(o) {
+    const {stringFields} = o;
+
     const otp = stringFields.filter(o => timebased.words.otp.includes(o.Key)).shift();
     const sotp = stringFields.filter(o => timebased.words.sotp.includes(o.Key)).shift();
 
@@ -46,6 +60,13 @@ const timebased = {
       args.set('digits', digits?.Value || 6);
 
       return await engine.otp(args.toString());
+    }
+
+    if (o.uuid) {
+      const v = engine.asyncOTP(o.uuid);
+      if (v) {
+        return v;
+      }
     }
 
     throw Error(Error('NO_OTP_Provided'));
@@ -126,7 +147,8 @@ function add(o, select = false) {
     part: 'login',
     title: o.Login || '',
     password: o.Password,
-    stringFields: o.StringFields
+    stringFields: o.StringFields,
+    uuid: o.uuid // for KeePassXC's built-in OTP
   }, {
     name: o.Name || '',
     part: 'name'
@@ -229,27 +251,33 @@ async function submit() {
 
 document.addEventListener('search', submit);
 
-list.addEventListener('change', e => {
-  const target = e.target;
+{
+  let lastO;
+  list.addEventListener('change', e => {
+    const target = e.target;
 
-  const disabled =
-    target.selectedValues.length === 0 ||
-    !target.selectedValues[0] ||
-    !target.selectedValues[0][0].password;
+    const disabled =
+      target.selectedValues.length === 0 ||
+      !target.selectedValues[0] ||
+      !target.selectedValues[0][0].password;
 
-  [...document.getElementById('toolbar').querySelectorAll('input')]
-    .forEach(input => input.disabled = disabled);
+    [...document.getElementById('toolbar').querySelectorAll('input')]
+      .forEach(input => input.disabled = disabled);
 
-  const o = e.target.selectedValues[0];
-  // otp
-  document.querySelector('#toolbar [data-cmd="otp"]').disabled = true;
-  if (o && o[0]) {
-    const stringFields = o[0].stringFields;
-    if (stringFields) {
-      document.querySelector('#toolbar [data-cmd="otp"]').disabled = timebased.includes(stringFields) === false;
+    const o = e.target.selectedValues[0];
+    // otp
+    document.querySelector('#toolbar [data-cmd="otp"]').disabled = true;
+    if (o && o[0]) {
+      if (lastO !== o[0]) {
+        lastO = o[0];
+
+        timebased.includes(o[0]).then(b => {
+          document.querySelector('#toolbar [data-cmd="otp"]').disabled = b === false;
+        });
+      }
     }
-  }
-});
+  });
+}
 
 document.addEventListener('keydown', e => {
   const metaKey = e.metaKey || e.altKey || e.ctrlKey;
@@ -305,11 +333,13 @@ document.addEventListener('keydown', e => {
 });
 
 const insert = {};
-insert.fields = async stringFields => {
+insert.fields = async o => {
+  const {stringFields} = o;
+
   // do we need to use otp or sotp
   if (stringFields.some(o => typeof(o.Value) === 'string' && o.Value.indexOf('{{TOTP}') !== -1)) {
     try {
-      const s = await timebased.get(stringFields);
+      const s = await timebased.get(o);
       for (const o of stringFields) {
         o.Value = o.Value.replace('{{TOTP}}', s);
       }
@@ -566,7 +596,7 @@ document.addEventListener('click', async e => {
       let inserted = false;
       // insert StringFields
       if (checked.stringFields && checked.stringFields.length) {
-        const r = await insert.fields(checked.stringFields);
+        const r = await insert.fields(checked);
         inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
       // insert username
@@ -635,7 +665,7 @@ document.addEventListener('click', async e => {
       const checked = list.selectedValues[0][0];
 
       try {
-        const s = await timebased.get(checked.stringFields);
+        const s = await timebased.get(checked);
 
         if (s) {
           await copy(s);

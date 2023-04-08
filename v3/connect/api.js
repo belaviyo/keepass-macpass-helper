@@ -24,6 +24,13 @@ engine.otp = string => {
   return totp.generate(secret, period, digits);
 };
 
+engine.asyncOTP = uuid => {
+  if (engine.core['get-totp']) {
+    return engine.core['get-totp'](uuid);
+  }
+  return Promise.resolve();
+};
+
 // eslint-disable-next-line no-unused-vars
 class SimpleStorage {
   read(prefs) {

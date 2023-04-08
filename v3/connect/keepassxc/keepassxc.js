@@ -198,6 +198,17 @@ class KeePassXC extends SimpleStorage {
       throw Error(resp.error || 'Cannot retrieve credentials');
     });
   }
+  'get-totp'(uuid) {
+    return this.securePost({
+      'action': 'get-totp',
+      uuid
+    }).then(resp => {
+      if (resp.success === 'true') {
+        return resp.totp;
+      }
+      return '';
+    });
+  }
   async search({url}) {
     try {
       await this['test-associate']();
@@ -206,6 +217,7 @@ class KeePassXC extends SimpleStorage {
       await this.associate();
     }
     const resp = await this['get-logins'](url);
+
     return {
       Entries: resp.map(e => Object.assign(e, {
         Login: e.login,
