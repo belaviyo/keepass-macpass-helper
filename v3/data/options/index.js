@@ -40,6 +40,12 @@ function restore() {
     'xc-native-id': 'org.keepasshelper.extension'
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
+    // make sure we have access to the native client
+    if (prefs.engine === 'keepassxc') {
+      if (!chrome.runtime.sendNativeMessage) {
+        document.getElementById('keepass').checked = true;
+      }
+    }
     document.getElementById('cmd-style').value = localStorage.getItem('cmd-style') || '';
     document.getElementById('save-dialog-style').value = localStorage.getItem('save-dialog-style') || '';
     document.getElementById('host').value = prefs.host;

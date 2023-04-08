@@ -75,7 +75,7 @@ class KeePassXC extends SimpleStorage {
     return JSON.parse(this.textDecoder.decode(res));
   }
   post(request) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       if (window.top !== window && /Firefox/.test(navigator.userAgent)) {
         chrome.runtime.sendMessage({
           cmd: 'native',
@@ -84,10 +84,15 @@ class KeePassXC extends SimpleStorage {
         }, resolve);
       }
       else {
-        Promise.race([
-          chrome.runtime.sendNativeMessage(this.nativeID, request),
-          new Promise(r => setTimeout(r, this.timeout, undefined))
-        ]).then(resolve);
+        if (chrome.runtime.sendNativeMessage) {
+          Promise.race([
+            new Promise(r => chrome.runtime.sendNativeMessage(this.nativeID, request, r)),
+            new Promise(r => setTimeout(r, this.timeout, undefined))
+          ]).then(resolve);
+        }
+        else {
+          reject(Error('native access it not configured. Use the options page to allow it'));
+        }
       }
     });
   }
