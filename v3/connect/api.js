@@ -41,6 +41,10 @@ class SimpleStorage {
   }
 }
 
+engine.hasSSDB = () => new Promise(resolve => chrome.storage.session.get({
+  'ssdb-exported-key': ''
+}, prefs => resolve(!!prefs['ssdb-exported-key'])));
+
 engine.prepare = type => {
   engine.type = type;
   if (type === 'keepass') {
@@ -91,6 +95,7 @@ engine.search = async query => {
         o.ssdb = true;
         o.href = query.url;
         o.group = '[Synced Storage]';
+        o.Name = '';
       });
       r.sort((a, b) => a.Login.localeCompare(b.Login));
       responses.Entries.unshift(...r);

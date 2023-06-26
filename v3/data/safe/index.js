@@ -23,7 +23,7 @@ document.addEventListener('submit', e => {
   }).catch(e => result.value = e.message || 'Operation was unsuccessful');
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
   window.focus();
   document.getElementById('passphrase').focus();
-});
+}, 100));

@@ -114,5 +114,8 @@ chrome.runtime.sendMessage({
 });
 
 document.querySelector('[name=url]').value = args.get('url');
-document.querySelector('[name=url]').focus();
-document.querySelector('[name=url]').select();
+addEventListener('load', () => setTimeout(() => {
+  window.focus();
+  document.querySelector('[name=url]').focus();
+  document.querySelector('[name=url]').select();
+}, 100));

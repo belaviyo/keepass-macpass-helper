@@ -55,6 +55,13 @@ input[type=password] {
   outline: none;
   min-width: 90px;
 }
+input[type=submit][data-cmd=keepass] {
+  grid-column: 4/5;
+}
+input[type=submit][data-cmd=ssdb] {
+  grid-column: 3/4;
+  grid-row: 1;
+}
 input:disabled {
   opacity: 0.4;
 }

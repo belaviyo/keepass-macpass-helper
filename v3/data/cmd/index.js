@@ -142,7 +142,6 @@ const cookie = {
   set: list => {
     const args = new URLSearchParams();
     args.set('value', list.value);
-    console.log(list, list.selectedValues[0][1].part);
     if (list.selectedValues[0][1].part === 'name') {
       const {name} = list.selectedValues[0][1];
       args.set('name', name);
@@ -253,13 +252,13 @@ async function submit() {
       const selected = {};
       const username = response.Entries.map(e => e.Login).filter(u => usernames.includes(u)).at(0);
       const cache = cookie.get();
-      console.log(cache);
       if (username) {
         // username is not the last selected one
         if (cache && cache.value !== username) {
           selected.Login = username;
         }
       }
+
       if (!selected.Login && cache) {
         for (const o of response.Entries) {
           if ('name' in cache) {
@@ -275,6 +274,7 @@ async function submit() {
           }
         }
       }
+
       // add
       for (const o of response.Entries) {
         const b = list.value ? false : (
@@ -347,7 +347,7 @@ document.addEventListener('search', submit);
     }
     // remove
     document.querySelector('#toolbar [data-cmd="delete"]').disabled =
-      !e.target.selectedValues.length || e.target.selectedValues.every(o => o[0]?.ssdb === true) === false;
+      !e.target.selectedValues.length || e.target.selectedValues.every(o => o && o[0]?.ssdb === true) === false;
   });
 }
 
@@ -765,9 +765,9 @@ document.addEventListener('click', async e => {
     else if (cmd === 'delete') {
       const entries = list.selectedValues;
       if (confirm(`Are you sure you want to remove ${entries.length} item(s) from the secure synced storage?`)) {
-        engine.ssdb.remove(entries[0][0].href, e => {
+        engine.ssdb.convert(entries[0][0].href).then(uuid => engine.ssdb.remove(uuid, e => {
           return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
-        }).then(() => location.reload());
+        }).then(() => location.reload()));
       }
     }
 

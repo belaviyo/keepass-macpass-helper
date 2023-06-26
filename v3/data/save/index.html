@@ -9,7 +9,7 @@
   <form action="#" autocomplete="off">
     <div>
       <span>URL</span>
-      <input type="text" name="url" autofocus>
+      <input type="text" name="url">
       <input type="button" data-cmd="simplify" value="Simplify">
       <span>Submit URL</span>
       <input type="text" name="submiturl">
@@ -21,10 +21,19 @@
       <input data-type="password" type="button" value="Show" data-cmd="toggle">
     </div>
     <p class="submit">
-      <input type="button" value="Cancel" data-cmd="cancel">
+      <input type="button" value="Close" data-cmd="cancel">
       <span>Save in</span>
-      <input type="submit" value="KeePass" title="Save in KeePass or KeePassXC application"></input>
-      <input type="submit" value="Synced Storage (beta)" data-cmd="ssdb" title="This function uses your browser's synchronized storage with AES-CBC 256 encryption for secure storage. This storage has nothing to do with your KeePass Database.">
+      <input type="submit" value="KeePass" data-cmd="keepass" title="Save in KeePass or KeePassXC application"></input>
+      <input type="submit" value="Synced Storage" data-cmd="ssdb" title="*** This storage is currently in the beta phase ***
+
+This function uses your browser's synchronized storage for secure storage, employing AES-CBC 256 encryption. It is separate from your KeePass Database.
+
+You can use it in the following scenarios:
+
+  -> When you need to access a credential regardless of which KeePass database is open.
+  -> When you prefer not to include the credential in your KeePass database.
+
+With this storage, both the credential and the URL are encrypted. Unless the database is unlocked, there is no way to detect that you have a credential associated with a this URL.">
     </p>
   </form>
   <script src="/tools/safe.js"></script>
