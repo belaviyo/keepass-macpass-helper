@@ -59,10 +59,13 @@ input:disabled {
   opacity: 0.4;
 }
 .submit {
-  display: flex;
+  display: grid;
+  grid-template-columns: min-content 1fr min-content min-content;
+  grid-gap: var(--gap);
   align-items: center;
-  justify-content: flex-end;
   margin: 0;
   align-self: end;
-  gap: var(--gap);
+}
+.submit span {
+  justify-self: end;
 }

@@ -42,7 +42,7 @@ document.addEventListener('click', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
 
-  const b = document.querySelector('input[type=submit]');
+  const b = e.submitter || document.querySelector('input[type=submit]');
   b.disabled = true;
 
   const formData = new FormData(e.target);
@@ -61,7 +61,24 @@ document.addEventListener('submit', e => {
         await engine.core.open(prompt('Password to unlock the database?'));
       }
 
-      await engine.set(query);
+      if (e.submitter.dataset.cmd == 'ssdb') {
+        if (engine.ssdb) {
+          const uuid = await engine.ssdb.convert(query.url);
+          await engine.ssdb.append(uuid, {
+            'Url': query.url,
+            'SubmitUrl': query.url.submiturl,
+            'Login': query.login,
+            'Password': query.password
+          });
+        }
+        else {
+          b.disabled = false;
+          return alert('Secure synced storage is not open. Use the popup interface to open it, then retry.');
+        }
+      }
+      else {
+        await engine.set(query);
+      }
 
       b.value = 'done!';
       setTimeout(() => {

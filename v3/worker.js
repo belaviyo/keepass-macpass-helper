@@ -155,6 +155,11 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       title: 'Encrypt or Decrypt a String',
       contexts: ['action']
     }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
+      id: 'lock-secure-synced-storage',
+      title: 'Lock Secure Synced Storage',
+      contexts: ['action']
+    }, () => chrome.runtime.lastError);
     if (/Firefox/.test(navigator.userAgent)) {
       chrome.contextMenus.create({
         id: 'open-options',
@@ -377,11 +382,30 @@ const onCommand = async (info, tab) => {
       }
     });
   }
+  else if (info.menuItemId === 'lock-secure-synced-storage') {
+    chrome.storage.session.remove('ssdb-exported-key');
+  }
 };
 chrome.contextMenus.onClicked.addListener(onCommand);
 chrome.commands.onCommand.addListener(command => onCommand({
   menuItemId: command
 }));
+
+const icon = () => chrome.storage.session.get({
+  'ssdb-exported-key': ''
+}, prefs => {
+  const b = Boolean(prefs['ssdb-exported-key']);
+
+  chrome.action.setIcon({
+    path: {
+      '16': '/data/icons/' + (b ? 'ssdb/' : '') + '16.png',
+      '32': '/data/icons/' + (b ? 'ssdb/' : '') + '32.png',
+      '48': '/data/icons/' + (b ? 'ssdb/' : '') + '48.png'
+    }
+  });
+});
+chrome.runtime.onStartup.addListener(icon);
+chrome.runtime.onInstalled.addListener(icon);
 
 /* in KeePassXC mode check */
 chrome.storage.onChanged.addListener(ps => {
@@ -389,6 +413,9 @@ chrome.storage.onChanged.addListener(ps => {
     if (typeof chrome.runtime.sendNativeMessage === 'undefined') {
       chrome.runtime.reload();
     }
+  }
+  if (ps['ssdb-exported-key']) {
+    icon();
   }
 });
 

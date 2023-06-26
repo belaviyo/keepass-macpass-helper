@@ -1,4 +1,4 @@
-/* global engine, safe */
+/* global engine, Safe */
 'use strict';
 
 const list = document.getElementById('list');
@@ -19,7 +19,7 @@ const timebased = {
     botp: ['TimeOtp-Secret-Base32']
   },
   includes(o) {
-    const {stringFields} = o;
+    const {stringFields = []} = o;
 
     if (o) {
       const b = stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
@@ -76,6 +76,7 @@ const timebased = {
 const decrypt = async sotp => {
   psbox.querySelector('span').textContent = 'Enter password to decrypt the secure OTP';
   psbox.classList.remove('hidden');
+  psbox.querySelector('input').select();
   psbox.querySelector('input').focus();
 
   const password = await new Promise(resolve => psbox.onsubmit = e => {
@@ -84,7 +85,9 @@ const decrypt = async sotp => {
   });
   psbox.classList.add('hidden');
 
-  return await safe.decrypt(sotp, password);
+  const safe = new Safe();
+  await safe.open(password);
+  return safe.decrypt(sotp);
 };
 
 document.body.dataset.top = window.top === window;
@@ -112,17 +115,40 @@ const cookie = {
   },
   get: () => {
     const value = storage.get('cookie:' + cookie.host);
+
     if (value) {
-      return value;
+      try {
+        const args = new URLSearchParams(value);
+        if (args.has('value')) {
+          return {
+            value: args.get('value'),
+            name: args.get('name')
+          };
+        }
+      }
+      catch (e) {}
+
+      // fallback
+      return {value};
     }
     // fallback for older version
     const key = document.cookie.split(`${cookie.host}=`);
     if (key.length > 1) {
-      return key[1].split(';')[0];
+      return {
+        value: key[1].split(';')[0]
+      };
     }
   },
-  set: value => {
-    storage.set('cookie:' + cookie.host, value);
+  set: list => {
+    const args = new URLSearchParams();
+    args.set('value', list.value);
+    console.log(list, list.selectedValues[0][1].part);
+    if (list.selectedValues[0][1].part === 'name') {
+      const {name} = list.selectedValues[0][1];
+      args.set('name', name);
+    }
+
+    storage.set('cookie:' + cookie.host, args.toString());
   }
 };
 
@@ -148,7 +174,9 @@ function add(o, select = false) {
     title: o.Login || '',
     password: o.Password,
     stringFields: o.StringFields,
-    uuid: o.uuid // for KeePassXC's built-in OTP
+    uuid: o.uuid, // for KeePassXC's built-in OTP
+    ssdb: o.ssdb, // for internal secure storage
+    href: o.href // for internal secure storage
   }, {
     name: o.Name || '',
     part: 'name'
@@ -201,7 +229,7 @@ async function submit() {
 
   list.clear();
 
-  [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
+  [...document.getElementById('toolbar').querySelectorAll('input,button')].forEach(input => {
     input.disabled = true;
   });
 
@@ -218,13 +246,49 @@ async function submit() {
         Login: 'No credential for this page!'
       }, true);
     }
-    else { // select an item
-      response.Entries.forEach(add);
+    else {
+      submit.populated = false;
 
-      const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
-        cookie.get() ||
-        response.Entries[0].Login;
-      list.value = username;
+      // select an item
+      const selected = {};
+      const username = response.Entries.map(e => e.Login).filter(u => usernames.includes(u)).at(0);
+      const cache = cookie.get();
+      console.log(cache);
+      if (username) {
+        // username is not the last selected one
+        if (cache && cache.value !== username) {
+          selected.Login = username;
+        }
+      }
+      if (!selected.Login && cache) {
+        for (const o of response.Entries) {
+          if ('name' in cache) {
+            if (o.Login === cache.value && o.Name === cache.name) {
+              selected.Login = cache.value;
+              selected.Name = cache.name;
+              break;
+            }
+          }
+          else if (o.Login === cache.value) {
+            selected.Login = cache.value;
+            break;
+          }
+        }
+      }
+      // add
+      for (const o of response.Entries) {
+        const b = list.value ? false : (
+          ('Name' in selected) ? (selected.Login === o.Login && selected.Name === o.Name) : (selected.Login === o.Login)
+        );
+        add(o, b);
+      }
+      // what if we have no selection
+      if (!list.value) {
+        list.value = response.Entries[0].Login;
+      }
+
+      submit.populated = true;
+
       list.dispatchEvent(new Event('change', {
         bubbles: true
       }));
@@ -248,12 +312,17 @@ async function submit() {
     error(e);
   }
 }
+submit.populated = true;
 
 document.addEventListener('search', submit);
 
 {
   let lastO;
   list.addEventListener('change', e => {
+    if (submit.populated === false) {
+      return;
+    }
+
     const target = e.target;
 
     const disabled =
@@ -261,7 +330,7 @@ document.addEventListener('search', submit);
       !target.selectedValues[0] ||
       !target.selectedValues[0][0].password;
 
-    [...document.getElementById('toolbar').querySelectorAll('input')]
+    [...document.getElementById('toolbar').querySelectorAll('input, button')]
       .forEach(input => input.disabled = disabled);
 
     const o = e.target.selectedValues[0];
@@ -276,6 +345,9 @@ document.addEventListener('search', submit);
         });
       }
     }
+    // remove
+    document.querySelector('#toolbar [data-cmd="delete"]').disabled =
+      !e.target.selectedValues.length || e.target.selectedValues.every(o => o[0]?.ssdb === true) === false;
   });
 }
 
@@ -329,6 +401,12 @@ document.addEventListener('keydown', e => {
     if (e.target.nodeName === 'SIMPLE-LIST-VIEW') {
       document.querySelector('[data-cmd="insert-both"]').click();
     }
+  }
+  else if (metaKey && e.code === 'KeyD') {
+    document.getElementById('ssdb').click();
+  }
+  else if (e.code === 'Delete' || e.code === 'Backspace') {
+    document.querySelector('[data-cmd="delete"]').click();
   }
 });
 
@@ -563,7 +641,7 @@ document.addEventListener('click', async e => {
 
     // cache
     if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
-      cookie.set(list.value);
+      cookie.set(list);
     }
     //
     if (cmd && cmd.startsWith('insert-')) {
@@ -684,6 +762,15 @@ document.addEventListener('click', async e => {
     else if (cmd === 'options-page') {
       chrome.runtime.openOptionsPage();
     }
+    else if (cmd === 'delete') {
+      const entries = list.selectedValues;
+      if (confirm(`Are you sure you want to remove ${entries.length} item(s) from the secure synced storage?`)) {
+        engine.ssdb.remove(entries[0][0].href, e => {
+          return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
+        }).then(() => location.reload());
+      }
+    }
+
     if (psbox.classList.contains('hidden') === true && e.target.type !== 'search') {
       list.focus();
     }
@@ -740,6 +827,7 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
     if (prefs.engine === 'kwpass') {
       psbox.querySelector('span').textContent = 'Unlock Internal Database';
       psbox.classList.remove('hidden');
+      psbox.querySelector('input').select();
       psbox.querySelector('input').focus();
 
       const password = (await storage.remote({

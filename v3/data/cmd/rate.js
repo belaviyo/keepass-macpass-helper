@@ -2,7 +2,8 @@ chrome.storage.local.get({
   'rate': true,
   'crate': 0
 }, prefs => {
-  document.getElementById('rate').dataset.hide = prefs['rate'] === false || prefs.crate < 5 || Math.random() < 0.8;
+  const b = prefs['rate'] === false || prefs.crate < 5 || Math.random() < 0.9;
+  document.getElementById('rate').classList[b ? 'add' : 'remove']('hidden');
 
   if (prefs.crate < 5) {
     prefs.crate += 1;

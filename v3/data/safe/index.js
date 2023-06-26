@@ -1,4 +1,4 @@
-/* global safe */
+/* global Safe */
 'use strict';
 
 document.getElementById('encrypt').addEventListener('click', () => {
@@ -17,8 +17,10 @@ document.addEventListener('submit', e => {
   const passphrase = document.getElementById('passphrase').value;
   const result = document.getElementById('result');
 
-  safe[e.target.dataset.action](data, passphrase).then(s => result.value = s)
-    .catch(e => result.value = e.message || 'Operation was unsuccessful');
+  const safe = new Safe();
+  safe.open(passphrase).then(() => {
+    return safe[e.target.dataset.action](data).then(s => result.value = s);
+  }).catch(e => result.value = e.message || 'Operation was unsuccessful');
 });
 
 document.addEventListener('DOMContentLoaded', () => {

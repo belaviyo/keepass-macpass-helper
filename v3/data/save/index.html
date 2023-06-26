@@ -22,9 +22,13 @@
     </div>
     <p class="submit">
       <input type="button" value="Cancel" data-cmd="cancel">
-      <input type="submit" value="Submit">
+      <span>Save in</span>
+      <input type="submit" value="KeePass" title="Save in KeePass or KeePassXC application"></input>
+      <input type="submit" value="Synced Storage (beta)" data-cmd="ssdb" title="This function uses your browser's synchronized storage with AES-CBC 256 encryption for secure storage. This storage has nothing to do with your KeePass Database.">
     </p>
   </form>
+  <script src="/tools/safe.js"></script>
+  <script src="/connect/SecureSyncedDB.js"></script>
   <script src="/connect/api.js"></script>
   <script src="/connect/keepass/keepass.js"></script>
   <script src="/connect/keepassxc/nacl-fast.min.js"></script>

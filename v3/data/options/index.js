@@ -242,3 +242,53 @@ document.getElementById('rate').onclick = () => {
     url
   }));
 };
+
+// Secure Synced Storage
+document.getElementById('ssdb-lock').onclick = () => chrome.storage.session.remove('ssdb-exported-key');
+document.getElementById('ssdb-export').onclick = () => chrome.storage.sync.get(null, prefs => {
+  const text = JSON.stringify(prefs, null, '\t');
+  const blob = new Blob([text], {type: 'application/json'});
+  const objectURL = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), {
+    href: objectURL,
+    type: 'application/json',
+    download: 'keepass-helper-secure-synced-storage.json'
+  }).dispatchEvent(new MouseEvent('click'));
+  setTimeout(() => URL.revokeObjectURL(objectURL));
+});
+document.getElementById('ssdb-import').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.style.display = 'none';
+  input.type = 'file';
+  input.accept = '.json';
+  input.acceptCharset = 'utf-8';
+  input.initialValue = input.value;
+
+  document.body.appendChild(input);
+
+  input.onchange = () => {
+    if (input.value !== input.initialValue) {
+      const file = input.files[0];
+      if (file.size > 10e6) {
+        return console.warn('The file is too large!');
+      }
+      const reader = new FileReader();
+      reader.onloadend = event => {
+        input.remove();
+        const prefs = JSON.parse(event.target.result);
+        chrome.storage.sync.set(prefs, () => {
+          toast('Synced credentials are imported');
+        });
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+  };
+  input.click();
+});
+document.getElementById('ssdb-clear').onclick = () => {
+  if (confirm(`Are you are you want to remove all credentials in the browser's synced storage?`)) {
+    chrome.storage.sync.clear(() => {
+      toast('Your passwords in the synced storage are permanently removed');
+    });
+  }
+};

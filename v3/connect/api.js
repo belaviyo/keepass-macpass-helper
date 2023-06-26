@@ -1,4 +1,4 @@
-/* global KeePass, KeePassXC, KWPASS, TOTP */
+/* global KeePass, KeePassXC, KWPASS, TOTP SecureSyncedStorage */
 const engine = {};
 
 // otpauth://hotp/Secure%20App:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Secure%20App&counter=0
@@ -52,12 +52,60 @@ engine.prepare = type => {
   else if (type === 'kwpass') {
     engine.core = new KWPASS();
   }
-  return engine.core.prepare();
+
+  return new Promise(resolve => {
+    chrome.storage.session.get({
+      'ssdb-exported-key': ''
+    }, prefs => {
+      const exportedKey = prefs['ssdb-exported-key'];
+
+      if (exportedKey) {
+        engine.ssdb = new SecureSyncedStorage();
+        engine.ssdb.import(exportedKey).then(resolve);
+      }
+      else {
+        resolve();
+      }
+    });
+  }).then(() => engine.core.prepare());
 };
 
-engine.search = query => engine.core.search(query);
+engine.search = async query => {
+  const responses = await engine.core.search(query);
 
-engine.set = query => engine.core.set(query);
+  if (responses.Entries && engine.ssdb && query.url) {
+    try {
+      const uuid = await engine.ssdb.convert(query.url);
+      const r = await engine.ssdb.find(uuid, undefined, (failed, succeeded, total) => {
+        if (succeeded === 0 && total !== 0 && failed) {
+          document.getElementById('notify').notify('Unable to decrypt entries in secure storage. Incorrect password?', 'warning', 3000);
+        }
+        else if (failed) {
+          console.info(
+            `Can't decrypt certain entries in secure storage due to multiple passwords` +
+            ` used for encrypting different entries within the domain.`
+          );
+        }
+      });
+      r.forEach(o => {
+        o.ssdb = true;
+        o.href = query.url;
+        o.group = '[Synced Storage]';
+      });
+      r.sort((a, b) => a.Login.localeCompare(b.Login));
+      responses.Entries.unshift(...r);
+    }
+    catch (e) {
+      console.warn('unexpected error from SecureSyncedStorage', e);
+    }
+  }
+
+  return responses;
+};
+
+engine.set = query => {
+  return engine.core.set(query);
+};
 
 engine.connected = async type => {
   try {
