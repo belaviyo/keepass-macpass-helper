@@ -201,7 +201,7 @@ function error(e) {
   document.getElementById('group').setAttribute('width', 0);
   list.classList.add('error');
 
-  console.warn(e);
+  console.warn(`id: ` + chrome.runtime.id, e);
 
   list.add([{
     name: e.message || e || 'Unknown Error',

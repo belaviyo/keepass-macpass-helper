@@ -55,5 +55,10 @@
       "data/safe/index.html"
     ],
     "matches": ["*://*/*"]
-  }]
+  }],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@example.com"
+    }
+  }
 }
