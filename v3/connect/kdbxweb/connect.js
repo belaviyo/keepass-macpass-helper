@@ -58,12 +58,38 @@ class KWPASS {
   search({url, submiturl}) {
     const {hostname} = new URL(url || submiturl);
 
+    const domainParts = hostname.split(".");
+    let hostTries = [];
+    for (let partCount = 0; partCount < domainParts.length - 1; partCount++) {
+      let possibleDomain = "";
+      for (let idx = partCount; idx < domainParts.length; idx++) {
+        if (possibleDomain !== "") {
+          possibleDomain += ".";
+        }
+        possibleDomain += domainParts[idx];
+      }
+      hostTries.push(possibleDomain);
+    }
+
     const matches = [];
     const step = group => {
       for (const g of (group.groups || [])) {
         step(g);
       }
       for (const entry of group.entries) {
+        let entryUrl = entry.fields.URL;
+        if (entryUrl) {
+          if (entryUrl.indexOf('://') !== -1) {
+            entryUrl = entryUrl.substr(entryUrl.indexOf('://') + 3);
+          }
+          let found = false;
+          for (const host of hostTries) {
+            found |= (entryUrl.indexOf(host) !== -1);
+          }
+          if (found) {
+            matches.push(entry);
+          }
+        }
         if (entry.fields.URL && entry.fields.URL.indexOf('://' + hostname) !== -1) {
           matches.push(entry);
         }
