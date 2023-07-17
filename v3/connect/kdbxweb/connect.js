@@ -1,5 +1,4 @@
-/* global kdbxweb */
-/* global tldjs */
+/* global kdbxweb, tldjs */
 
 class KWFILE {
   open(name = 'database') {
@@ -68,8 +67,8 @@ class KWPASS {
       for (const entry of group.entries) {
         const entryUrl = entry.fields.URL;
         if (entryUrl && (
-          entryUrl.indexOf('://' + hostname) !== -1 ||
-          entryUrl.indexOf('://' + domain) !== -1 ||
+          entryUrl.includes('://' + hostname) ||
+          entryUrl.includes('://' + domain) ||
           entryUrl.indexOf(hostname) === 0 ||
           entryUrl.indexOf(domain) === 0)) {
           matches.push(entry);

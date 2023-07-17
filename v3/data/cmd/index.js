@@ -415,7 +415,7 @@ insert.fields = async o => {
   const {stringFields} = o;
 
   // do we need to use otp or sotp
-  if (stringFields.some(o => typeof(o.Value) === 'string' && o.Value.indexOf('{{TOTP}') !== -1)) {
+  if (stringFields.some(o => typeof(o.Value) === 'string' && o.Value.includes('{{TOTP}'))) {
     try {
       const s = await timebased.get(o);
       for (const o of stringFields) {

@@ -8,20 +8,27 @@
 <body>
   <form action="#" autocomplete="off">
     <div>
-      <span>URL</span>
-      <input type="text" name="url">
-      <input type="button" data-cmd="simplify" value="Simplify">
-      <span>Submit URL</span>
-      <input type="text" name="submiturl">
-      <input type="button" data-cmd="simplify" value="Simplify">
+      <div class="contents">
+        <span>URL</span>
+        <input type="text" name="url">
+        <input type="button" data-cmd="trim" value="Clean">
+        <input type="button" data-cmd="domain" value="Domain">
+      </div>
+      <div class="contents">
+        <span>Submit URL</span>
+        <input type="text" name="submiturl">
+        <input type="button" data-cmd="trim" value="Clean">
+        <input type="button" data-cmd="domain" value="Domain">
+      </div>
       <span>Login</span>
-      <input type="text" name="login" required style="grid-column: 2/4;">
+      <input type="text" name="login" required style="grid-column: 2/5;">
       <span>Password</span>
-      <input type="password" name="password" autocomplete="off" required>
+      <input type="password" name="password" autocomplete="off" required style="grid-column: 2/4;">
       <input data-type="password" type="button" value="Show" data-cmd="toggle">
     </div>
     <p class="submit">
       <input type="button" value="Close" data-cmd="cancel">
+      <input type="button" value="Reset" data-cmd="reset">
       <span>Save in</span>
       <input type="submit" value="KeePass" data-cmd="keepass" title="Save in KeePass or KeePassXC application"></input>
       <input type="submit" value="Synced Storage" data-cmd="ssdb" title="*** This storage is currently in the beta phase ***
@@ -43,7 +50,7 @@ With this storage, both the credential and the URL are encrypted. Unless the dat
   <script src="/connect/keepassxc/nacl-fast.min.js"></script>
   <script src="/connect/keepassxc/keepassxc.js"></script>
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
-  <script src="/connect/kdbxweb/tldjs_2.3.1.js"></script>
+  <script src="/tools/tld.js"></script>
   <script src="/connect/kdbxweb/connect.js"></script>
   <script src="index.js"></script>
 </body>

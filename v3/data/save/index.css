@@ -28,7 +28,7 @@ form {
 }
 form > div {
   display: grid;
-  grid-template-columns: min-content 1fr min-content;
+  grid-template-columns: min-content 1fr min-content min-content;
   white-space: nowrap;
   grid-gap: var(--gap);
   align-items: center;
@@ -53,13 +53,12 @@ input[type=password] {
   border-radius: 0;
   padding: 7px;
   outline: none;
-  min-width: 90px;
 }
 input[type=submit][data-cmd=keepass] {
-  grid-column: 4/5;
+  grid-column: 5/6;
 }
 input[type=submit][data-cmd=ssdb] {
-  grid-column: 3/4;
+  grid-column: 4/5;
   grid-row: 1;
 }
 input:disabled {
@@ -67,7 +66,7 @@ input:disabled {
 }
 .submit {
   display: grid;
-  grid-template-columns: min-content 1fr min-content min-content;
+  grid-template-columns: min-content min-content 1fr min-content min-content;
   grid-gap: var(--gap);
   align-items: center;
   margin: 0;
@@ -75,4 +74,7 @@ input:disabled {
 }
 .submit span {
   justify-self: end;
+}
+.contents {
+  display: contents;
 }

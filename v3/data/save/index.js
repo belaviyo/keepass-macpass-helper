@@ -1,4 +1,4 @@
-/* global engine */
+/* global engine, tldjs */
 'use strict';
 
 // styling
@@ -21,20 +21,30 @@ document.addEventListener('click', e => {
   if (cmd === 'cancel') {
     chrome.runtime.sendMessage({cmd: 'close-me'});
   }
+  else if (cmd === 'reset') {
+    start();
+    onmessage();
+  }
   else if (cmd === 'toggle') {
     target.dataset.type = target.dataset.type === 'password' ? 'text' : 'password';
     document.querySelector('[name="password"]').type = target.dataset.type;
     target.value = target.dataset.type === 'password' ? 'Show' : 'Hide';
   }
-  else if (cmd === 'simplify') {
-    const input = target.previousElementSibling;
-    if (input.value) {
-      try {
-        const url = new URL(input.value);
+  else if (cmd === 'trim' || cmd === 'domain') {
+    const input = target.parentElement.querySelector('input[type="text"]');
+    try {
+      const url = new URL(input.value);
+      if (cmd === 'trim') {
         input.value = url.origin;
-        input.focus();
       }
-      catch (e) {}
+      else {
+        input.value = url.protocol + '//' + tldjs.getDomain(url.href);
+      }
+      input.focus();
+    }
+    catch (e) {
+      console.error(e);
+      alert(e.message);
     }
   }
 });
@@ -93,8 +103,9 @@ document.addEventListener('submit', e => {
   });
 });
 
-window.addEventListener('message', ({data}) => {
-  const pair = data.pairs.filter(a => {
+const onmessage = (o = onmessage.o) => {
+  onmessage.o = o;
+  const pair = o.data.pairs.filter(a => {
     return a.usernames.length || a.passwords.length;
   }).sort((a, b) => {
     if (a.usernames.length && a.passwords.length) {
@@ -108,14 +119,17 @@ window.addEventListener('message', ({data}) => {
     document.querySelector('[name=login]').value = pair.usernames.filter(s => s).shift() || '';
     document.querySelector('[name=password]').value = pair.passwords.filter(s => s).shift() || '';
   }
-});
-chrome.runtime.sendMessage({
-  cmd: 'collect'
-});
-
-document.querySelector('[name=url]').value = args.get('url');
-addEventListener('load', () => setTimeout(() => {
-  window.focus();
   document.querySelector('[name=url]').focus();
   document.querySelector('[name=url]').select();
-}, 100));
+};
+addEventListener('message', onmessage, {once: true});
+
+const start = () => {
+  document.querySelector('[name=url]').value = args.get('url');
+  document.querySelector('[name=submiturl]').value = '';
+
+  addEventListener('load', () => setTimeout(() => {
+    window.focus();
+  }, 100));
+};
+start();
