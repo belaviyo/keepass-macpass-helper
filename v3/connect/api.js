@@ -8,7 +8,7 @@ engine.otp = string => {
     string = string.substr(i);
   }
   // what if only secret is provided
-  if (string.includes('secret=') === false) {
+  if (string.includes('secret=') === false && string.includes('key=') === false) {
     string = 'secret=' + encodeURIComponent(string);
   }
 
