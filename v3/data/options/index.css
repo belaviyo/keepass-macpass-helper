@@ -44,12 +44,6 @@ input[type=text] {
 input[type=file] {
   display: none;
 }
-th span {
-  background-color: rgba(0, 0, 0, 0.05);
-  padding: 5px;
-  display: block;
-  margin: 10px 0;
-}
 thead:first-of-type th span {
   margin-top: 0;
 }
@@ -60,9 +54,48 @@ a {
   text-decoration: none;
   color: #07c;
 }
+.heading {
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 10px 5px;
+  margin: 10px 0;
+  font-size: 1em;
+}
+.mm1m {
+  display: grid;
+  grid-template-columns: min-content min-content 1fr min-content;
+  grid-gap: 5px;
+  align-items: center;
+}
+.m1 {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  grid-gap: 5px;
+  align-items: center;
+}
+
+@media screen and (min-width: 600px) {
+  .mm1m label {
+    white-space: nowrap;
+  }
+  .m1 label {
+    white-space: nowrap;
+  }
+}
+.om {
+  display: grid;
+  grid-template-columns: 1fr min-content;
+  grid-gap: 5px;
+  align-items: center;
+}
 .hidden {
   opacity: 0.2;
   pointer-events: none;
+}
+.fl {
+  display: flex;
+  flex-flow: wrap;
+  gap: 5px;
 }
 .note {
   background-color: rgba(0, 0, 0, 0.05);

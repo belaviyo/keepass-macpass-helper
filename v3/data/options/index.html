@@ -2,178 +2,90 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>KeePassHelper Password Manager :: Options Page</title>
+    <title>Options Page :: KeePassHelper Password Manager</title>
     <link rel="stylesheet" type="text/css" href="index.css">
   </head>
   <body>
     <p class="save">Make sure to press the "Save Options" button!</p>
-  <table>
-    <colgroup>
-      <col width="220">
-      <col>
-    </colgroup>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Connection</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><label class="algn"><input type="radio" name="method" id="keepass"> <a data-href="faq2" target="_blank">KeePassHTTP</a> host</label></td>
-        <td>
-          <div style="display: flex; align-items: center;">
-            <input type="text" id="host">
-            <input type="button" id="check" value="Check" title="Check permission access and port availability">
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td><label class="algn"><input type="radio" name="method" id="keepassxc"> <a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label></td>
-        <td>
-          <div style="display: flex; align-items: center;">
-            <input type="text" id="xc-native-id">
-          </div>
-      </tr>
-      <tr>
-        <td><label class="algn"><input type="radio" name="method" id="kwpass"> <a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label></td>
-        <td>
-          <input type="button" id="kwpass-download" value="Download as KDBX3">
-          <input type="button" id="kwpass-remove" value="Delete File(s)">
-          <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
-        </td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Password Generation</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Password generation character set</td>
-        <td><input type="text" id="charset"></td>
-      </tr>
-      <tr>
-        <td>Password generation length</td>
-        <td><input type="number" id="length"></td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>AutoFill (for one credential)</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Fill login form and close the panel</td>
-        <td><input type="checkbox" id="auto-login"></td>
-      </tr>
-      <tr>
-        <td>Then submit the form</td>
-        <td><input type="checkbox" id="auto-submit"></td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Auto Login (not available)</span></th>
-      </tr>
-    </thead>
-    <tbody class="disabled">
-      <tr>
-        <td colspan="2">A JSON array to fill login forms automatically without the need to use the panel at all. <a href="#" id=example>Insert an example</a></td>
-      </tr>
-      <tr>
-        <td colspan="2"><textarea rows="4" id="json"></textarea></td>
-      </tr>
-      <tr>
-        <td>Then submit the form</td>
-        <td><input type="checkbox" id="auto-submit-auto-login"></td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Panel Styling</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td colspan="2"><textarea rows="4" id="cmd-style" placeholder="style panel with CSS; e.g.: body {background: #fff !important;}"></textarea></td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Save Dialog Styling</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td colspan="2"><textarea rows="4" id="save-dialog-style"></textarea></td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Secure Synced Storage</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td colspan="2">
-    <button id="ssdb-lock">Lock</button> -
-    <button id="ssdb-import">Import</button>
-    <button id="ssdb-export">Export</button> -
-    <button id="ssdb-clear">Delete all Credentials</button>
-        </td>
-      </tr>
-    </tbody>
-    <thead>
-      <tr>
-        <th colspan="2"><span>Misc</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td colspan="2" class="disabled">
-          <div style="display: flex">
-            <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials (not available)</label>
-            <input type="checkbox" id="embedded">
-          </div>
-        </td>
-      </tr>
-      <tr class="chrome disabled">
-        <td colspan="2">
-          <div style="display: flex">
-            <label for="minilogin" style="flex: 1">Display login button next to password fields (not available)</label>
-            <input type="checkbox" id="minilogin">
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td colspan="2">
-          <div style="display: flex">
-            <label for="faqs" style="flex: 1">Open FAQs on updates</label>
-            <input type="checkbox" id="faqs">
-          </div>
-        </td>
-      </tr>
-      <tr style="display: none;">
-        <td>Display format</td>
-        <td><input type="text" id="format"></td>
-      </tr>
-    </tbody>
-  </table>
-  <p>
-    <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)">Access Remote Frames Permission</button>
-  </p>
-  <p>
-    <button id="usage">YouTube Preview</button>
-    <button id="rate">Rate Us</button>
-  </p>
-  <p>
-    <button id="reset">Factory Reset</button>
-    <button id="support">Support Development</button>
-    <button id="save">Save Options</button>
-    <span id="toast"></span>
-  </p>
+    <h2 class="heading">Connection</h2>
+    <div class="mm1m">
+      <input type="radio" name="method" id="keepass">
+      <label for="keepass"><a data-href="faq2" target="_blank">KeePassHTTP</a> host</label>
+      <input type="text" id="host">
+      <input type="button" id="check" value="Check" title="Check permission access and port availability">
+      <input type="radio" name="method" id="keepassxc">
+      <label for="keepassxc"><a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label>
+      <input type="text" id="xc-native-id">
+      <input type="button" value="Generate Manifest" id="keepassxc-manifest">
+      <input type="radio" name="method" id="kwpass">
+      <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label>
+      <div style="grid-column: 3/5; text-align: end;" class="fl">
+        <input type="button" id="kwpass-download" value="Download as KDBX3">
+        <input type="button" id="kwpass-remove" value="Delete File(s)">
+        <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
+      </div>
+    </div>
+    <h2 class="heading">Password Generation</h2>
+    <div class="m1">
+      <label for="charset">Characters</label>
+      <input type="text" id="charset">
+      <label for="length">Length</label>
+      <input type="number" id="length">
+    </div>
+    <h2 class="heading">AutoFill (for one credential)</h2>
+    <div class="om">
+      <label for="auto-login">Fill login form and close the panel</label>
+      <input type="checkbox" id="auto-login">
+      <label for="auto-submit">Then submit the form</label>
+      <input type="checkbox" id="auto-submit">
+    </div>
+    <h2 class="heading">Auto Login (not available)</h2>
+    <p class="disabled">A JSON array to fill login forms automatically without the need to use the panel at all. <a href="#" id=example>Insert an example</a></p>
+    <textarea rows="4" id="json" disabled></textarea>
+    <div class="om">
+        <label for="auto-submit-auto-login">Then submit the form</label>
+        <input type="checkbox" id="auto-submit-auto-login">
+    </div>
+    <h2 class="heading">Panel (popup) Styling</h2>
+    <textarea rows="4" id="cmd-style" placeholder="style panel with CSS; e.g.: body {background: #fff !important;}"></textarea>
+    <h2 class="heading">Save Dialog Styling</h2>
+    <textarea rows="4" id="save-dialog-style"></textarea>
+    <h2>Secure Synced Storage</h2>
+    <div>
+      <button id="ssdb-lock">Lock</button> -
+      <button id="ssdb-import">Import</button>
+      <button id="ssdb-export">Export</button> -
+      <button id="ssdb-clear">Delete all Credentials</button>
+    </div>
+    <h2 class="heading">Misc</h2>
+    <div class="om disabled">
+      <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials (not available)</label>
+      <input type="checkbox" id="embedded">
+    </div>
+    <div class="om chrome disabled">
+      <label for="minilogin" style="flex: 1">Display login button next to password fields (not available)</label>
+      <input type="checkbox" id="minilogin">
+    </div>
+    <div class="om">
+      <label for="faqs" style="flex: 1">Open FAQs on updates</label>
+      <input type="checkbox" id="faqs">
+    </div>
+    <div class="m1" style="display: none;">
+      <label for="format">Display format</label>
+      <input type="text" id="format">
+    </div>
+
+    <p class="fl">
+      <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)">Access Remote Frames Permission</button>
+      <button id="usage">YouTube Preview</button>
+      <button id="rate">Rate Me</button>
+    </p>
+    <p class="fl">
+      <button id="reset">Factory Reset</button>
+      <button id="support">Support Development</button>
+      <button id="save">Save Options</button>
+      <span id="toast"></span>
+    </p>
 
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
   <script src="/tools/tld.js"></script>

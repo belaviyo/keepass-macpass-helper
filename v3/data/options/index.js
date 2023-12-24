@@ -225,7 +225,7 @@ for (const a of [...document.querySelectorAll('[data-href]')]) {
 
 // rate
 document.getElementById('rate').onclick = () => {
-  let url = 'https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj/reviews/';
+  let url = 'https://chromewebstore.google.com/detail/keepasshelper-password-ma/jgnfghanfbjmimbdmnjfofnbcgpkbegj/reviews';
   if (/Edg/.test(navigator.userAgent)) {
     url = 'https://microsoftedge.microsoft.com/addons/detail/bfmglfdehkodoiinbclgoppembjfgjkj';
   }
@@ -246,7 +246,7 @@ document.getElementById('rate').onclick = () => {
 // Secure Synced Storage
 document.getElementById('ssdb-lock').onclick = () => chrome.storage.session.remove('ssdb-exported-key');
 document.getElementById('ssdb-export').onclick = () => chrome.storage.sync.get(null, prefs => {
-  const text = JSON.stringify(prefs, null, '\t');
+  const text = JSON.stringify(prefs, null, '  ');
   const blob = new Blob([text], {type: 'application/json'});
   const objectURL = URL.createObjectURL(blob);
   Object.assign(document.createElement('a'), {
@@ -291,4 +291,36 @@ document.getElementById('ssdb-clear').onclick = () => {
       toast('Your passwords in the synced storage are permanently removed');
     });
   }
+};
+
+document.getElementById('keepassxc-manifest').onclick = () => {
+  const path =
+    navigator.platform.startsWith('Win') ?
+      'C:\\Program Files\\KeePassXC\\keepassxc-proxy.exe' : navigator.platform.startsWith('Mac') ?
+        '/Applications/KeePassXC.app/Contents/MacOS/keepassxc-proxy' : '/usr/bin/keepassxc-proxy';
+
+  const name = document.getElementById('xc-native-id').value || 'org.keepasshelper.extension';
+  const manifest = {
+    'description': 'KeePassHelper integration with native messaging support',
+    'type': 'stdio',
+    name,
+    path
+  };
+  if (/Firefox/.test(navigator.userAgent)) {
+    manifest['allowed_extensions'] = [chrome.runtime.id];
+  }
+  else {
+    manifest['allowed_origins'] = [`chrome-extension://${chrome.runtime.id}/`];
+  }
+  const text = JSON.stringify(manifest, null, '  ');
+  const blob = new Blob([text], {type: 'application/json'});
+  const href = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), {
+    href,
+    type: 'application/json',
+    download: name + '.json'
+  }).dispatchEvent(new MouseEvent('click'));
+  setTimeout(() => URL.revokeObjectURL(href));
+
+  toast('Check the path and read the FAQ to place the file in the correct directory');
 };

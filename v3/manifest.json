@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "0.7.9",
+  "version": "0.8.0",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",
@@ -20,20 +20,20 @@
     "service_worker": "worker.js"
   },
   "action": {
-    "default_popup": "data/cmd/index.html"
+    "default_popup": "/data/cmd/index.html"
   },
   "icons": {
-    "16": "data/icons/16.png",
-    "32": "data/icons/32.png",
-    "48": "data/icons/48.png",
-    "64": "data/icons/64.png",
-    "128": "data/icons/128.png",
-    "256": "data/icons/256.png",
-    "512": "data/icons/512.png"
+    "16": "/data/icons/16.png",
+    "32": "/data/icons/32.png",
+    "48": "/data/icons/48.png",
+    "64": "/data/icons/64.png",
+    "128": "/data/icons/128.png",
+    "256": "/data/icons/256.png",
+    "512": "/data/icons/512.png"
   },
   "homepage_url": "https://webextension.org/listing/keepass-helper.html",
   "options_ui": {
-    "page": "data/options/index.html",
+    "page": "/data/options/index.html",
     "open_in_tab": true
   },
   "commands": {
@@ -50,9 +50,9 @@
   },
   "web_accessible_resources": [{
     "resources": [
-      "data/cmd/index.html",
-      "data/save/index.html",
-      "data/safe/index.html"
+      "/data/cmd/index.html",
+      "/data/save/index.html",
+      "/data/safe/index.html"
     ],
     "matches": ["*://*/*"]
   }]
