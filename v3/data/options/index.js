@@ -37,7 +37,12 @@ function restore() {
     'auto-submit': true,
     'faqs': true,
     'engine': 'keepass',
-    'xc-native-id': 'org.keepasshelper.extension'
+    'xc-native-id': 'org.keepasshelper.extension',
+    'sort': {
+      'active': false,
+      'key': 'Login',
+      'direction': 'az'
+    }
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
     // make sure we have access to the native client
@@ -57,6 +62,9 @@ function restore() {
     document.getElementById('auto-submit').checked = prefs['auto-submit'];
     document.getElementById('faqs').checked = prefs.faqs;
     document.getElementById('xc-native-id').value = prefs['xc-native-id'];
+    document.getElementById('sort.active').checked = prefs.sort.active;
+    document.getElementById('sort.key').value = prefs.sort.key;
+    document.getElementById('sort.direction').value = prefs.sort.direction;
   });
 }
 
@@ -73,7 +81,12 @@ function save() {
     'auto-submit': document.getElementById('auto-submit').checked,
     'faqs': document.getElementById('faqs').checked,
     'engine': document.querySelector('[name="method"]:checked').id,
-    'xc-native-id': document.getElementById('xc-native-id').value
+    'xc-native-id': document.getElementById('xc-native-id').value,
+    'sort': {
+      'active': document.getElementById('sort.active').checked,
+      'key': document.getElementById('sort.key').value,
+      'direction': document.getElementById('sort.direction').value
+    }
   }, () => {
     toast('Options saved');
   });

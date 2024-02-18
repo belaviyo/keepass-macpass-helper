@@ -10,6 +10,7 @@ textarea {
   padding: 5px;
   border: solid 1px #d4d4d4;
 }
+select,
 button,
 input[type=submit],
 input[type=button] {
@@ -43,6 +44,10 @@ input[type=text] {
 }
 input[type=file] {
   display: none;
+}
+select {
+  padding: 3px 5px;
+  text-align: center;
 }
 thead:first-of-type th span {
   margin-top: 0;
@@ -96,6 +101,7 @@ a {
   display: flex;
   flex-flow: wrap;
   gap: 5px;
+  align-items: center;
 }
 .note {
   background-color: rgba(0, 0, 0, 0.05);

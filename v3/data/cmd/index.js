@@ -274,7 +274,22 @@ async function submit() {
           }
         }
       }
+      const prefs = await storage.remote({
+        'auto-login': false,
+        'auto-submit': true,
+        'sort': {
+          'active': false,
+          'key': 'Login',
+          'direction': 1
+        }
+      });
 
+      // sort
+      if (prefs.sort.active) {
+        response.Entries.sort((a, b) => {
+          return (prefs.sort.direction === 'az' ? 1 : -1) * (a[prefs.sort.key] || '').localeCompare(b[prefs.sort.key]);
+        });
+      }
       // add
       for (const o of response.Entries) {
         const b = list.value ? false : (
@@ -294,10 +309,6 @@ async function submit() {
       }));
 
       if (response.Entries.length === 1) {
-        const prefs = await storage.remote({
-          'auto-login': false,
-          'auto-submit': true
-        });
         if (prefs['auto-login']) {
           document.querySelector('[data-cmd="insert-both"]').dispatchEvent(new CustomEvent('click', {
             'detail': prefs['auto-submit'] ? '' : 'no-submit',
