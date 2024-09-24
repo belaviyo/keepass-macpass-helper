@@ -6,10 +6,10 @@ for (const e of document.querySelectorAll('dialog.kphelper')) {
 
 {
   const dialog = document.createElement('dialog');
-  dialog.classList.add('kphelper');
+  dialog.classList.add('kphelper', 'save');
   const iframe = document.createElement('iframe');
   dialog.append(iframe);
-  document.body.append(dialog);
+  (document.body || document.documentElement).append(dialog);
   iframe.onload = () => iframe.contentWindow.postMessage({
     pairs: window.pairs
   }, '*');

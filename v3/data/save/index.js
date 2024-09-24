@@ -133,3 +133,9 @@ const start = () => {
   }, 100));
 };
 start();
+
+addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    document.querySelector('[data-cmd="cancel"]').click();
+  }
+});

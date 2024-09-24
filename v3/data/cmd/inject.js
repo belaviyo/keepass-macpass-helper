@@ -1,16 +1,32 @@
 'use strict';
 
-function editable(e) {
-  const node = e && e.nodeName.toLowerCase();
-  if (e && e.nodeType === 1 && (node === 'textarea' ||
-    (node === 'input' && /^(?:text|email|number|search|tel|url|password)$/i.test(e.type)))) {
-    return e;
+// find the active editable element
+function editable() {
+  const es = [
+    document.activeElement
+  ];
+  // detect activeElement if there is a self iframe
+  for (const f of document.querySelectorAll('dialog.kphelper iframe')) {
+    if (f.activeElement) {
+      es.unshift(f.activeElement);
+    }
   }
-  return e ? (e.isContentEditable ? e : null) : null;
+
+  for (const e of es) {
+    const node = e && e.nodeName.toLowerCase();
+    if (e && e.nodeType === 1 && (node === 'textarea' ||
+      (node === 'input' && /^(?:text|email|number|search|tel|url|password)$/i.test(e.type)))) {
+      return e;
+    }
+    if (e && e.isContentEditable) {
+      return e;
+    }
+  }
+  return null;
 }
 
 // will be used to focus the element after text insertion
-window.aElement = editable(document.activeElement);
+window.aElement = editable();
 
 // try to find used usernames
 {

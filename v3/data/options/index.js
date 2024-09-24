@@ -39,7 +39,7 @@ function restore() {
     'engine': 'keepass',
     'xc-native-id': 'org.keepasshelper.extension',
     'sort': {
-      'active': false,
+      'active': true,
       'key': 'Login',
       'direction': 'az'
     }

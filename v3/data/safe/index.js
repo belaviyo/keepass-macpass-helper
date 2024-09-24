@@ -27,3 +27,9 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
   window.focus();
   document.getElementById('passphrase').focus();
 }, 100));
+
+addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    document.getElementById('cancel').click();
+  }
+});

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "0.8.0",
+  "version": "0.8.2",
   "name": "KeePassHelper Password Manager",
   "description": "__MSG_description__",
   "default_locale": "en",
@@ -17,7 +17,8 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "worker.js"
+    "service_worker": "worker.js",
+    "scripts": ["worker.js"]
   },
   "action": {
     "default_popup": "/data/cmd/index.html"
@@ -55,5 +56,11 @@
       "/data/safe/index.html"
     ],
     "matches": ["*://*/*"]
-  }]
+  }],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{69ef9498-0139-43e4-97b8-942982ac9158}",
+      "strict_min_version": "128.0"
+    }
+  }
 }

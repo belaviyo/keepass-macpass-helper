@@ -1,5 +1,5 @@
 const current = () => chrome.tabs.query({
-  currentWindow: true,
+  lastFocusedWindow: true,
   active: true,
   windowType: 'normal'
 }).then(tbs => {
@@ -133,7 +133,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 
 // Context Menu
 {
-  const callback = () => {
+  const once = () => {
+    if (once.done) {
+      return;
+    }
+    once.done = true;
+
     chrome.contextMenus.create({
       id: 'generate-password',
       title: 'Generate a Random Password',
@@ -175,8 +180,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       }, () => chrome.runtime.lastError);
     }
   };
-  chrome.runtime.onInstalled.addListener(callback);
-  chrome.runtime.onStartup.addListener(callback);
+  chrome.runtime.onInstalled.addListener(once);
+  chrome.runtime.onStartup.addListener(once);
 }
 const onCommand = async (info, tab) => {
   tab = tab || await current();
@@ -306,10 +311,9 @@ const onCommand = async (info, tab) => {
                 tabId: tab.id
               },
               func: (value = '') => {
-                return prompt(
-                  'What is the username to match with KeePass database?\n\nThis username must exactly match with one of the credentials stored in your KeePass database for this URL',
-                  value
-                );
+                return prompt(`What is the username to match with KeePass database?
+
+This username must exactly correspond to one of the credentials stored in your KeePass database for this URL.`, value);
               },
               args: [o?.username || '']
             });
@@ -341,46 +345,23 @@ const onCommand = async (info, tab) => {
     });
   }
   else if (info.menuItemId === 'open-embedded') {
-    chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id
-      },
-      func: () => {
-        for (const e of document.querySelectorAll('dialog.kphelper')) {
-          e.remove();
-        }
-
-        const dialog = document.createElement('dialog');
-        dialog.classList.add('kphelper');
-        dialog.style = `
-          margin-top: 0;
-          width: 550px;
-          height: 400px;
-          border: none;
-          padding: 0;
-          overflow: hidden;
-          top: 0;
-          z-index: 1000000000;
-        `;
-        const iframe = document.createElement('iframe');
-        iframe.activeElement = document.activeElement;
-        iframe.style = `
-          color-scheme: dark;
-          background-color: #414141;
-          border: none;
-          width: 100%;
-          height: 100%;
-        `;
-        dialog.append(iframe);
-        document.body.append(dialog);
-        iframe.onload = () => iframe.contentWindow.postMessage({
-          pairs: window.pairs
-        }, '*');
-        iframe.src = chrome.runtime.getURL('/data/cmd/index.html');
-        // Do not use showModal since we are injecting into the DOM
-        dialog.show();
-      }
-    });
+    const target = {
+      tabId: tab.id
+    };
+    try {
+      await chrome.scripting.insertCSS({
+        target,
+        files: ['/data/embedded/inject.css']
+      });
+      await chrome.scripting.executeScript({
+        target,
+        files: ['/data/embedded/inject.js']
+      });
+    }
+    catch (e) {
+      console.warn(e);
+      notify(tab, e);
+    }
   }
   else if (info.menuItemId === 'lock-secure-synced-storage') {
     chrome.storage.session.remove('ssdb-exported-key');
@@ -423,8 +404,7 @@ chrome.storage.onChanged.addListener(ps => {
 {
   const {management, runtime: {onInstalled, setUninstallURL, getManifest}, storage, tabs} = chrome;
   if (navigator.webdriver !== true) {
-    const page = getManifest().homepage_url;
-    const {name, version} = getManifest();
+    const {homepage_url: page, name, version} = getManifest();
     onInstalled.addListener(({reason, previousVersion}) => {
       management.getSelf(({installType}) => installType === 'normal' && storage.local.get({
         'faqs': true,
@@ -433,7 +413,7 @@ chrome.storage.onChanged.addListener(ps => {
         if (reason === 'install' || (prefs.faqs && reason === 'update')) {
           const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
           if (doUpdate && previousVersion !== version) {
-            tabs.query({active: true, currentWindow: true}, tbs => tabs.create({
+            tabs.query({active: true, lastFocusedWindow: true}, tbs => tabs.create({
               url: page + '?version=' + version + (previousVersion ? '&p=' + previousVersion : '') + '&type=' + reason,
               active: reason === 'install',
               ...(tbs && tbs.length && {index: tbs[0].index + 1})

@@ -278,7 +278,7 @@ async function submit() {
         'auto-login': false,
         'auto-submit': true,
         'sort': {
-          'active': false,
+          'active': true,
           'key': 'Login',
           'direction': 1
         }
@@ -890,8 +890,8 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
         });
       }
 
-      usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
-      aElement = r.map(r => r.result?.aElement).flat().some(a => a);
+      usernames = r.filter(a => a).map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
+      aElement = r.filter(a => a).map(r => r.result?.aElement).flat().some(a => a);
     }
     catch (e) {
       console.warn(e);
