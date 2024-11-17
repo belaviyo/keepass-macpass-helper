@@ -31,8 +31,10 @@ function restore() {
   chrome.storage.local.get({
     'host': 'http://localhost:19455',
     'foramt': '[login] - [name]',
-    'charset': 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
-    'length': 12,
+    'charset-1': 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
+    'charset-2': '!@#$%^&*()-_+=',
+    'length-1': 10,
+    'length-2': 2,
     'auto-login': false,
     'auto-submit': true,
     'faqs': true,
@@ -55,8 +57,10 @@ function restore() {
     document.getElementById('save-dialog-style').value = localStorage.getItem('save-dialog-style') || '';
     document.getElementById('host').value = prefs.host;
     document.getElementById('format').value = prefs.format;
-    document.getElementById('charset').value = prefs.charset;
-    document.getElementById('length').value = prefs.length;
+    document.getElementById('charset-1').value = prefs['charset-1'];
+    document.getElementById('length-1').value = prefs['length-1'];
+    document.getElementById('charset-2').value = prefs['charset-2'];
+    document.getElementById('length-2').value = prefs['length-2'];
     document.getElementById('auto-login').checked = prefs['auto-login'];
     document.getElementById('auto-submit-auto-login').checked = localStorage.getItem('auto-submit') === 'true';
     document.getElementById('auto-submit').checked = prefs['auto-submit'];
@@ -75,8 +79,10 @@ function save() {
   chrome.storage.local.set({
     'host': document.getElementById('host').value,
     'format': document.getElementById('format').value,
-    'charset': document.getElementById('charset').value,
-    'length': Math.max(document.getElementById('length').value, 3),
+    'charset-1': document.getElementById('charset-1').value,
+    'length-1': Math.max(document.getElementById('length-1').value, 3),
+    'charset-2': document.getElementById('charset-2').value,
+    'length-2': Math.max(document.getElementById('length-2').value, 0),
     'auto-login': document.getElementById('auto-login').checked,
     'auto-submit': document.getElementById('auto-submit').checked,
     'faqs': document.getElementById('faqs').checked,

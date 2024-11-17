@@ -129,6 +129,10 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     chrome.runtime.sendNativeMessage(request.id, request.request, response);
     return true;
   }
+  else if (request.cmd === 'session-storage-get') {
+    chrome.storage.session.get(request.prefs, response);
+    return true;
+  }
 });
 
 // Context Menu
@@ -284,15 +288,40 @@ const onCommand = async (info, tab) => {
   }
   else if (info.menuItemId === 'generate-password') {
     chrome.storage.local.get({
-      charset: 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
-      length: 12
+      'charset-1': 'qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM1234567890',
+      'charset-2': '!@#$%^&*()-_+=',
+      'length-1': 10,
+      'length-2': 2
     }, prefs => {
-      const array = new Uint8Array(prefs.length);
-      crypto.getRandomValues(array);
-      const password = [...array].map(n => Math.floor(n / 256 * prefs.charset.length) - 1)
-        .map(n => prefs.charset[n]).join('');
+      const password = [];
+
+      {
+        const array = new Uint8Array(prefs['length-1']);
+        crypto.getRandomValues(array);
+
+        for (const byte of array) {
+          const n = byte % prefs['charset-1'].length;
+          password.push(prefs['charset-1'][n] || '-');
+        }
+      }
+      if (prefs['length-2']) {
+        const array = new Uint8Array(prefs['length-2']);
+        crypto.getRandomValues(array);
+
+        for (const byte of array) {
+          const n = byte % prefs['charset-2'].length;
+          password.push(prefs['charset-2'][n] || '-');
+        }
+      }
+      // Shuffle the middle items using Fisher-Yates algorithm
+      const [first, ...rest] = password;
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+
       // copy to clipboard
-      copy(password, tab);
+      copy([first, ...rest].join(''), tab);
     });
   }
   else if (info.menuItemId === 'auto-login') {
