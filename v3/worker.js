@@ -196,6 +196,14 @@ const onCommand = async (info, tab) => {
     };
 
     try {
+      await chrome.scripting.executeScript({
+        target: {
+          ...target,
+          allFrames: true
+        },
+        files: ['/data/helper.js']
+      });
+
       // collect logins
       const r = await chrome.scripting.executeScript({
         target: {
@@ -203,30 +211,17 @@ const onCommand = async (info, tab) => {
           allFrames: true
         },
         func: () => {
-          const forms = [...document.querySelectorAll('input[type=password]')]
-            .map(p => {
-              const form = p.closest('form');
-              if (form) {
-                return form;
-              }
-              // what if there is no form element
-              let parent = p;
-              for (let i = 0; i < 5; i += 1) {
-                parent = parent.parentElement;
-                if (parent.querySelector('input[type=text],input[type=email]')) {
-                  return parent;
-                }
-              }
-              return parent;
-            }).filter((f, i, l) => f && l.indexOf(f) === i);
+          const inputs = document.extendedQuerySelectorAll('input[type=password]');
+          const forms = inputs
+            .map(p => self.detectForm(p, 'input[type=text],input[type=email]'))
+            .filter((f, i, l) => f && l.indexOf(f) === i);
 
           return forms.map(f => {
             const usernames = [
-              ...f.querySelectorAll('input[type=text]'),
-              ...f.querySelectorAll('input[type=email]')
+              ...f.extendedQuerySelectorAll('input[type=text]'),
+              ...f.extendedQuerySelectorAll('input[type=email]')
             ].flat().map(e => e.value).filter(s => s);
-            const passwords = [...f.querySelectorAll('input[type=password]')]
-              .map(e => e.value).filter(s => s);
+            const passwords = inputs.map(e => e.value).filter(s => s);
 
             return {
               usernames,

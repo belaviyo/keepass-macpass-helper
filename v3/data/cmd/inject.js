@@ -28,31 +28,40 @@ function editable() {
 // will be used to focus the element after text insertion
 window.aElement = editable();
 
+// Traverse the document and shadow roots
+
 // try to find used usernames
 {
-  const forms = [...document.querySelectorAll('input[type=password]')]
+  const passwords = document.extendedQuerySelectorAll('input[type=password]');
+  const forms = passwords
     .map(p => p.form)
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
 
   // https://github.com/belaviyo/keepass-macpass-helper/issues/69
   // https://login.aliexpress.com/
-  if (forms.length === 0) {
-    const password = document.querySelector('input[type=password]');
-    if (password) {
-      let parent = password.parentElement;
-      while (parent !== document.body && parent.querySelector('input[type=email],input[type=text]') === null) {
+  if (forms.length === 0 && passwords.length) {
+    const [password] = passwords;
+    let parent = password.parentElement || password.parentNode;
+    while (parent !== document.body) {
+      const es = parent.extendedQuerySelectorAll('input[type=email],input[type=text]');
+      if (es.length) {
+        forms.push(parent);
+        break;
+      }
+      if (parent.parentElement) {
         parent = parent.parentElement;
       }
-
-      if (parent.querySelector('input[type=email],input[type=text]')) {
-        forms.push(parent);
+      else {
+        if (parent.getRootNode() instanceof ShadowRoot) {
+          parent = parent.getRootNode().host;
+        }
       }
     }
   }
 
   const usernames = forms.map(f => {
-    return [...f.querySelectorAll('input:not([type=password])')].filter(i => {
+    return f.extendedQuerySelectorAll('input:not([type=password])').filter(i => {
       return (i.type === 'text' || i.type === 'email') && i.getBoundingClientRect().width > 0;
     });
   }).flat();

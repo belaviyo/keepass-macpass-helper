@@ -504,8 +504,8 @@ insert.username = username => chrome.scripting.executeScript({
         const form = window.detectForm(aElement);
         if (form) {
           const e = [ // first use type=email
-            ...form.querySelectorAll('input[type=email]'),
-            ...form.querySelectorAll('input[type=text]')
+            ...form.extendedQuerySelectorAll('input[type=email]'),
+            ...form.extendedQuerySelectorAll('input[type=text]')
           ].filter(e => e.offsetParent).sort((a, b) => {
             // try to find the best matched username field
             const keys = ['user', 'usr', 'login'];
@@ -557,9 +557,11 @@ insert.password = password => chrome.scripting.executeScript({
   func: password => {
     const es = [];
     const aElement = window.aElement;
+
     if (!aElement) {
       return;
     }
+
     // try to find the password field
     for (const e of [[aElement]].flat()) {
       if (e.type === 'password') {
@@ -569,7 +571,7 @@ insert.password = password => chrome.scripting.executeScript({
     if (es.length === 0) {
       const form = window.detectForm(aElement);
       if (form) {
-        for (const e of [...form.querySelectorAll('[type=password]')]) {
+        for (const e of form.extendedQuerySelectorAll('[type=password]')) {
           if (e.offsetParent) {
             es.push(e);
           }
@@ -657,30 +659,6 @@ document.addEventListener('click', async e => {
     //
     if (cmd && cmd.startsWith('insert-')) {
       const checked = list.selectedValues[0][0];
-      // insert helper function
-      await chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id,
-          allFrames
-        },
-        func: () => {
-          window.detectForm = e => {
-            const form = e.closest('form');
-            if (form) {
-              return form;
-            }
-            // what if there is no form element
-            let parent = e;
-            for (let i = 0; i < 5; i += 1) {
-              parent = parent.parentElement;
-              if (parent.querySelector('[type=password]')) {
-                return parent;
-              }
-            }
-            return parent;
-          };
-        }
-      });
 
       let inserted = false;
       // insert StringFields
@@ -708,7 +686,7 @@ document.addEventListener('click', async e => {
             target: {
               tabId: tab.id
             },
-            func: () => [...document.querySelectorAll('iframe[src]')]
+            func: () => document.extendedQuerySelectorAll('iframe[src]')
               .map(e => e.src)
               .filter(s => s && s.startsWith('http') && s.startsWith(location.origin) === false)
           });
@@ -875,7 +853,7 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
             tabId: tab.id,
             allFrames: true
           },
-          files: ['/data/cmd/inject.js']
+          files: ['/data/helper.js', '/data/cmd/inject.js']
         }),
         new Promise(resolve => setTimeout(() => resolve(false), 2000))
       ]);
@@ -886,7 +864,7 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
             tabId: tab.id,
             allFrames: false
           },
-          files: ['/data/cmd/inject.js']
+          files: ['/data/helper.js', '/data/cmd/inject.js']
         });
       }
 
