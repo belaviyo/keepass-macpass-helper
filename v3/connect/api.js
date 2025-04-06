@@ -56,6 +56,28 @@ engine.prepare = type => {
   else if (type === 'kwpass') {
     engine.core = new KWPASS();
   }
+  else if (type === 'none') {
+    engine.core = new class {
+      async prepare() {}
+      async 'get-logins'() {
+        return [];
+      }
+      async 'set-login'() {
+        throw Error('Not_Supported');
+      }
+      async 'get-totp'() {
+        throw Error('Not_Supported');
+      }
+      async search() {
+        return {
+          Entries: []
+        };
+      }
+      async set() {
+        throw Error('Not_Supported');
+      }
+    }
+  }
 
   return new Promise(resolve => {
     chrome.storage.session.get({

@@ -46,3 +46,6 @@ self.detectForm = function(e, query = '[type=password]') {
   }
   return parent;
 };
+
+// eslint-disable-next-line eol-last, semi
+''
