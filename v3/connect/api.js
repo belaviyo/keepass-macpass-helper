@@ -76,7 +76,7 @@ engine.prepare = type => {
       async set() {
         throw Error('Not_Supported');
       }
-    }
+    };
   }
 
   return new Promise(resolve => {
@@ -101,26 +101,31 @@ engine.search = async query => {
 
   if (responses.Entries && engine.ssdb && query.url) {
     try {
-      const uuid = await engine.ssdb.convert(query.url);
-      const r = await engine.ssdb.find(uuid, undefined, (failed, succeeded, total) => {
-        if (succeeded === 0 && total !== 0 && failed) {
-          document.getElementById('notify').notify('Unable to decrypt entries in secure storage. Incorrect password?', 'warning', 3000);
+      const uuids = await engine.ssdb.convert(query.url);
+      const rs = [];
+      for (const uuid of uuids) {
+        const r = await engine.ssdb.find(uuid, undefined, (failed, succeeded, total) => {
+          if (succeeded === 0 && total !== 0 && failed) {
+            document.getElementById('notify').notify('Unable to decrypt entries in secure storage. Incorrect password?', 'warning', 3000);
+          }
+          else if (failed) {
+            console.info(
+              `Can't decrypt certain entries in secure storage due to multiple passwords` +
+              ` used for encrypting different entries within the domain.`
+            );
+          }
+        });
+        for (const o of r) {
+          o.ssdb = true;
+          o.href = query.url;
+          o.group = '[Synced Storage]';
+          o.Name = '';
+
+          rs.push(o);
         }
-        else if (failed) {
-          console.info(
-            `Can't decrypt certain entries in secure storage due to multiple passwords` +
-            ` used for encrypting different entries within the domain.`
-          );
-        }
-      });
-      r.forEach(o => {
-        o.ssdb = true;
-        o.href = query.url;
-        o.group = '[Synced Storage]';
-        o.Name = '';
-      });
-      r.sort((a, b) => a.Login.localeCompare(b.Login));
-      responses.Entries.unshift(...r);
+      }
+      rs.sort((a, b) => a.Login.localeCompare(b.Login));
+      responses.Entries.unshift(...rs);
     }
     catch (e) {
       console.warn('unexpected error from SecureSyncedStorage', e);

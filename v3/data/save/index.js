@@ -73,7 +73,7 @@ document.addEventListener('submit', e => {
 
       if (e.submitter.dataset.cmd == 'ssdb') {
         if (engine.ssdb) {
-          const uuid = await engine.ssdb.convert(query.url);
+          const uuid = (await engine.ssdb.convert(query.url)).at(0);
           await engine.ssdb.append(uuid, {
             'Url': query.url,
             'SubmitUrl': query.url.submiturl,

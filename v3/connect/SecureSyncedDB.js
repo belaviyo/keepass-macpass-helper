@@ -40,7 +40,14 @@ class SecureSyncedStorage {
   }
   async convert(href) {
     const ek = await this.#safe.export();
-    return ek + '@' + (new URL(href)).hostname;
+    const {hostname} = new URL(href);
+    const uuids = [];
+    const parts = hostname.split('.');
+    for (let n = 0; n < parts.length - 1; n += 1) {
+      uuids.push(ek + '@' + parts.slice(n).join('.'));
+    }
+
+    return uuids;
   }
   async find(uuid, match = () => true, stat = () => {}) {
     const hash = await this.#hash(uuid);

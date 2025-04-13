@@ -754,9 +754,14 @@ document.addEventListener('click', async e => {
     else if (cmd === 'delete') {
       const entries = list.selectedValues;
       if (confirm(`Are you sure you want to remove ${entries.length} item(s) from the secure synced storage?`)) {
-        engine.ssdb.convert(entries[0][0].href).then(uuid => engine.ssdb.remove(uuid, e => {
-          return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
-        }).then(() => location.reload()));
+        engine.ssdb.convert(entries[0][0].href).then(async uuids => {
+          for (const uuid of uuids) {
+            await engine.ssdb.remove(uuid, e => {
+              return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
+            });
+          }
+          location.reload();
+        });
       }
     }
 
