@@ -1,4 +1,4 @@
-/* global Safe */
+/* global Safe, tldjs */
 
 class SyncedStorage {
   get(key) {
@@ -41,10 +41,15 @@ class SecureSyncedStorage {
   async convert(href) {
     const ek = await this.#safe.export();
     const {hostname} = new URL(href);
+    const domain = tldjs.getDomain(href);
     const uuids = [];
     const parts = hostname.split('.');
     for (let n = 0; n < parts.length - 1; n += 1) {
-      uuids.push(ek + '@' + parts.slice(n).join('.'));
+      const h = parts.slice(n).join('.');
+      uuids.push(ek + '@' + h);
+      if (h === domain) {
+        break;
+      }
     }
 
     return uuids;

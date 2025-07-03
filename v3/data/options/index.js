@@ -1,6 +1,45 @@
 /* global KWPASS */
 'use strict';
 
+const KEYS = {
+  'copy': {
+    code: 'KeyC',
+    meta: ['meta']
+  },
+  'otp': {
+    code: 'KeyO',
+    meta: ['meta']
+  },
+  'password': {
+    code: 'KeyX',
+    meta: ['meta']
+  },
+  'insert-both': {
+    code: 'KeyB',
+    meta: ['meta', 'shift']
+  },
+  'insert-both-no-submit': {
+    code: 'KeyB',
+    meta: ['meta']
+  },
+  'insert-login': {
+    code: 'KeyU',
+    meta: ['meta']
+  },
+  'insert-password': {
+    code: 'KeyP',
+    meta: ['meta']
+  },
+  'search': {
+    code: 'KeyF',
+    meta: ['meta']
+  },
+  'ssdb': {
+    code: 'KeyD',
+    meta: ['meta']
+  }
+};
+
 const toast = (msg, callback = () => {}) => {
   const e = document.getElementById('toast');
   e.textContent = msg;
@@ -44,7 +83,8 @@ function restore() {
       'active': true,
       'key': 'Login',
       'direction': 'az'
-    }
+    },
+    'keys': KEYS
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
     // make sure we have access to the native client
@@ -69,14 +109,35 @@ function restore() {
     document.getElementById('sort.active').checked = prefs.sort.active;
     document.getElementById('sort.key').value = prefs.sort.key;
     document.getElementById('sort.direction').value = prefs.sort.direction;
+
+    for (const [name, o] of Object.entries(prefs.keys)) {
+      const [shift, meta] = document.querySelectorAll(`[data-shortcut="${name}"] label input`);
+      shift.checked = o.meta.includes('shift');
+      meta.checked = o.meta.includes('meta');
+    }
   });
 }
 
-function save() {
+async function save() {
   localStorage.setItem('cmd-style', document.getElementById('cmd-style').value);
   localStorage.setItem('save-dialog-style', document.getElementById('save-dialog-style').value);
 
+  const ps = await chrome.storage.local.get({
+    keys: KEYS
+  });
+  for (const name of Object.keys(ps.keys)) {
+    const [shift, meta] = document.querySelectorAll(`[data-shortcut="${name}"] label input`);
+    ps.keys[name].meta = [];
+    if (shift.checked) {
+      ps.keys[name].meta.push('shift');
+    }
+    if (meta.checked || ps.keys[name].meta.length === 0) {
+      ps.keys[name].meta.push('meta');
+    }
+  }
+
   chrome.storage.local.set({
+    'keys': ps.keys,
     'host': document.getElementById('host').value,
     'format': document.getElementById('format').value,
     'charset-1': document.getElementById('charset-1').value,

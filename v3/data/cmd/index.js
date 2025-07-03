@@ -362,65 +362,6 @@ document.addEventListener('search', submit);
   });
 }
 
-document.addEventListener('keydown', e => {
-  const metaKey = e.metaKey || e.altKey || e.ctrlKey;
-  if (metaKey && e.code === 'KeyC') {
-    document.querySelector('[data-cmd="copy"]').click();
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyO') {
-    document.querySelector('[data-cmd="otp"]').click();
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyX') {
-    document.querySelector('[data-cmd="copy"]').dispatchEvent(
-      new CustomEvent('click', {
-        'detail': 'password',
-        'bubbles': true
-      })
-    );
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyB') {
-    if (e.shiftKey) {
-      document.querySelector('[data-cmd="insert-both"]').click();
-    }
-    else {
-      document.querySelector('[data-cmd="insert-both"]').dispatchEvent(
-        new CustomEvent('click', {
-          'detail': 'no-submit',
-          'bubbles': true
-        })
-      );
-    }
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyU') {
-    document.querySelector('[data-cmd="insert-login"]').click();
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyP') {
-    document.querySelector('[data-cmd="insert-password"]').click();
-    e.preventDefault();
-  }
-  else if (metaKey && e.code === 'KeyF') {
-    search.focus();
-    search.select();
-    e.preventDefault();
-  }
-  else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    if (e.target.nodeName === 'SIMPLE-LIST-VIEW') {
-      document.querySelector('[data-cmd="insert-both"]').click();
-    }
-  }
-  else if (metaKey && e.code === 'KeyD') {
-    document.getElementById('ssdb').click();
-  }
-  else if (e.code === 'Delete' || e.code === 'Backspace') {
-    document.querySelector('[data-cmd="delete"]').click();
-  }
-});
-
 const insert = {};
 insert.fields = async o => {
   const {stringFields} = o;

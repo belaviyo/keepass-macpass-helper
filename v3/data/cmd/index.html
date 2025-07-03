@@ -11,8 +11,7 @@
     <span></span>
     <button id="ssdb" title="Securely store passwords using AES-CBC 256 encryption in the synchronized storage of your browser. This allows you to access the passwords on all synced devices, without storing them in your KeePass database.
 
-  - Press Alt + D on Windows
-  - Press Command + D on Mac
+  - Press {{shortcut-ssdb}}
 
 To close this database, use the right-click context menu over the action button"  class="hidden" disabled>Synced <u>D</u>B</button>
     <input type="button" value="Rate Me" id="rate" class="hidden">
@@ -31,32 +30,27 @@ To close this database, use the right-click context menu over the action button"
   </div>
   <div id="toolbar">
     <button title="To insert the selected username either:
-  - Press Alt + U on Windows
-  - Press Command + U on Mac
+  - Press {{shortcut-insert-login}}
   - Click on the button" data-cmd="insert-login" disabled><u>U</u>sername</button>
     <button title="To insert the selected password either:
-  - Press Alt + P on Windows
-  - Press Command + P on Mac
+  - Press {{shortcut-insert-password}}
   - Click on the button" data-cmd="insert-password" disabled><u>P</u>assword</button>
     <button title="To perform {USERNAME}{TAB}{PASSWORD}{ENTER} sequence either:
   - Click on the button
-  - Press Alt + Shift + B on Windows
-  - Press Command + Shift + B on Mac
+  - Press {{shortcut-insert-both}}
 
 To perform {USERNAME}{TAB}{PASSWORD} sequence either:
   - Ctrl + Click on the button
-  - Press Alt + B on Windows
-  - Press Command + B on Mac" data-cmd="insert-both" disabled><u>B</u>oth</button>
+  - Press {{shortcut-insert-both-no-submit}}" data-cmd="insert-both" disabled><u>B</u>oth</button>
     <button title="To copy the one-time password token (OTP) to the clipboard either:
-  - Press Alt + O on Windows
-  - Press Command + O on Mac
+  - Press {{shortcut-otp}}
   - Click on the button" data-cmd="otp" disabled><u>O</u>TP</button>
   <button title="Remove selected credentials from your browser's secure synced storage:
 
   - Backspace
   - Delete" disabled data-cmd="delete">Delete</button>
     -
-    <input type="button" value="Copy (C/X)" title="To copy username to the clipboard either:&#013;  - Press Alt + C on Windows&#013;  - Press Command + C on Mac&#013;  - Click on the button&#013;&#013;To copy password to the clipboard either:&#013;  - Press Alt + X on Windows&#013;  - Press Command + X on Mac&#013;  - Meta + Click the button" data-cmd="copy" disabled>
+    <input type="button" value="Copy (C/X)" title="To copy username to the clipboard either:&#013;  - Press {{shortcut-copy}}&#013;  - Click on the button&#013;&#013;To copy password to the clipboard either:&#013;  - Press {{shortcut-password}}&#013;  - Meta + Click the button" data-cmd="copy" disabled>
   </div>
   <div id="host-access" hbox class="hidden">
     <div>
@@ -75,16 +69,17 @@ To perform {USERNAME}{TAB}{PASSWORD} sequence either:
 
   <script src="components/list-view.js"></script>
   <script src="components/notification-view.js"></script>
+  <script src="/tools/tld.js"></script>
   <script src="/connect/SecureSyncedDB.js"></script>
   <script src="/connect/api.js"></script>
   <script src="/connect/keepass/keepass.js"></script>
   <script src="/connect/keepassxc/nacl-fast.min.js"></script>
   <script src="/connect/keepassxc/keepassxc.js"></script>
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
-  <script src="/tools/tld.js"></script>
   <script src="/connect/kdbxweb/connect.js"></script>
   <script src="/connect/totp.js"></script>
   <script src="/tools/safe.js"></script>
+  <script src="shortcuts.js"></script>
   <script src="index.js"></script>
   <script src="rate.js"></script>
   <script src="ssdb.js"></script>
