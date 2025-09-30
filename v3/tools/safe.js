@@ -52,14 +52,16 @@ class Safe {
     // compatibility fix
     string = string.replace('data:application/octet-binary;base64,', '');
 
-    const iv = crypto.getRandomValues(new Uint8Array(16));
+    const bytes = this.#buffer(atob(string));
+    const iv = bytes.slice(0, 16); // use the stored iv
+    const data = bytes.slice(16);
 
     const result = await crypto.subtle.decrypt({
       name: 'AES-CBC',
       iv
-    }, this.#key, this.#buffer(atob(string)));
+    }, this.#key, data);
 
-    const ab = (new Uint8Array(result)).subarray(16);
+    const ab = (new Uint8Array(result));
     return this.#decoder.decode(ab);
   }
 }
