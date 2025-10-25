@@ -106,7 +106,8 @@ engine.search = async query => {
       for (const uuid of uuids) {
         const r = await engine.ssdb.find(uuid, undefined, (failed, succeeded, total) => {
           if (succeeded === 0 && total !== 0 && failed) {
-            document.getElementById('notify').notify('Unable to decrypt entries in secure storage. Incorrect password?', 'warning', 3000);
+            document.getElementById('notify')
+              .notify('Unable to decrypt entries in secure storage. Incorrect password?', 'warning', 3000);
           }
           else if (failed) {
             console.info(

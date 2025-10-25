@@ -37,6 +37,7 @@ class KeePassXC extends SimpleStorage {
         'clientID': this.clientID,
         'publicKey': this.btoa(this.keyPair.publicKey)
       });
+
       if (resp && resp.success === 'true') {
         this.serverPublicKey = this.atob(resp.publicKey);
       }

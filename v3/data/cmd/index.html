@@ -45,11 +45,13 @@ To perform {USERNAME}{TAB}{PASSWORD} sequence either:
     <button title="To copy the one-time password token (OTP) to the clipboard either:
   - Press {{shortcut-otp}}
   - Click on the button" data-cmd="otp" disabled><u>O</u>TP</button>
+    <button title="To use stored passkey for login either:
+  - Press {{shortcut-passkey}}
+  - Click on the button" data-cmd="passkey" disabled>Pass<u>k</u>ey</button>
   <button title="Remove selected credentials from your browser's secure synced storage:
 
   - Backspace
   - Delete" disabled data-cmd="delete">Delete</button>
-    -
     <input type="button" value="Copy (C/X)" title="To copy username to the clipboard either:&#013;  - Press {{shortcut-copy}}&#013;  - Click on the button&#013;&#013;To copy password to the clipboard either:&#013;  - Press {{shortcut-password}}&#013;  - Meta + Click the button" data-cmd="copy" disabled>
   </div>
   <div id="host-access" hbox class="hidden">
@@ -80,6 +82,7 @@ To perform {USERNAME}{TAB}{PASSWORD} sequence either:
   <script src="/connect/totp.js"></script>
   <script src="/tools/safe.js"></script>
   <script src="shortcuts.js"></script>
+  <script src="passkey.js"></script>
   <script src="index.js"></script>
   <script src="rate.js"></script>
   <script src="ssdb.js"></script>

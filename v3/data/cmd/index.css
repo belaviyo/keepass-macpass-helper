@@ -46,6 +46,9 @@ input[type=button]:disabled {
   cursor: default;
   opacity: 0.5;
 }
+button * {
+  pointer-events: none;
+}
 a {
   text-decoration: none;
   color: var(--fg-a);

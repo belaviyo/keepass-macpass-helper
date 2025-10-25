@@ -1,4 +1,4 @@
-/* global engine, Safe */
+/* global engine, Safe, passkey */
 'use strict';
 
 const list = document.getElementById('list');
@@ -356,6 +356,11 @@ document.addEventListener('search', submit);
         });
       }
     }
+    // passkey
+    document.querySelector('#toolbar [data-cmd="passkey"]').disabled = o[0].stringFields.some(o => {
+      return o.Key === 'PASSKEY_STORAGE';
+    }) === false;
+
     // remove
     document.querySelector('#toolbar [data-cmd="delete"]').disabled =
       !e.target.selectedValues.length || e.target.selectedValues.every(o => o && o[0]?.ssdb === true) === false;
@@ -594,7 +599,7 @@ document.addEventListener('click', async e => {
     const alt = e.metaKey || e.ctrlKey;
 
     // cache
-    if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy'))) {
+    if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy') || cmd === 'passkey')) {
       cookie.set(list);
     }
     //
@@ -688,6 +693,15 @@ document.addEventListener('click', async e => {
         console.warn(e);
         alert(e.message || 'cannot decrypt');
       }
+    }
+    else if (cmd === 'passkey') {
+      const checked = list.selectedValues[0][0];
+      const data = checked.stringFields.filter(o => o.Key === 'PASSKEY_STORAGE').shift().Value;
+      const json = JSON.parse(data);
+      const key = 'pk:' + checked.uuid;
+      const count = Number(localStorage.getItem(key) || '1');
+      localStorage.setItem(key, count + 1);
+      passkey.get(json, count).then(() => window.close());
     }
     else if (cmd === 'options-page') {
       chrome.runtime.openOptionsPage();

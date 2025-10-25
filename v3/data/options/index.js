@@ -37,6 +37,10 @@ const KEYS = {
   'ssdb': {
     code: 'KeyD',
     meta: ['meta']
+  },
+  'passkey': {
+    code: 'KeyK',
+    meta: ['meta']
   }
 };
 
