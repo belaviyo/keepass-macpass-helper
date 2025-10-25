@@ -7,27 +7,50 @@ passkey.set = async tabId => {
     tabId,
     allFrames: true
   };
+  const pem = {
+    async export(privateKey) { // CryptoKey to PEM
+      const exported = await crypto.subtle.exportKey('pkcs8', privateKey);
+      const exportedAsString = String.fromCharCode.apply(null, new Uint8Array(exported));
+      const exportedAsBase64 = btoa(exportedAsString).replace(/\s/g, '');
+      const pem = `-----BEGIN PRIVATE KEY-----
+${exportedAsBase64.match(/.{1,64}/g).join('\n')}
+-----END PRIVATE KEY-----`;
+      return pem;
+    }
+  };
+
+  // Generate EC key pair
+  // Only share public key inside MAIN world
+  const keyPair = await crypto.subtle.generateKey({
+    name: 'ECDSA',
+    namedCurve: 'P-256'
+  }, true, ['sign', 'verify']);
 
   await chrome.scripting.executeScript({
     target,
-    func: () => {
+    func: key => {
       const port = document.createElement('span');
       port.id = 'kph-tsGhyft';
       document.documentElement.appendChild(port);
       port.addEventListener('copy-data', e => {
         e.preventDefault();
         e.stopImmediatePropagation();
+
         chrome.runtime.sendMessage({
           cmd: 'passkey-interface',
-          data: e.detail
+          data: {
+            PRIVATE_KEY_PEM: key,
+            ...e.detail
+          }
         });
       });
-    }
+    },
+    args: [await pem.export(keyPair.privateKey)]
   });
   await chrome.scripting.executeScript({
     target,
     world: 'MAIN',
-    func: (data, count = 1) => {
+    func: pub => {
       const port = document.getElementById('kph-tsGhyft');
       port.remove();
 
@@ -37,17 +60,6 @@ passkey.set = async tabId => {
           let binary = '';
           for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
           return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        }
-      };
-      const pem = {
-        async export(privateKey) { // CryptoKey to PEM
-          const exported = await crypto.subtle.exportKey('pkcs8', privateKey);
-          const exportedAsString = String.fromCharCode.apply(null, new Uint8Array(exported));
-          const exportedAsBase64 = btoa(exportedAsString).replace(/\s/g, '');
-          const pem = `-----BEGIN PRIVATE KEY-----
-${exportedAsBase64.match(/.{1,64}/g).join('\n')}
------END PRIVATE KEY-----`;
-          return pem;
         }
       };
       const cbor = (() => {
@@ -175,9 +187,15 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
       const create = async options => {
         const {challenge, rp, user} = options.publicKey;
         if (!rp || !rp.id) {
+          console.error(options);
           throw new DOMException('PASSKEYS_DOMAIN_RPID_MISMATCH', DOMException.SECURITY_ERR);
         }
-        if (!user || !user.id || !(user.id instanceof ArrayBuffer)) {
+        if (!user || !user.id) {
+          console.error(options);
+          throw new TypeError('PASSKEYS_INVALID_USER_ID');
+        }
+        if (!((user.id.buffer || user.id) instanceof ArrayBuffer)) {
+          console.error(options);
           throw new TypeError('PASSKEYS_INVALID_USER_ID');
         }
 
@@ -187,15 +205,9 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         const credId = credIdBytes.buffer;
         const credIdB64 = base64.encode(credId);
 
-        // Generate EC key pair
-        const keyPair = await crypto.subtle.generateKey({
-          name: 'ECDSA',
-          namedCurve: 'P-256'
-        }, true, ['sign', 'verify']);
-
         // Export public key raw
-        const pubRaw = await crypto.subtle.exportKey('raw', keyPair.publicKey);
-        const pubRawU8 = new Uint8Array(pubRaw);
+        const pubRawU8 = new Uint8Array(pub);
+        const pubRaw = pubRawU8.buffer;
         if (pubRawU8[0] !== 0x04) {
           throw new DOMException('Unexpected_Public_Key_Format', 'NotAllowedError');
         }
@@ -241,9 +253,8 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         port.dispatchEvent(new CustomEvent('copy-data', {
           detail: {
             CREDENTIAL_ID: credIdB64,
-            PRIVATE_KEY_PEM: await pem.export(keyPair.privateKey),
             RELYING_PARTY: rp.id,
-            USER_HANDLE: base64.encode(user.id)
+            USER_HANDLE: base64.encode(user.id.buffer || user.id)
           }
         }));
 
@@ -262,9 +273,7 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           return create(args[0]).catch(e => console.error(e));
         }
       });
-      alert(`Intercepting passkey generation...
-
-You can now proceed with creating a new passkey.`);
-    }
+    },
+    args: [Array.from(new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey)))]
   });
 };
