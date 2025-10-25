@@ -703,10 +703,20 @@ document.addEventListener('click', async e => {
       const checked = list.selectedValues[0][0];
       const data = checked.stringFields.filter(o => o.Key === 'PASSKEY_STORAGE').shift().Value;
       const json = JSON.parse(data);
-      const key = 'pk:' + checked.uuid;
-      const count = Number(localStorage.getItem(key) || '1');
-      localStorage.setItem(key, count + 1);
-      passkey.get(json, count).then(() => window.close());
+      const key = 'P:' + checked.uuid;
+      const prefs = await chrome.storage.sync.get({
+        [key]: 1
+      });
+      if (e.shiftKey) {
+        const n = prompt('Current Login count', prefs[key]);
+        if (n && isNaN(n) === false) {
+          prefs[key] = Math.max(1, Number(n));
+        }
+      }
+      prefs[key] += 1;
+      await chrome.storage.sync.set(prefs);
+      await passkey.get(json, prefs[key]);
+      window.close();
     }
     else if (cmd === 'options-page') {
       chrome.runtime.openOptionsPage();

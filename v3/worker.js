@@ -132,8 +132,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 
       chrome.windows.create({
         url: '/data/passkey/index.html?' + args.toString(),
-        width: 500,
-        height: 300,
+        width: 600,
+        height: 500,
         left: win.left + Math.round((win.width - 400) / 2),
         top: win.top + Math.round((win.height - 300) / 2),
         type: 'popup'
@@ -183,7 +183,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'generate-passkey',
-      title: 'Record Passkey Generation',
+      title: 'Intercept Passkey Generation (beta)',
       contexts: ['action'],
       parentId: 'save'
     }, () => chrome.runtime.lastError);

@@ -369,11 +369,15 @@ document.getElementById('ssdb-import').addEventListener('click', () => {
   };
   input.click();
 });
-document.getElementById('ssdb-clear').onclick = () => {
+document.getElementById('ssdb-clear').onclick = async () => {
   if (confirm(`Are you are you want to remove all credentials in the browser's synced storage?`)) {
-    chrome.storage.sync.clear(() => {
-      toast('Your passwords in the synced storage are permanently removed');
-    });
+    const prefs = await chrome.storage.sync.get(null);
+    for (const key of Object.keys(prefs)) {
+      if (key.startsWith('A:')) {
+        await chrome.storage.sync.remove(key);
+      }
+    }
+    toast('Your passwords in the synced storage are permanently removed');
   }
 };
 
