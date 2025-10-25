@@ -175,7 +175,8 @@ function add(o, select = false) {
     stringFields: o.StringFields,
     uuid: o.uuid, // for KeePassXC's built-in OTP
     ssdb: o.ssdb, // for internal secure storage
-    href: o.href // for internal secure storage
+    href: o.href, // for internal secure storage
+    query: o.query // for updating entry later
   }, {
     name: o.Name || '',
     part: 'name'
@@ -233,9 +234,10 @@ async function submit() {
   });
 
   try {
-    const response = await engine.search({
+    const q = {
       url: query
-    });
+    };
+    const response = await engine.search(q);
 
     // hide group and title columns if no data available
     document.getElementById('group').setAttribute('width', response.Entries.some(o => o.group) ? '1fr' : '0');
@@ -292,6 +294,7 @@ async function submit() {
       }
       // add
       for (const o of response.Entries) {
+        o.query = q;
         const b = list.value ? false : (
           ('Name' in selected) ? (selected.Login === o.Login && selected.Name === o.Name) : (selected.Login === o.Login)
         );
@@ -357,9 +360,11 @@ document.addEventListener('search', submit);
       }
     }
     // passkey
-    document.querySelector('#toolbar [data-cmd="passkey"]').disabled = o[0].stringFields.some(o => {
-      return o.Key === 'PASSKEY_STORAGE';
-    }) === false;
+    if (o && o[0] && o[0].stringFields) {
+      document.querySelector('#toolbar [data-cmd="passkey"]').disabled = o[0].stringFields.some(o => {
+        return o.Key === 'PASSKEY_STORAGE';
+      }) === false;
+    }
 
     // remove
     document.querySelector('#toolbar [data-cmd="delete"]').disabled =

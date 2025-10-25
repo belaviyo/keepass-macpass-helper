@@ -188,6 +188,7 @@ class KeePass extends SimpleStorage {
         e.Login = await d(e.Login);
         e.Name = await d(e.Name);
         e.Password = await d(e.Password);
+        e.uuid = await d(e.Uuid);
 
         for (let m = 0; m < (e.StringFields || []).length; m += 1) {
           const o = e.StringFields[m];
@@ -198,14 +199,43 @@ class KeePass extends SimpleStorage {
     }
     return r;
   }
-  set({url, submiturl, login, password}) {
-    return this.post({
+  /* stringFields seems to be ignored */
+  async set({url, submiturl, login, password, uuid, stringFields = []}) {
+    const iv = this.iv();
+    const e = await this.encrypt(iv);
+
+    const obj = {
       'RequestType': 'set-login',
-      'Login': login,
-      'Password': password,
-      'Url': url,
-      'SubmitUrl': submiturl
-    }, undefined, true, ['Login', 'Password', 'Url', 'SubmitUrl']);
+      'Url': await e(url, true),
+      'SubmitUrl': await e(submiturl || '', true),
+      'Login': await e(login, true),
+      'Password': await e(password, true)
+    };
+
+    if (uuid) {
+      obj.Uuid = uuid; // Assuming Uuid is sent unencrypted
+    }
+
+    if (stringFields.length > 0) {
+      obj.StringFields = [];
+      for (const sf of stringFields) {
+        const encryptedKey = await e(sf.key, true);
+        const encryptedValue = await e(sf.value, true);
+        obj.StringFields.push({
+          Key: encryptedKey,
+          Value: encryptedValue
+        });
+      }
+    }
+
+    obj.Nonce = KeePass.u2b(iv);
+    obj.Verifier = await e(obj.Nonce);
+
+    if (this.id) {
+      obj.Id = this.id;
+    }
+
+    return this.post(obj, undefined, false);
   }
   // high-level access
   async search(query) {

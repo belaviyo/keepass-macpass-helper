@@ -1,3 +1,9 @@
+/* global passkey */
+
+if (typeof importScripts !== 'undefined') {
+  self.importScripts('/data/passkey/passkey.create.js');
+}
+
 const current = () => chrome.tabs.query({
   lastFocusedWindow: true,
   active: true,
@@ -119,6 +125,21 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       }
     });
   }
+  else if (request.cmd === 'passkey-interface') {
+    chrome.windows.getCurrent().then(win => {
+      const args = new URLSearchParams();
+      args.set('data', JSON.stringify(request.data, undefined, '  ').replaceAll('\\\\n', '\\n'));
+
+      chrome.windows.create({
+        url: '/data/passkey/index.html?' + args.toString(),
+        width: 500,
+        height: 300,
+        left: win.left + Math.round((win.width - 400) / 2),
+        top: win.top + Math.round((win.height - 300) / 2),
+        type: 'popup'
+      });
+    });
+  }
   else if (request.cmd === 'notify') {
     notify(undefined, request.message, request.badge, request.color);
   }
@@ -148,10 +169,23 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       title: 'Generate a Random Password',
       contexts: ['action']
     }, () => chrome.runtime.lastError);
+
+    chrome.contextMenus.create({
+      id: 'save',
+      title: 'Save',
+      contexts: ['action']
+    }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'save-form',
       title: 'Save a new Login Form in KeePass',
-      contexts: ['action']
+      contexts: ['action'],
+      parentId: 'save'
+    }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
+      id: 'generate-passkey',
+      title: 'Record Passkey Generation',
+      contexts: ['action'],
+      parentId: 'save'
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'auto-login',
@@ -190,7 +224,13 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 const onCommand = async (info, tab) => {
   tab = tab || await current();
 
-  if (info.menuItemId === 'save-form') {
+  if (info.menuItemId === 'generate-passkey') {
+    passkey.set(tab.id).catch(e => {
+      console.warn(e);
+      notify(tab, e);
+    });
+  }
+  else if (info.menuItemId === 'save-form') {
     const target = {
       tabId: tab.id
     };

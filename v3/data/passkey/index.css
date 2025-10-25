@@ -1,0 +1,31 @@
+body {
+  font-family: "Helvetica Neue",Helvetica,sans-serif;
+  font-size: 14px;
+  margin: 10px;
+  color: #ccc;
+  background-color: #414141;
+}
+h1 {
+  font-size: 16px;
+}
+input[type="button"] {
+  cursor: pointer;
+  background-color: #282828;
+  color: #ccc;
+  border: none;
+  border-radius: 0;
+  padding: 7px;
+  outline: none;
+  min-width: 90px;
+}
+div.info {
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  align-items: start;
+  white-space: nowrap;
+  grid-gap: 10px;
+}
+textarea {
+  field-sizing: content;
+  white-space: pre;
+}

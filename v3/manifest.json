@@ -18,7 +18,7 @@
   ],
   "background": {
     "service_worker": "worker.js",
-    "scripts": ["worker.js"]
+    "scripts": ["data/passkey/passkey.create.js", "worker.js"]
   },
   "action": {
     "default_popup": "/data/cmd/index.html"

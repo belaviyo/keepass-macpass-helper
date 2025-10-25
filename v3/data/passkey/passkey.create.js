@@ -1,29 +1,37 @@
-/* global PublicKeyCredential, AuthenticatorAssertionResponse, AuthenticatorAttestationResponse */
+/* global PublicKeyCredential, AuthenticatorAttestationResponse */
 
 const passkey = {};
 
-passkey.get = async (data, count) => {
-  const [tab] = await chrome.tabs.query({
-    currentWindow: true,
-    active: true
+passkey.set = async tabId => {
+  const target = {
+    tabId,
+    allFrames: true
+  };
+
+  await chrome.scripting.executeScript({
+    target,
+    func: () => {
+      const port = document.createElement('span');
+      port.id = 'kph-tsGhyft';
+      document.documentElement.appendChild(port);
+      port.addEventListener('copy-data', e => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        chrome.runtime.sendMessage({
+          cmd: 'passkey-interface',
+          data: e.detail
+        });
+      });
+    }
   });
-  chrome.scripting.executeScript({
-    target: {
-      tabId: tab.id,
-      allFrames: true
-    },
+  await chrome.scripting.executeScript({
+    target,
     world: 'MAIN',
     func: (data, count = 1) => {
-      console.info('[login counter]', count, data.CREDENTIAL_ID);
+      const port = document.getElementById('kph-tsGhyft');
+      port.remove();
 
       const base64 = {
-        decode(url) { // base64url decode
-          const base64 = url.replace(/-/g, '+').replace(/_/g, '/');
-          const binary = atob(base64);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          return bytes.buffer;
-        },
         encode(buffer) { // base64url encode
           const bytes = new Uint8Array(buffer);
           let binary = '';
@@ -32,15 +40,6 @@ passkey.get = async (data, count) => {
         }
       };
       const pem = {
-        import(pem) { // PEM to CryptoKey
-          const base64 = pem.replace(/-----BEGIN PRIVATE KEY-----/, '').replace(/-----END PRIVATE KEY-----/, '')
-            .replace(/\s+/g, '');
-          const der = Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
-          return crypto.subtle.importKey('pkcs8', der, {
-            name: 'ECDSA',
-            namedCurve: 'P-256'
-          }, false, ['sign']);
-        },
         async export(privateKey) { // CryptoKey to PEM
           const exported = await crypto.subtle.exportKey('pkcs8', privateKey);
           const exportedAsString = String.fromCharCode.apply(null, new Uint8Array(exported));
@@ -123,45 +122,6 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         };
       })();
 
-      const buildAuthenticatorData = async rpId => {
-        const rpIdHash = new Uint8Array(await crypto.subtle.digest(
-          'SHA-256',
-          new TextEncoder().encode(rpId)
-        )); // 32 bytes
-
-        const flags = new Uint8Array([0x05]); // UP (user present) + UV
-        const signCount = new Uint8Array(4); // login counter (increment on each request)
-        (new DataView(signCount.buffer)).setUint32(0, count, false);
-
-        // concatenate rpIdHash + flags + signCount
-        const buffer = new Uint8Array(rpIdHash.length + flags.length + signCount.length);
-        buffer.set(rpIdHash, 0);
-        buffer.set(flags, rpIdHash.length);
-        buffer.set(signCount, rpIdHash.length + flags.length);
-
-        return buffer.buffer;
-      };
-
-      const rawSignatureToDER = rawSig => {
-        const r = new Uint8Array(rawSig, 0, 32);
-        const s = new Uint8Array(rawSig, 32, 32);
-
-        function encodePositiveInteger(intBytes) {
-          const padded = (intBytes[0] & 0x80) ? new Uint8Array([0x00, ...intBytes]) : intBytes.slice();
-          const len = padded.length;
-          const lenBytes = new Uint8Array([len]); // since len <= 33 < 128
-          return new Uint8Array([0x02, ...lenBytes, ...padded]);
-        }
-
-        const rEncoded = encodePositiveInteger(r);
-        const sEncoded = encodePositiveInteger(s);
-
-        const innerLength = rEncoded.length + sEncoded.length;
-        const lenBytes = new Uint8Array([innerLength]); // < 128
-        const der = new Uint8Array([0x30, ...lenBytes, ...rEncoded, ...sEncoded]);
-
-        return der.buffer;
-      };
       const buildCreateAuthenticatorData = async (rpId, credId, coseKey) => {
         const rpIdHash = new Uint8Array(await crypto.subtle.digest(
           'SHA-256',
@@ -192,6 +152,7 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
 
         return buffer.buffer;
       };
+
       const createPublicKeyCredential = (publicKey, response, id, rawId) => {
         const publicKeyCredential = {
           authenticatorAttachment: 'platform',
@@ -211,48 +172,6 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         return publicKeyCredential;
       };
 
-
-      const get = async options => {
-        const privateKey = await pem.import(data.PRIVATE_KEY_PEM);
-
-        // Build clientDataJSON
-        const clientDataJSON = new TextEncoder().encode(JSON.stringify({
-          challenge: base64.encode(options.publicKey.challenge.buffer || options.publicKey.challenge),
-          crossOrigin: false,
-          origin: location.origin,
-          type: 'webauthn.get'
-        }));
-
-        const clientDataHash = await crypto.subtle.digest('SHA-256', clientDataJSON);
-
-        const authenticatorData = await buildAuthenticatorData(data.RELYING_PARTY);
-
-        // Prepare signed data: authenticatorData || clientDataHash
-        const signedData = new Uint8Array(authenticatorData.byteLength + 32);
-        signedData.set(new Uint8Array(authenticatorData), 0);
-        signedData.set(new Uint8Array(clientDataHash), authenticatorData.byteLength);
-
-        const rawSignature = await crypto.subtle.sign({
-          name: 'ECDSA',
-          hash: 'SHA-256'
-        }, privateKey, signedData);
-
-        const response = {
-          clientDataJSON: clientDataJSON.buffer,
-          authenticatorData,
-          signature: rawSignatureToDER(rawSignature),
-          userHandle: base64.decode(data.USER_HANDLE)
-        };
-        Object.setPrototypeOf(response, AuthenticatorAssertionResponse.prototype);
-
-        const publicKeyCredential = createPublicKeyCredential(
-          options.publicKey, response,
-          data.CREDENTIAL_ID, base64.decode(data.CREDENTIAL_ID)
-        );
-        console.log('get', publicKeyCredential, options);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return publicKeyCredential;
-      };
       const create = async options => {
         const {challenge, rp, user} = options.publicKey;
         if (!rp || !rp.id) {
@@ -319,32 +238,21 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         };
         Object.setPrototypeOf(response, AuthenticatorAttestationResponse.prototype);
 
-        // set values for "get"
-        data.CREDENTIAL_ID = credIdB64;
-        data.PRIVATE_KEY_PEM = await pem.export(keyPair.privateKey);
-        data.RELYING_PARTY = rp.id;
-        data.USER_HANDLE = base64.encode(user.id);
-        console.log('Export', data);
+        port.dispatchEvent(new CustomEvent('copy-data', {
+          detail: {
+            CREDENTIAL_ID: credIdB64,
+            PRIVATE_KEY_PEM: await pem.export(keyPair.privateKey),
+            RELYING_PARTY: rp.id,
+            USER_HANDLE: base64.encode(user.id)
+          }
+        }));
 
         const publicKeyCredential = createPublicKeyCredential(options.publicKey, response, credIdB64, credId);
-        console.log('create', publicKeyCredential, options);
         await new Promise(resolve => setTimeout(resolve, 2000));
         return publicKeyCredential;
       };
 
       /* overrides */
-      navigator.credentials.get = new Proxy(navigator.credentials.get, {
-        apply(target, self, args) {
-          const [options] = args;
-          if (!options?.publicKey || options?.mediation === 'silent') {
-            return null;
-          }
-          if (options?.mediation === 'conditional') {
-            return Reflect.apply(target, self, args);
-          }
-          return get(options);
-        }
-      });
       navigator.credentials.create = new Proxy(navigator.credentials.create, {
         apply(target, self, args) {
           const [options] = args;
@@ -354,7 +262,9 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           return create(args[0]).catch(e => console.error(e));
         }
       });
-    },
-    args: [data, count]
+      alert(`Intercepting passkey generation...
+
+You can now proceed with creating a new passkey.`);
+    }
   });
 };
