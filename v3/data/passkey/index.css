@@ -39,6 +39,9 @@ a,
 a:visited {
   color: #03A9F4;
 }
+p {
+  grid-column: 1 / 3;
+}
 .note {
   text-align: center;
   border: solid 2px #a19846;

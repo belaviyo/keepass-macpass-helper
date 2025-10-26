@@ -593,7 +593,8 @@ const copy = content => navigator.clipboard.writeText(content).then(() => {
     cmd: 'notify',
     message: 'Done',
     badge: '✓',
-    color: 'green'
+    color: 'green',
+    timeout: 3000
   }, () => window.close());
 }).catch(e => alert(e.message));
 
@@ -700,23 +701,35 @@ document.addEventListener('click', async e => {
       }
     }
     else if (cmd === 'passkey') {
-      const checked = list.selectedValues[0][0];
-      const data = checked.stringFields.filter(o => o.Key === 'PASSKEY_STORAGE').shift().Value;
-      const json = JSON.parse(data);
-      const key = 'P:' + checked.uuid;
-      const prefs = await chrome.storage.sync.get({
-        [key]: 1
-      });
-      if (e.shiftKey) {
-        const n = prompt('Current Login count', prefs[key]);
-        if (n && isNaN(n) === false) {
-          prefs[key] = Math.max(1, Number(n));
+      try {
+        const checked = list.selectedValues[0][0];
+        const data = checked.stringFields.filter(o => o.Key === 'PASSKEY_STORAGE').shift().Value;
+        const json = JSON.parse(data);
+        const key = 'P:' + checked.uuid;
+        const prefs = await chrome.storage.sync.get({
+          [key]: 1
+        });
+        if (e.shiftKey) {
+          const n = prompt('Current Login count', prefs[key]);
+          if (n && isNaN(n) === false) {
+            prefs[key] = Math.max(1, Number(n));
+          }
         }
+        prefs[key] += 1;
+        await chrome.storage.sync.set(prefs);
+        await passkey.get(json, prefs[key]);
+        await chrome.runtime.sendMessage({
+          cmd: 'notify',
+          message: 'Proceed passkey login on the page',
+          badge: '🔐',
+          color: 'green'
+        });
+        window.close();
       }
-      prefs[key] += 1;
-      await chrome.storage.sync.set(prefs);
-      await passkey.get(json, prefs[key]);
-      window.close();
+      catch (e) {
+        console.warn(e);
+        alert(e.message);
+      }
     }
     else if (cmd === 'options-page') {
       chrome.runtime.openOptionsPage();

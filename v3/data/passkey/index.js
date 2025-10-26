@@ -9,6 +9,15 @@ document.getElementById('data').value = args.get('data');
 document.getElementById('save-name').onclick = () => copy(document.getElementById('name').value);
 document.getElementById('save-value').onclick = () => copy(document.getElementById('data').value);
 
+onbeforeunload = e => {
+  event.preventDefault();
+  event.returnValue = '';
+};
+document.getElementById('done').onclick = () => {
+  onbeforeunload = () => {};
+  close();
+};
+
 // links
 for (const a of [...document.querySelectorAll('[data-href]')]) {
   if (a.hasAttribute('href') === false) {

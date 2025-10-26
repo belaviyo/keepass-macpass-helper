@@ -18,7 +18,7 @@ const current = () => chrome.tabs.query({
   return tbs[0];
 });
 
-const notify = async (tab, e, badge = 'E', color = '#d93025') => {
+const notify = async (tab, e, badge = 'E', color = '#d93025', timeout) => {
   tab = tab || await current();
 
   chrome.action.setBadgeText({
@@ -35,10 +35,12 @@ const notify = async (tab, e, badge = 'E', color = '#d93025') => {
   });
 
   clearTimeout(notify.id);
-  notify.id = setTimeout(() => chrome.action.setBadgeText({
-    tabId: tab.id,
-    text: ''
-  }), 3000);
+  if (timeout > 0) {
+    notify.id = setTimeout(() => chrome.action.setBadgeText({
+      tabId: tab.id,
+      text: ''
+    }), timeout);
+  }
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -64,7 +66,7 @@ const copy = async (content, tab) => {
   // Firefox
   try {
     await navigator.clipboard.writeText(content);
-    notify(undefined, 'Done', '✓', 'green');
+    notify(undefined, 'Done', '✓', 'green', 3000);
   }
   catch (e) {
     try {
@@ -77,7 +79,8 @@ const copy = async (content, tab) => {
             cmd: 'notify',
             message: 'Done',
             badge: '✓',
-            color: 'green'
+            color: 'green',
+            timeout: 3000
           })).catch(() => chrome.runtime.sendMessage({
             cmd: 'copy-interface',
             password
@@ -141,7 +144,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     });
   }
   else if (request.cmd === 'notify') {
-    notify(undefined, request.message, request.badge, request.color);
+    notify(undefined, request.message, request.badge, request.color, request.timeout);
   }
   else if (request.cmd === 'copy-interface') {
     copy.interface(request.password);
@@ -225,7 +228,7 @@ const onCommand = async (info, tab) => {
   tab = tab || await current();
 
   if (info.menuItemId === 'generate-passkey') {
-    passkey.set(tab.id).catch(e => {
+    passkey.set(tab.id).then(() => notify(tab, 'Proceed with passkey generation', '🔏', '#3f51b5')).catch(e => {
       console.warn(e);
       notify(tab, e);
     });

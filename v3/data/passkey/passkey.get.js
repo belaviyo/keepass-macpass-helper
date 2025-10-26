@@ -32,6 +32,9 @@ passkey.get = async (data, count) => {
       port.id = 'kph-hjUido';
       document.documentElement.appendChild(port);
       port.addEventListener('calculating-signature', async e => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
         const {clientDataJSON, authenticatorData} = e.detail;
 
         const rawSignatureToDER = rawSig => {

@@ -5,7 +5,8 @@ const copy = e => navigator.clipboard.writeText(args.get('content')).then(() => 
     cmd: 'notify',
     message: 'Done',
     badge: '✓',
-    color: 'green'
+    color: 'green',
+    timeout: 3000
   }, () => window.close()), e && e.isTrusted ? 0 : 1000);
 }).catch(e => e.isTrusted ? alert(e.message) : '');
 
