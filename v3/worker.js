@@ -174,21 +174,26 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     }, () => chrome.runtime.lastError);
 
     chrome.contextMenus.create({
-      id: 'save',
-      title: 'Save',
+      id: 'save-form',
+      title: 'Save a new Login Form in KeePass',
       contexts: ['action']
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
-      id: 'save-form',
-      title: 'Save a new Login Form in KeePass',
-      contexts: ['action'],
-      parentId: 'save'
+      id: 'passkey',
+      title: 'Passkey Generation (Beta)',
+      contexts: ['action']
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'generate-passkey',
-      title: 'Intercept Passkey Generation (beta)',
+      title: 'Intercept',
       contexts: ['action'],
-      parentId: 'save'
+      parentId: 'passkey'
+    }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
+      id: 'generate-passkey:backed-up',
+      title: 'Intercept + Backup Verify',
+      contexts: ['action'],
+      parentId: 'passkey'
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'auto-login',
@@ -197,26 +202,32 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       enabled: false
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
+      id: 'extra',
+      title: 'Extra',
+      contexts: ['action']
+    }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
       id: 'encrypt-data',
       title: 'Encrypt or Decrypt a String',
-      contexts: ['action']
+      contexts: ['action'],
+      parentId: 'extra'
+    }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
+      id: 'open-keyboards',
+      title: 'Keyboard Shortcut Settings',
+      contexts: ['action'],
+      parentId: 'extra'
     }, () => chrome.runtime.lastError);
     chrome.contextMenus.create({
       id: 'lock-secure-synced-storage',
       title: 'Lock Secure Synced Storage',
-      contexts: ['action']
+      contexts: ['action'],
+      parentId: 'extra'
     }, () => chrome.runtime.lastError);
     if (/Firefox/.test(navigator.userAgent)) {
       chrome.contextMenus.create({
         id: 'open-options',
         title: 'Open Options Page',
-        contexts: ['action']
-      }, () => chrome.runtime.lastError);
-    }
-    else {
-      chrome.contextMenus.create({
-        id: 'open-keyboards',
-        title: 'Keyboard Shortcut Settings',
         contexts: ['action']
       }, () => chrome.runtime.lastError);
     }
@@ -227,8 +238,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 const onCommand = async (info, tab) => {
   tab = tab || await current();
 
-  if (info.menuItemId === 'generate-passkey') {
-    passkey.set(tab.id).then(() => notify(tab, 'Proceed with passkey generation', '🔏', '#3f51b5')).catch(e => {
+  if (info.menuItemId === 'generate-passkey' || info.menuItemId === 'generate-passkey:backed-up') {
+    passkey.set(tab.id, {
+      'backed-up': info.menuItemId === 'generate-passkey:backed-up'
+    }).then(() => {
+      notify(tab, 'Proceed with passkey generation', '🔏', '#3f51b5');
+    }).catch(e => {
       console.warn(e);
       notify(tab, e);
     });

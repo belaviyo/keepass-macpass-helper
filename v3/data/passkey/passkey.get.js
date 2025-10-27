@@ -1,4 +1,4 @@
-/* global PublicKeyCredential, AuthenticatorAssertionResponse */
+/* global PublicKeyCredential, AuthenticatorAssertionResponse, cloneInto */
 
 const passkey = {};
 
@@ -35,42 +35,57 @@ passkey.get = async (data, count) => {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        const {clientDataJSON, authenticatorData} = e.detail;
+        let detail;
+        try {
+          const {clientDataJSON, authenticatorData} = e.detail;
 
-        const rawSignatureToDER = rawSig => {
-          const r = new Uint8Array(rawSig, 0, 32);
-          const s = new Uint8Array(rawSig, 32, 32);
+          const rawSignatureToDER = rawSig => {
+            const r = new Uint8Array(rawSig, 0, 32);
+            const s = new Uint8Array(rawSig, 32, 32);
 
-          function encodePositiveInteger(intBytes) {
-            const padded = (intBytes[0] & 0x80) ? new Uint8Array([0x00, ...intBytes]) : intBytes.slice();
-            const len = padded.length;
-            const lenBytes = new Uint8Array([len]); // since len <= 33 < 128
-            return new Uint8Array([0x02, ...lenBytes, ...padded]);
-          }
+            function encodePositiveInteger(intBytes) {
+              const padded = (intBytes[0] & 0x80) ? new Uint8Array([0x00, ...intBytes]) : intBytes.slice();
+              const len = padded.length;
+              const lenBytes = new Uint8Array([len]); // since len <= 33 < 128
+              return new Uint8Array([0x02, ...lenBytes, ...padded]);
+            }
 
-          const rEncoded = encodePositiveInteger(r);
-          const sEncoded = encodePositiveInteger(s);
+            const rEncoded = encodePositiveInteger(r);
+            const sEncoded = encodePositiveInteger(s);
 
-          const innerLength = rEncoded.length + sEncoded.length;
-          const lenBytes = new Uint8Array([innerLength]); // < 128
-          const der = new Uint8Array([0x30, ...lenBytes, ...rEncoded, ...sEncoded]);
+            const innerLength = rEncoded.length + sEncoded.length;
+            const lenBytes = new Uint8Array([innerLength]); // < 128
+            const der = new Uint8Array([0x30, ...lenBytes, ...rEncoded, ...sEncoded]);
 
-          return der.buffer;
-        };
+            return der.buffer;
+          };
 
-        // Prepare signed data: authenticatorData || clientDataHash
-        const clientDataHash = await crypto.subtle.digest('SHA-256', clientDataJSON);
-        const signedData = new Uint8Array(authenticatorData.byteLength + 32);
-        signedData.set(new Uint8Array(authenticatorData), 0);
-        signedData.set(new Uint8Array(clientDataHash), authenticatorData.byteLength);
-
-        const rawSignature = await crypto.subtle.sign({
-          name: 'ECDSA',
-          hash: 'SHA-256'
-        }, privateKey, signedData);
-
+          // Prepare signed data: authenticatorData || clientDataHash
+          const clientDataHash = await crypto.subtle.digest('SHA-256', clientDataJSON);
+          const signedData = new Uint8Array(authenticatorData.byteLength + 32);
+          signedData.set(new Uint8Array(authenticatorData), 0);
+          signedData.set(new Uint8Array(clientDataHash), authenticatorData.byteLength);
+          const rawSignature = await crypto.subtle.sign({
+            name: 'ECDSA',
+            hash: 'SHA-256'
+          }, privateKey, signedData);
+          detail = {
+            signature: rawSignatureToDER(rawSignature)
+          };
+          console.log(7);
+        }
+        catch (e) {
+          console.error(e);
+          detail = {
+            error: e.message
+          };
+        }
+        // Firefox
+        if (typeof cloneInto !== 'undefined') {
+          detail = cloneInto(detail, window);
+        }
         port.dispatchEvent(new CustomEvent('signature-ready', {
-          detail: rawSignatureToDER(rawSignature)
+          detail
         }));
       });
     },
@@ -87,7 +102,12 @@ passkey.get = async (data, count) => {
       const port = document.getElementById('kph-hjUido');
       port.remove();
       port.addEventListener('signature-ready', e => {
-        port.resolve(e.detail);
+        if (e.detail.error) {
+          port.reject(Error(e.detail.error));
+        }
+        else {
+          port.resolve(e.detail.signature);
+        }
       });
 
       const base64 = {
@@ -112,7 +132,8 @@ passkey.get = async (data, count) => {
           new TextEncoder().encode(rpId)
         )); // 32 bytes
 
-        const flags = new Uint8Array([0x05]); // UP (user present) + UV
+        const flagsValue = 0x05; // UP (user present) + UV
+        const flags = new Uint8Array([flagsValue]);
         const signCount = new Uint8Array(4); // login counter (increment on each request)
         (new DataView(signCount.buffer)).setUint32(0, count, false);
 
@@ -155,8 +176,9 @@ passkey.get = async (data, count) => {
 
         const authenticatorData = await buildAuthenticatorData(data.RELYING_PARTY);
 
-        const signature = await new Promise(resolve => {
+        const signature = await new Promise((resolve, reject) => {
           port.resolve = resolve;
+          port.reject = reject;
 
           port.dispatchEvent(new CustomEvent('calculating-signature', {
             detail: {
@@ -165,6 +187,7 @@ passkey.get = async (data, count) => {
             }
           }));
         });
+        console.log(signature, 2);
 
         const response = {
           clientDataJSON: clientDataJSON.buffer,
@@ -183,6 +206,8 @@ passkey.get = async (data, count) => {
       };
 
       /* overrides */
+      console.info('Intercepting Passkey Request');
+
       navigator.credentials.get = new Proxy(navigator.credentials.get, {
         apply(target, self, args) {
           const [options] = args;

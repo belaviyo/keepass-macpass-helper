@@ -362,7 +362,7 @@ document.addEventListener('search', submit);
     // passkey
     if (o && o[0] && o[0].stringFields) {
       document.querySelector('#toolbar [data-cmd="passkey"]').disabled = o[0].stringFields.some(o => {
-        return o.Key === 'PASSKEY_STORAGE';
+        return o.Key.startsWith('PASSKEY_STORAGE');
       }) === false;
     }
 
@@ -703,8 +703,26 @@ document.addEventListener('click', async e => {
     else if (cmd === 'passkey') {
       try {
         const checked = list.selectedValues[0][0];
-        const data = checked.stringFields.filter(o => o.Key === 'PASSKEY_STORAGE').shift().Value;
-        const json = JSON.parse(data);
+        const data = checked.stringFields.filter(o => o.Key.startsWith('PASSKEY_STORAGE'));
+        let selectedData = data[0];
+        if (data.length > 1) {
+          const r = prompt('Which passkey would you like to use?\n\n' + data.map((o, n) => {
+            return (n + 1) + ': ' + o.Key;
+          }).join('\n'), 1);
+
+          if (!r) {
+            return;
+          }
+          if (isNaN(r)) {
+            return;
+          }
+          selectedData = data[Number(r) - 1];
+          if (!selectedData) {
+            return;
+          }
+        }
+
+        const json = JSON.parse(selectedData.Value);
         const key = 'P:' + checked.uuid;
         const prefs = await chrome.storage.sync.get({
           [key]: 1

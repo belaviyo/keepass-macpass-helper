@@ -2,7 +2,7 @@
 
 const passkey = {};
 
-passkey.set = async tabId => {
+passkey.set = async (tabId, features) => {
   const target = {
     tabId,
     allFrames: true
@@ -28,7 +28,7 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
 
   await chrome.scripting.executeScript({
     target,
-    func: key => {
+    func: (key, features) => {
       const port = document.createElement('span');
       port.id = 'kph-tsGhyft';
       document.documentElement.appendChild(port);
@@ -36,21 +36,26 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         e.preventDefault();
         e.stopImmediatePropagation();
 
+        const FLAGS = ['AT', 'UP', 'UV', 'BE'];
+        if (features['backed-up']) {
+          FLAGS.push('BS');
+        }
         chrome.runtime.sendMessage({
           cmd: 'passkey-interface',
           data: {
             PRIVATE_KEY_PEM: key,
-            ...e.detail
+            ...e.detail,
+            FLAGS
           }
         });
       });
     },
-    args: [await pem.export(keyPair.privateKey)]
+    args: [await pem.export(keyPair.privateKey), features]
   });
   await chrome.scripting.executeScript({
     target,
     world: 'MAIN',
-    func: pub => {
+    func: (pub, features) => {
       const port = document.getElementById('kph-tsGhyft');
       port.remove();
 
@@ -140,7 +145,13 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           new TextEncoder().encode(rpId)
         )); // 32 bytes
 
-        const flags = new Uint8Array([0x45]); // AT + UP + UV
+        let flagsValue = 0x45; // AT + UP + UV
+        // https://github.com/keepassium/keepassium/issues/444/
+        flagsValue |= 0x08; // Add BE
+        if (features['backed-up']) {
+          flagsValue |= 0x10; // Add BS (only if actually backed up)
+        }
+        const flags = new Uint8Array([flagsValue]); // AT + UP + UV
         const signCount = new Uint8Array([0x00, 0x00, 0x00, 0x01]);
         // Fixed for this extension
         const aaguid = new Uint8Array([220, 21, 28, 38, 217, 69, 68, 233, 164, 85, 106, 141, 33, 91, 81, 3]);
@@ -264,6 +275,9 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
       };
 
       /* overrides */
+      const msg = (features['backed-up'] ? 'with' : 'without') + ' "backed up" flag';
+      console.info('Intercepting Passkey Generation', msg);
+
       navigator.credentials.create = new Proxy(navigator.credentials.create, {
         apply(target, self, args) {
           const [options] = args;
@@ -274,6 +288,6 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
         }
       });
     },
-    args: [Array.from(new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey)))]
+    args: [Array.from(new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey))), features]
   });
 };
