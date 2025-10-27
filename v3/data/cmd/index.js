@@ -360,9 +360,10 @@ document.addEventListener('search', submit);
       }
     }
     // passkey
+    document.querySelector('#toolbar [data-cmd="passkey"]').disabled = true;
     if (o && o[0] && o[0].stringFields) {
       document.querySelector('#toolbar [data-cmd="passkey"]').disabled = o[0].stringFields.some(o => {
-        return o.Key.startsWith('PASSKEY_STORAGE');
+        return o.Key.startsWith('PASSKEY_STORAGE') || o.Key === 'KPEX_PASSKEY_PRIVATE_KEY_PEM';
       }) === false;
     }
 
@@ -704,6 +705,29 @@ document.addEventListener('click', async e => {
       try {
         const checked = list.selectedValues[0][0];
         const data = checked.stringFields.filter(o => o.Key.startsWith('PASSKEY_STORAGE'));
+        // Append KeePassXC style passkey;
+        if (checked.stringFields.some(o => o.Key === 'KPEX_PASSKEY_PRIVATE_KEY_PEM')) {
+          try {
+            const id = checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_CREDENTIAL_ID').shift().Value;
+            // duplication check
+            if (data.some(o => o.CREDENTIAL_ID === id) === false) {
+              data.push({
+                Key: 'Imported from KeePassXC',
+                Value: JSON.stringify({
+                  PRIVATE_KEY_PEM: checked.stringFields
+                    .filter(o => o.Key === 'KPEX_PASSKEY_PRIVATE_KEY_PEM').shift().Value,
+                  CREDENTIAL_ID: id,
+                  RELYING_PARTY: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_RELYING_PARTY').shift().Value,
+                  USER_HANDLE: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_USER_HANDLE').shift().Value
+                }).replaceAll('\\\\n', '\\n')
+              });
+            }
+          }
+          catch (e) {
+            console.error(e);
+          }
+        }
+
         let selectedData = data[0];
         if (data.length > 1) {
           const r = prompt('Which passkey would you like to use?\n\n' + data.map((o, n) => {

@@ -72,7 +72,6 @@ passkey.get = async (data, count) => {
           detail = {
             signature: rawSignatureToDER(rawSignature)
           };
-          console.log(7);
         }
         catch (e) {
           console.error(e);
@@ -187,7 +186,6 @@ passkey.get = async (data, count) => {
             }
           }));
         });
-        console.log(signature, 2);
 
         const response = {
           clientDataJSON: clientDataJSON.buffer,
