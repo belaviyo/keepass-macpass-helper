@@ -132,6 +132,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     chrome.windows.getCurrent().then(win => {
       const args = new URLSearchParams();
       args.set('data', JSON.stringify(request.data, undefined, '  ').replaceAll('\\\\n', '\\n'));
+      args.set('href', sender.tab.url);
 
       chrome.windows.create({
         url: '/data/passkey/index.html?' + args.toString(),

@@ -120,7 +120,7 @@ engine.search = async query => {
           o.ssdb = true;
           o.href = query.url;
           o.group = '[Synced Storage]';
-          o.Name = '';
+          o.Name = o.Name || '';
 
           rs.push(o);
         }

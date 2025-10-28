@@ -6,18 +6,30 @@
   <link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
-  <h1>Store the following StringField inside KeePass application.</h1>
-  <p class="note">Losing this data means losing your newly generated passkey, and you will no longer be able to log in to the site using that passkey.</p>
-  <div class="info">
+  <h1>Store the following StringField inside KeePass application or Synced Storage.</h1>
+  <p class="note">If this data is lost, the newly generated passkey will be unrecoverable, and you won't be able to log in to the site with it.<span id="ssdb-info"><br><br>If you prefer to store it in Secure Storage but the option is disabled, it means your database is not open. Please open the database first, then click the refresh button.</span></p>
+  <div id="content">
     <span>Name</span>
     <input type="text" value="KPH: PASSKEY_STORAGE" id="name" title="You can append any string to this key if you have more than one passkeys">
     <input type="button" id="save-name" value="Copy">
     <span>Value</span>
     <textarea readonly id="data" rows="6"></textarea>
     <input type="button" id="save-value" value="Copy">
-    <p>Read <a data-href="20" target="_blank">FAQs page</a> for more info</p>
+  </div>
+  <div class="info">
+    <span>Save in</span>
+    <input type="button" id="ssdb" value="Synced Storage" disabled>
+    <input type="button" id="keepass" value="KeePass">
+  </div>
+  <div class="done">
+    <div style="flex: 1">Read <a data-href="20" target="_blank">FAQs page</a> for more info</div>
+    <input type="button" id="refresh" value="Refresh">
     <input type="button" id="done" value="Done">
   </div>
+  <script src="/tools/safe.js"></script>
+  <script src="/tools/tld.js"></script>
+  <script src="/connect/SecureSyncedDB.js"></script>
+  <script src="/connect/api.js"></script>
   <script type="text/javascript" src="index.js"></script>
 </body>
 </html>

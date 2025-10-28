@@ -347,6 +347,12 @@ document.addEventListener('search', submit);
     [...document.getElementById('toolbar').querySelectorAll('input, button')]
       .forEach(input => input.disabled = disabled);
 
+    // Only has username
+    if (target.selectedValues[0][0].name) {
+      document.querySelector('#toolbar [data-cmd="insert-login"]').disabled = false;
+      document.querySelector('#toolbar [data-cmd="copy"]').disabled = false;
+    }
+
     const o = e.target.selectedValues[0];
     // otp
     document.querySelector('#toolbar [data-cmd="otp"]').disabled = true;
