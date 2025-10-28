@@ -1,5 +1,5 @@
 # KeePassHelper Password Manager
-Helper extension for KeePass to find and insert credentials, generate passwords, or save new logins without manual copy and paste
+An extension for Chrome, Opera, Edge, and Firefox that integrates with KeePass, MacPass, and KeePassXC to find and fill credentials, generate secure passwords and passkeys, and save new logins directly to your database—no manual copying required.
 
 ### Preview
 
