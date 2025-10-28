@@ -45,7 +45,8 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           data: {
             PRIVATE_KEY_PEM: key,
             ...e.detail,
-            FLAGS
+            FLAGS,
+            CREATE_BY: 'KPH@' + chrome.runtime.getManifest().version
           }
         });
       });
@@ -152,7 +153,7 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           flagsValue |= 0x10; // Add BS (only if actually backed up)
         }
         const flags = new Uint8Array([flagsValue]); // AT + UP + UV
-        const signCount = new Uint8Array([0x00, 0x00, 0x00, 0x01]);
+        const signCount = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
         // Fixed for this extension
         const aaguid = new Uint8Array([220, 21, 28, 38, 217, 69, 68, 233, 164, 85, 106, 141, 33, 91, 81, 3]);
 
@@ -265,7 +266,8 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           detail: {
             CREDENTIAL_ID: credIdB64,
             RELYING_PARTY: rp.id,
-            USER_HANDLE: base64.encode(user.id.buffer || user.id)
+            USER_HANDLE: base64.encode(user.id.buffer || user.id),
+            USERNAME: user.name || 'NA'
           }
         }));
 

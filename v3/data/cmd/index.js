@@ -712,13 +712,14 @@ document.addEventListener('click', async e => {
             // duplication check
             if (data.some(o => o.CREDENTIAL_ID === id) === false) {
               data.push({
-                Key: 'Imported from KeePassXC',
+                Key: 'KeePassXC',
                 Value: JSON.stringify({
                   PRIVATE_KEY_PEM: checked.stringFields
                     .filter(o => o.Key === 'KPEX_PASSKEY_PRIVATE_KEY_PEM').shift().Value,
                   CREDENTIAL_ID: id,
                   RELYING_PARTY: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_RELYING_PARTY').shift().Value,
-                  USER_HANDLE: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_USER_HANDLE').shift().Value
+                  USER_HANDLE: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_USER_HANDLE').shift().Value,
+                  USERNAME: checked.stringFields.filter(o => o.Key === 'KPEX_PASSKEY_USERNAME').shift().Value
                 }).replaceAll('\\\\n', '\\n')
               });
             }
@@ -747,19 +748,7 @@ document.addEventListener('click', async e => {
         }
 
         const json = JSON.parse(selectedData.Value);
-        const key = 'P:' + checked.uuid;
-        const prefs = await chrome.storage.sync.get({
-          [key]: 1
-        });
-        if (e.shiftKey) {
-          const n = prompt('Current Login count', prefs[key]);
-          if (n && isNaN(n) === false) {
-            prefs[key] = Math.max(1, Number(n));
-          }
-        }
-        prefs[key] += 1;
-        await chrome.storage.sync.set(prefs);
-        await passkey.get(json, prefs[key]);
+        await passkey.get(json);
         await chrome.runtime.sendMessage({
           cmd: 'notify',
           message: 'Proceed passkey login on the page',

@@ -2,7 +2,7 @@
 
 const passkey = {};
 
-passkey.get = async (data, count) => {
+passkey.get = async data => {
   const [tab] = await chrome.tabs.query({
     currentWindow: true,
     active: true
@@ -95,9 +95,7 @@ passkey.get = async (data, count) => {
   await chrome.scripting.executeScript({
     target,
     world: 'MAIN',
-    func: (data, count = 1) => {
-      console.info('[login counter]', count, data.CREDENTIAL_ID);
-
+    func: data => {
       const port = document.getElementById('kph-hjUido');
       port.remove();
       port.addEventListener('signature-ready', e => {
@@ -133,8 +131,8 @@ passkey.get = async (data, count) => {
 
         const flagsValue = 0x05; // UP (user present) + UV
         const flags = new Uint8Array([flagsValue]);
-        const signCount = new Uint8Array(4); // login counter (increment on each request)
-        (new DataView(signCount.buffer)).setUint32(0, count, false);
+        // If authenticators always keep the counter at zero, the highlighted condition is false
+        const signCount = new Uint8Array(4);
 
         // concatenate rpIdHash + flags + signCount
         const buffer = new Uint8Array(rpIdHash.length + flags.length + signCount.length);
@@ -219,6 +217,6 @@ passkey.get = async (data, count) => {
         }
       });
     },
-    args: [data, count]
+    args: [data]
   });
 };
