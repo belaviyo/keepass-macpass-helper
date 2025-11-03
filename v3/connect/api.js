@@ -25,10 +25,10 @@ engine.otp = string => {
 };
 
 engine.asyncOTP = uuid => {
-  if (engine.core['get-totp']) {
+  if ('get-totp' in engine.core) {
     return engine.core['get-totp'](uuid);
   }
-  return Promise.resolve();
+  return Promise.resolve('');
 };
 
 // eslint-disable-next-line no-unused-vars

@@ -171,8 +171,9 @@ class SimpleListView extends HTMLElement {
     this.#parent.style.setProperty('--structure', c);
   }
   #adjust() {
-    this.#select.size = this.#select.options.length + (this.getAttribute('headers') === 'false' ? -1 : 0);
-    this.setAttribute('size', this.#select.size);
+    const n = this.#select.options.length + (this.getAttribute('headers') === 'false' ? -1 : 0);
+    this.#select.size = Math.max(2, n); // to make sure the select is in multiple view
+    this.setAttribute('size', n);
   }
   add(parts, name, value, selected = false) {
     const div = document.createElement('div');

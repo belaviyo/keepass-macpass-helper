@@ -20,7 +20,6 @@ const timebased = {
   },
   includes(o) {
     const {stringFields = []} = o;
-
     if (o) {
       const b = stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
         stringFields.some(o => timebased.words.sotp.includes(o.Key)) ||
@@ -359,7 +358,6 @@ document.addEventListener('search', submit);
     if (o && o[0]) {
       if (lastO !== o[0]) {
         lastO = o[0];
-
         timebased.includes(o[0]).then(b => {
           document.querySelector('#toolbar [data-cmd="otp"]').disabled = b === false;
         });
