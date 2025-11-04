@@ -68,7 +68,33 @@ document.addEventListener('submit', e => {
       await engine.prepare(prefs.engine);
 
       if (prefs.engine === 'kwpass') {
-        await engine.core.open(prompt('Password to unlock the database?'));
+        const dialog = document.getElementById('prompt');
+        dialog.showModal();
+        dialog.querySelector('input[type=password]').value = '';
+
+        const password = await new Promise(resolve => {
+          dialog.oncancel = e => {
+            e.preventDefault();
+            resolve('');
+          };
+          dialog.querySelector('input[type=button]').onclick = e => {
+            resolve('');
+          };
+          dialog.querySelector('form').onsubmit = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            resolve(dialog.querySelector('input[type=password]').value);
+          };
+        });
+        dialog.close();
+
+        if (password) {
+          await engine.core.open(password);
+        }
+        else {
+          b.disabled = false;
+          return;
+        }
       }
 
       if (e.submitter.dataset.cmd == 'ssdb') {
@@ -137,6 +163,9 @@ start();
 
 addEventListener('keydown', e => {
   if (e.code === 'Escape') {
+    if (e.target.closest('#prompt')) {
+      return;
+    }
     document.querySelector('[data-cmd="cancel"]').click();
   }
 });

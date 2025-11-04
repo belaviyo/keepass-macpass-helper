@@ -20,7 +20,7 @@
     <input type="radio" name="method" id="kwpass">
     <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label>
     <div style="grid-column: 3/5; text-align: end;" class="fl">
-      <input type="button" id="kwpass-download" value="Download as KDBX3">
+      <input type="button" id="kwpass-download" value="Download Database">
       <input type="button" id="kwpass-remove" value="Delete File(s)">
       <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
     </div>
@@ -183,10 +183,22 @@
     <button id="save">Save Options</button>
     <span id="toast"></span>
   </p>
+  <dialog id="prompt">
+    <form>
+      <p>
+        <label for="password-input">Enter Password:</label>
+        <input type="password" id="password-input" required>
+      </p>
+      <div>
+        <button type="button">Cancel</button>
+        <button type="submit">OK</button>
+      </div>
+    </form>
+  </dialog>
 
-<script src="/connect/kdbxweb/kdbxweb.js"></script>
-<script src="/tools/tld.js"></script>
-<script src="/connect/kdbxweb/connect.js"></script>
-<script src="index.js"></script>
+  <script src="/connect/kdbxweb/kdbxweb.js"></script>
+  <script src="/tools/tld.js"></script>
+  <script src="/connect/kdbxweb/connect.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>

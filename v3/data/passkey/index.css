@@ -70,3 +70,20 @@ p {
 #ssdb-info {
   display: none;
 }
+#prompt {
+  background-color: #414141;
+  color: #ccc;
+  white-space: nowrap;
+
+  p {
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    grid-gap: 5px;
+    align-items: center;
+  }
+  div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+}

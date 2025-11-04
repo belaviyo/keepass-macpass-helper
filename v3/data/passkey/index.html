@@ -26,10 +26,24 @@
     <input type="button" id="refresh" value="Refresh">
     <input type="button" id="done" value="Done">
   </div>
+  <dialog id="prompt">
+    <form>
+      <p>
+        <label for="password-input">Enter Database Password:</label>
+        <input type="password" id="password-input" required>
+      </p>
+      <div>
+        <input type="button" value="Cancel">
+        <input type="submit" value="OK">
+      </div>
+    </form>
+  </dialog>
   <script src="/tools/safe.js"></script>
   <script src="/tools/tld.js"></script>
   <script src="/connect/SecureSyncedDB.js"></script>
   <script src="/connect/api.js"></script>
+  <script src="/connect/kdbxweb/kdbxweb.js"></script>
+  <script src="/connect/kdbxweb/connect.js"></script>
   <script type="text/javascript" src="index.js"></script>
 </body>
 </html>

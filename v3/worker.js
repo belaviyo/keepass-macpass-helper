@@ -86,7 +86,8 @@ const copy = async (content, tab) => {
             password
           }));
         },
-        args: [content]
+        args: [content],
+        injectImmediately: true
       });
     }
     catch (e) {
@@ -125,7 +126,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
         catch (e) {
           document.activeElement.focus();
         }
-      }
+      },
+      injectImmediately: true
     });
   }
   else if (request.cmd === 'passkey-interface') {
@@ -260,7 +262,8 @@ const onCommand = async (info, tab) => {
           ...target,
           allFrames: true
         },
-        files: ['/data/helper.js']
+        files: ['/data/helper.js'],
+        injectImmediately: true
       });
 
       // collect logins
@@ -287,7 +290,8 @@ const onCommand = async (info, tab) => {
               passwords
             };
           });
-        }
+        },
+        injectImmediately: true
       });
 
       const pairs = r.map(o => o.result).flat().filter(a => a);
@@ -297,7 +301,8 @@ const onCommand = async (info, tab) => {
         func: pairs => {
           window.pairs = pairs;
         },
-        args: [pairs]
+        args: [pairs],
+        injectImmediately: true
       });
 
       await chrome.scripting.insertCSS({
@@ -306,7 +311,8 @@ const onCommand = async (info, tab) => {
       });
       await chrome.scripting.executeScript({
         target,
-        files: ['/data/save/inject.js']
+        files: ['/data/save/inject.js'],
+        injectImmediately: true
       });
     }
     catch (e) {
@@ -333,7 +339,8 @@ const onCommand = async (info, tab) => {
       });
       await chrome.scripting.executeScript({
         target,
-        files: ['/data/safe/inject.js']
+        files: ['/data/safe/inject.js'],
+        injectImmediately: true
       });
     }
     catch (e) {
@@ -398,7 +405,8 @@ const onCommand = async (info, tab) => {
 
 This username must exactly correspond to one of the credentials stored in your KeePass database for this URL.`, value);
               },
-              args: [o?.username || '']
+              args: [o?.username || ''],
+              injectImmediately: true
             });
             if (r[0].result) {
               if (o) {
@@ -438,7 +446,8 @@ This username must exactly correspond to one of the credentials stored in your K
       });
       await chrome.scripting.executeScript({
         target,
-        files: ['/data/embedded/inject.js']
+        files: ['/data/embedded/inject.js'],
+        injectImmediately: true
       });
     }
     catch (e) {

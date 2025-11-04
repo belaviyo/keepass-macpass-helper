@@ -37,7 +37,7 @@ engine.prepare('none').then(() => {
           'SubmitUrl': '',
           'Login': json.USERNAME + ' (' + json.CREDENTIAL_ID + ')',
           'Name': 'Passkey',
-          'Password': '11',
+          'Password': '',
           'StringFields': [{
             Key: 'PASSKEY_STORAGE',
             Value: args.get('data')
@@ -57,10 +57,66 @@ engine.prepare('none').then(() => {
   }
 });
 
-document.getElementById('keepass').onclick = () => {
-  alert(`Please manually save the data as a string field in your KeePass database.
+document.getElementById('keepass').onclick = async ({target}) => {
+  try {
+    const prefs = await chrome.storage.local.get({
+      engine: 'keepass'
+    });
+    if (prefs.engine === 'kwpass') {
+      target.disabled = true;
+      await engine.prepare(prefs.engine);
+
+      const dialog = document.getElementById('prompt');
+      dialog.showModal();
+      dialog.querySelector('input[type=password]').value = '';
+
+      const password = await new Promise(resolve => {
+        dialog.oncancel = e => {
+          e.preventDefault();
+          resolve('');
+        };
+        dialog.querySelector('input[type=button]').onclick = e => {
+          resolve('');
+        };
+        dialog.querySelector('form').onsubmit = e => {
+          e.preventDefault();
+          e.stopPropagation();
+          resolve(dialog.querySelector('input[type=password]').value);
+        };
+      });
+      dialog.close();
+
+      if (password) {
+        await engine.core.open(password);
+        const json = JSON.parse(args.get('data'));
+        await engine.set({
+          'url': args.get('href'),
+          'submiturl': '',
+          'login': json.USERNAME + ' (' + json.CREDENTIAL_ID + ')',
+          'name': 'Passkey', // only for kdbweb
+          'password': '',
+          'stringFields': [{
+            Key: 'PASSKEY_STORAGE',
+            Value: args.get('data')
+          }]
+        });
+        target.value = 'Saved';
+      }
+      else {
+        return;
+      }
+    }
+    else {
+      alert(`Please manually save the data as a string field in your KeePass database.
 
 This extension cannot insert or update string fields automatically.`);
+    }
+  }
+  catch (e) {
+    target.disabled = false;
+    console.error(e);
+    alert(e.message);
+  }
 };
 
 // links

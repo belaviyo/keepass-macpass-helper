@@ -347,7 +347,7 @@ document.addEventListener('search', submit);
       .forEach(input => input.disabled = disabled);
 
     // Only has username
-    if (target.selectedValues[0][0].name) {
+    if (target.selectedValues[0] && target.selectedValues[0][0].name) {
       document.querySelector('#toolbar [data-cmd="insert-login"]').disabled = false;
       document.querySelector('#toolbar [data-cmd="copy"]').disabled = false;
     }

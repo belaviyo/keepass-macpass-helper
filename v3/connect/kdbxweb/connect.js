@@ -65,7 +65,8 @@ class KWPASS {
         step(g);
       }
       for (const entry of group.entries) {
-        const entryUrl = entry.fields.URL;
+        const entryUrl = entry.fields.get('URL');
+
         if (entryUrl && (
           entryUrl.includes('://' + hostname) ||
           entryUrl.includes('://' + domain) ||
@@ -75,36 +76,54 @@ class KWPASS {
         }
       }
     };
+
     for (const group of this.db.groups) {
       step(group);
     }
 
     return Promise.resolve({
-      Entries: matches.map(e => ({
-        Login: e.fields.UserName,
-        Name: e.fields.Title,
-        Password: e.fields.Password ? e.fields.Password.getText() : '',
-        StringFields: Object.entries(e.fields).map(([key, value]) => ({
-          Key: key.replace(/^KPH:\s*/, ''),
-          Value: typeof value === 'object' ? value.getText() : value
-        }))
-      }))
+      Entries: matches.map(e => {
+        let Password = '';
+        if (e.fields.has('Password')) {
+          const p = e.fields.get('Password');
+          if (p) {
+            Password = e.fields.get('Password').getText();
+          }
+        }
+        const StringFields = [];
+        for (const [key, value] of e.fields.entries()) {
+          StringFields.push({
+            Key: key.replace(/^KPH:\s*/, ''),
+            Value: typeof value === 'object' ? value.getText() : value
+          });
+        }
+
+        return {
+          Login: e.fields.get('UserName'),
+          Name: e.fields.get('Title'),
+          Password,
+          StringFields
+        };
+      })
     });
   }
   async set(query) {
-    const {url, submiturl, login, password} = query;
+    const {url, submiturl, name, login, password, stringFields = []} = query;
     try {
       const group = this.db.getDefaultGroup();
       const entry = this.db.createEntry(group);
       entry.pushHistory();
-      entry.fields.UserName = login;
-      entry.fields.URL = url || submiturl;
-      entry.fields.Password = kdbxweb.ProtectedValue.fromString(password || '');
+      for (const {Key, Value} of stringFields) {
+        entry.fields.set(Key, Value);
+      }
+      entry.fields.set('Title', name || '');
+      entry.fields.set('UserName', login || '');
+      entry.fields.set('URL', url || submiturl);
+      entry.fields.set('Password', kdbxweb.ProtectedValue.fromString(password || ''));
       entry.times.update();
-      // downgrade to KDBX3
-      this.db.setVersion(3);
+
       const ab = await this.db.save();
-      return this.attach(new Uint8Array(ab));
+      return this.attach(new Uint8Array(ab), this.key);
     }
     catch (e) {
       throw Error('Is database unlocked? ' + e.message);
@@ -114,6 +133,7 @@ class KWPASS {
     password = kdbxweb.ProtectedValue.fromString(password);
 
     const files = await this.file.read();
+    this.key = files[1];
 
     if (files.length < 1) {
       throw Error('No database. Use options page to add a database');
@@ -137,8 +157,6 @@ class KWPASS {
     return this.file.clear();
   }
   export() {
-    // downgrade to KDBX3
-    this.db.setVersion(3);
     this.db.save().then(ab => {
       const blob = new Blob([new Uint8Array(ab)], {
         type: 'octet/stream'
@@ -146,7 +164,7 @@ class KWPASS {
       const href = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = href;
-      a.download = 'keepass.db';
+      a.download = 'keepass.kdbx';
       a.click();
       setTimeout(() => {
         URL.revokeObjectURL(href);

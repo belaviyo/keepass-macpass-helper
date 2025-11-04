@@ -1,1 +1,1 @@
-https://github.com/keeweb/kdbxweb/archive/1.14.2.zip
+https://cdn.jsdelivr.net/npm/kdbxweb@2.1.1/dist/kdbxweb.js

@@ -190,7 +190,7 @@ class KeePassXC extends SimpleStorage {
       throw Error(resp.error || 'Cannot retrieve credentials');
     });
   }
-  /* stringFields seems to be ignored */
+  /* stringFields seems to be ignored, Title (Name) is also ignored */
   'set-login'({url, submiturl, login, password, uuid, stringFields = []}) {
     return this.securePost({
       'action': 'set-login',
