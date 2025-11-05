@@ -269,14 +269,14 @@ document.getElementById('kwpass-file').onclick = () => {
     }
     toast('Database is stored');
     chrome.storage.session.remove('kw:password');
-  }).catch(e => alert(e.message));
+  }).catch(e => toast(e.message));
 };
 document.getElementById('kwpass-remove').addEventListener('click', () => {
   const next = () => kwpass.dettach().then(() => {
     chrome.runtime.sendMessage({
       cmd: 'kwpass-remove'
     });
-    alert('Database is removed');
+    toast('Database is removed');
   }).catch(e => toast('Error: ' + e.message));
   if (kwpass.db) {
     next();
@@ -284,7 +284,7 @@ document.getElementById('kwpass-remove').addEventListener('click', () => {
   else {
     kwpass.prepare().then(next).catch(e => {
       console.error(e);
-      alert(e.message);
+      toast(e.message);
     });
   }
 });
@@ -307,7 +307,7 @@ document.getElementById('kwpass-download').addEventListener('click', async () =>
 
   if (password) {
     const next = () => kwpass.open(password).then(() => kwpass.export()).catch(e => {
-      alert('[Error] ' + e.message);
+      toast('[Error] ' + e.message);
       console.warn(e);
     });
     if (kwpass.db) {
@@ -340,11 +340,11 @@ document.getElementById('kwpass-create').addEventListener('click', async () => {
       await kwpass.prepare();
       await kwpass.dettach();
       await kwpass.create(password);
-      alert('Database is ready');
+      toast('Database is ready');
     }
     catch (e) {
       console.error(e);
-      alert(e.message);
+      toast(e.message);
     }
   }
 });

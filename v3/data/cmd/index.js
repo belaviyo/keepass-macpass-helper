@@ -772,7 +772,7 @@ document.addEventListener('click', async e => {
     }
     else if (cmd === 'delete') {
       const entries = list.selectedValues;
-      if (confirm(`Are you sure you want to remove ${entries.length} item(s) from the secure synced storage?`)) {
+      if (confirm(`Are you sure you want to remove ${entries.length} item(s) from secure or internal storage?`)) {
         // kwpass
         {
           const uuids = entries.filter(e => e[0].from === 'kwpass').map(e => e[0].uuid);
