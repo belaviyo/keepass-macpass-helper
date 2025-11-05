@@ -66,25 +66,34 @@ document.getElementById('keepass').onclick = async ({target}) => {
       target.disabled = true;
       await engine.prepare(prefs.engine);
 
-      const dialog = document.getElementById('prompt');
-      dialog.showModal();
-      dialog.querySelector('input[type=password]').value = '';
-
-      const password = await new Promise(resolve => {
-        dialog.oncancel = e => {
-          e.preventDefault();
-          resolve('');
-        };
-        dialog.querySelector('input[type=button]').onclick = e => {
-          resolve('');
-        };
-        dialog.querySelector('form').onsubmit = e => {
-          e.preventDefault();
-          e.stopPropagation();
-          resolve(dialog.querySelector('input[type=password]').value);
-        };
+      let password;
+      const ps = await chrome.storage.session.get({
+        'kw:password': ''
       });
-      dialog.close();
+      if (ps['kw:password']) {
+        password = ps['kw:password'];
+      }
+      else {
+        const dialog = document.getElementById('prompt');
+        dialog.showModal();
+        dialog.querySelector('input[type=password]').value = '';
+
+        password = await new Promise(resolve => {
+          dialog.oncancel = e => {
+            e.preventDefault();
+            resolve('');
+          };
+          dialog.querySelector('input[type=button]').onclick = e => {
+            resolve('');
+          };
+          dialog.querySelector('form').onsubmit = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            resolve(dialog.querySelector('input[type=password]').value);
+          };
+        });
+        dialog.close();
+      }
 
       if (password) {
         await engine.core.open(password);

@@ -70,7 +70,7 @@ a {
 .mm1m {
   display: grid;
   grid-template-columns: min-content min-content 1fr min-content;
-  grid-gap: 5px;
+  grid-gap: 20px 5px;
   align-items: center;
 }
 .m1 {

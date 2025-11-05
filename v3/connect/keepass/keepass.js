@@ -189,6 +189,7 @@ class KeePass extends SimpleStorage {
         e.Name = await d(e.Name);
         e.Password = await d(e.Password);
         e.uuid = await d(e.Uuid);
+        e.from = 'keepass';
 
         for (let m = 0; m < (e.StringFields || []).length; m += 1) {
           const o = e.StringFields[m];

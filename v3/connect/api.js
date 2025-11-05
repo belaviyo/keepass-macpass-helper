@@ -63,10 +63,10 @@ engine.prepare = type => {
         return [];
       }
       async 'set-login'() {
-        throw Error('Not_Supported');
+        throw Error('NO_BACK_END');
       }
       async 'get-totp'() {
-        throw Error('Not_Supported');
+        throw Error('NO_BACK_END');
       }
       async search() {
         return {
@@ -74,7 +74,7 @@ engine.prepare = type => {
         };
       }
       async set() {
-        throw Error('Not_Supported');
+        throw Error('NO_BACK_END');
       }
     };
   }
@@ -117,10 +117,11 @@ engine.search = async query => {
           }
         });
         for (const o of r) {
-          o.ssdb = true;
+          o.from = 'ssdb';
           o.href = query.url;
           o.group = '[Synced Storage]';
           o.Name = o.Name || '';
+          o.uuid = o.uuid || '';
 
           rs.push(o);
         }

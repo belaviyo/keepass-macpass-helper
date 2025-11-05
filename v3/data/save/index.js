@@ -67,36 +67,6 @@ document.addEventListener('submit', e => {
     try {
       await engine.prepare(prefs.engine);
 
-      if (prefs.engine === 'kwpass') {
-        const dialog = document.getElementById('prompt');
-        dialog.showModal();
-        dialog.querySelector('input[type=password]').value = '';
-
-        const password = await new Promise(resolve => {
-          dialog.oncancel = e => {
-            e.preventDefault();
-            resolve('');
-          };
-          dialog.querySelector('input[type=button]').onclick = e => {
-            resolve('');
-          };
-          dialog.querySelector('form').onsubmit = e => {
-            e.preventDefault();
-            e.stopPropagation();
-            resolve(dialog.querySelector('input[type=password]').value);
-          };
-        });
-        dialog.close();
-
-        if (password) {
-          await engine.core.open(password);
-        }
-        else {
-          b.disabled = false;
-          return;
-        }
-      }
-
       if (e.submitter.dataset.cmd == 'ssdb') {
         if (engine.ssdb) {
           const uuid = (await engine.ssdb.convert(query.url)).at(0);
@@ -105,6 +75,7 @@ document.addEventListener('submit', e => {
             'Url': query.url,
             'SubmitUrl': query.url.submiturl,
             'Login': query.login,
+            'Name': query.name,
             'Password': query.password
           });
         }
@@ -114,6 +85,46 @@ document.addEventListener('submit', e => {
         }
       }
       else {
+        if (prefs.engine === 'kwpass') {
+          // find password from session storage or ask from user
+          const prefs = await chrome.storage.session.get({
+            'kw:password': ''
+          });
+
+          let password;
+          if (prefs['kw:password']) {
+            password = prefs['kw:password'];
+          }
+          else {
+            const dialog = document.getElementById('prompt');
+            dialog.showModal();
+            dialog.querySelector('input[type=password]').value = '';
+
+            password = await new Promise(resolve => {
+              dialog.oncancel = e => {
+                e.preventDefault();
+                resolve('');
+              };
+              dialog.querySelector('input[type=button]').onclick = e => {
+                resolve('');
+              };
+              dialog.querySelector('form').onsubmit = e => {
+                e.preventDefault();
+                e.stopPropagation();
+                resolve(dialog.querySelector('input[type=password]').value);
+              };
+            });
+            dialog.close();
+          }
+
+          if (password) {
+            await engine.core.open(password);
+          }
+          else {
+            b.disabled = false;
+            return;
+          }
+        }
         await engine.set(query);
       }
 

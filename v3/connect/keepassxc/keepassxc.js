@@ -229,6 +229,7 @@ class KeePassXC extends SimpleStorage {
 
     return {
       Entries: resp.map(e => Object.assign(e, {
+        from: 'keepassxc',
         Login: e.login,
         Name: e.name,
         Password: e.password,

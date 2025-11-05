@@ -70,7 +70,6 @@ class SecureSyncedStorage {
         });
       })).then(vs => {
         vs = vs.filter(a => a).map(JSON.parse);
-
         stat(failed, vs.length, values.length);
         return vs.filter(match);
       });
@@ -78,6 +77,9 @@ class SecureSyncedStorage {
     return [];
   }
   async append(uuid, object) {
+    object.uuid = object.uudi || ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => {
+      return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+    });
     const value = await this.#safe.encrypt(JSON.stringify(object));
     const hash = await this.#hash(uuid);
 

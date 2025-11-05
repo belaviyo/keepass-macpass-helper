@@ -1,5 +1,21 @@
 /* global kdbxweb, tldjs */
 
+kdbxweb.CryptoEngine.setArgon2Impl((password, salt, memory, iterations, length, parallelism, type, version) => {
+  return import('/connect/kdbxweb/noble/hashes/argon2.js').then(({argon2d, argon2id}) => {
+    const argon2 = type === 0 ? argon2d : argon2id;
+
+    const bytes = argon2(new Uint8Array(password), new Uint8Array(salt), {
+      t: iterations,
+      m: memory,
+      p: parallelism,
+      dkLen: length,
+      version
+    });
+
+    return bytes.buffer;
+  });
+});
+
 class KWFILE {
   open(name = 'database') {
     return new Promise((resolve, reject) => {
@@ -55,12 +71,15 @@ class KWPASS {
     this.file = new KWFILE();
     return this.file.open();
   }
-  search({url, submiturl}) {
+  search({url, submiturl, login, password}, clean = true) {
     const {hostname} = new URL(url || submiturl);
 
     const domain = tldjs.getDomain(url);
     const matches = [];
     const step = group => {
+      if (group.name === 'Recycle Bin') {
+        return;
+      }
       for (const g of (group.groups || [])) {
         step(g);
       }
@@ -87,7 +106,7 @@ class KWPASS {
         if (e.fields.has('Password')) {
           const p = e.fields.get('Password');
           if (p) {
-            Password = e.fields.get('Password').getText();
+            Password = p.getText();
           }
         }
         const StringFields = [];
@@ -99,6 +118,9 @@ class KWPASS {
         }
 
         return {
+          from: 'kwpass',
+          uuid: e.uuid.id,
+          group: e.parentGroup.name,
           Login: e.fields.get('UserName'),
           Name: e.fields.get('Title'),
           Password,
@@ -123,6 +145,7 @@ class KWPASS {
       entry.times.update();
 
       const ab = await this.db.save();
+      await this.dettach(true);
       return this.attach(new Uint8Array(ab), this.key);
     }
     catch (e) {
@@ -146,29 +169,73 @@ class KWPASS {
       throw Error('Cannot open database; ' + e.message);
     });
   }
+  /* remove */
+  async remove(uuids) {
+    const rms = [];
+    const step = group => {
+      if (group.name === 'Recycle Bin') {
+        return;
+      }
+
+      for (const g of (group.groups || [])) {
+        step(g);
+      }
+      for (const entry of group.entries) {
+        if (uuids.includes(entry.uuid.id)) {
+          rms.push(entry);
+        }
+      }
+    };
+
+    for (const group of this.db.groups) {
+      step(group);
+    }
+    for (const entry of rms) {
+      this.db.remove(entry);
+    }
+
+    const ab = await this.db.save();
+    await this.dettach(true);
+    return this.attach(new Uint8Array(ab), this.key);
+  }
+  /* create a blank database */
+  async create(password) {
+    const credentials = new kdbxweb.Credentials(kdbxweb.ProtectedValue.fromString(password));
+    this.db = kdbxweb.Kdbx.create(credentials, 'KeePassHelper Database');
+    const ab = await this.db.save();
+    this.attach(new Uint8Array(ab));
+  }
   async attach(fileBytes, keyBytes) {
-    await this.dettach();
     await this.file.write(fileBytes);
     if (keyBytes) {
       await this.file.write(keyBytes);
     }
   }
-  dettach() {
+  async dettach(silent) {
+    if (silent !== true) {
+      const files = await this.file.read();
+      if (files.length) {
+        const a = confirm(`The old database will be removed from internal storage.
+Any new credentials saved in this database will be lost. Are you sure you want to continue?`);
+        if (a === false) {
+          throw Error('ABORTED');
+        }
+      }
+    }
     return this.file.clear();
   }
-  export() {
-    this.db.save().then(ab => {
-      const blob = new Blob([new Uint8Array(ab)], {
-        type: 'octet/stream'
-      });
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = href;
-      a.download = 'keepass.kdbx';
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(href);
-      }, 1000);
+  async export() {
+    this.db.upgrade(); // upgrade the db to latest version (currently KDBX4)
+
+    const ab = await this.db.save();
+    const blob = new Blob([new Uint8Array(ab)], {
+      type: 'octet/stream'
     });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = 'KeePassHelper.kdbx';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
   }
 }

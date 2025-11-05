@@ -4,6 +4,7 @@
 const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
 const psbox = document.getElementById('password-needed');
+psbox.onkeydown = e => e.stopPropagation();
 
 // can I use allFames or chrome.scripting fails?
 let allFrames = true;
@@ -172,8 +173,8 @@ function add(o, select = false) {
     title: o.Login || '',
     password: o.Password,
     stringFields: o.StringFields,
+    from: o.from,
     uuid: o.uuid, // for KeePassXC's built-in OTP
-    ssdb: o.ssdb, // for internal secure storage
     href: o.href, // for internal secure storage
     query: o.query // for updating entry later
   }, {
@@ -372,8 +373,8 @@ document.addEventListener('search', submit);
     }
 
     // remove
-    document.querySelector('#toolbar [data-cmd="delete"]').disabled =
-      !e.target.selectedValues.length || e.target.selectedValues.every(o => o && o[0]?.ssdb === true) === false;
+    document.querySelector('#toolbar [data-cmd="delete"]').disabled = !e.target.selectedValues.length ||
+      e.target.selectedValues.some(o => o && ['ssdb', 'kwpass'].includes(o[0]?.from)) === false;
   });
 }
 
@@ -772,14 +773,29 @@ document.addEventListener('click', async e => {
     else if (cmd === 'delete') {
       const entries = list.selectedValues;
       if (confirm(`Are you sure you want to remove ${entries.length} item(s) from the secure synced storage?`)) {
-        engine.ssdb.convert(entries[0][0].href).then(async uuids => {
-          for (const uuid of uuids) {
-            await engine.ssdb.remove(uuid, e => {
-              return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
-            });
+        // kwpass
+        {
+          const uuids = entries.filter(e => e[0].from === 'kwpass').map(e => e[0].uuid);
+
+          if (uuids.length) {
+            await engine.core.remove(uuids);
           }
-          location.reload();
-        });
+        }
+        // ssdb (in future we can use entry.uuid for deletion)
+        {
+          for (const entry of entries) {
+            const o = entry[0];
+            if (o.from === 'ssdb') {
+              const uuids = await engine.ssdb.convert(o.href);
+              for (const uuid of uuids) {
+                await engine.ssdb.remove(uuid, e => {
+                  return entries.filter(a => a[0].name === e.Login && a[0].password === e.Password).length === 0;
+                });
+              }
+            }
+          }
+        }
+        location.reload();
       }
     }
 
@@ -850,7 +866,13 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
       });
       psbox.classList.add('hidden');
 
-      await engine.core.open(password);
+      try {
+        await engine.core.open(password);
+      }
+      catch (e) { // delete wrong password
+        await chrome.storage.session.remove('kw:password');
+        throw Error(e);
+      }
 
       chrome.storage.session.set({
         'kw:password': password

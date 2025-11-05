@@ -18,11 +18,17 @@
     <input type="text" id="xc-native-id">
     <input type="button" value="Generate Manifest" id="keepassxc-manifest">
     <input type="radio" name="method" id="kwpass">
-    <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (read-only) (beta)</label>
+    <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (writes to internal database)</label>
     <div style="grid-column: 3/5; text-align: end;" class="fl">
-      <input type="button" id="kwpass-download" value="Download Database">
-      <input type="button" id="kwpass-remove" value="Delete File(s)">
-      <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
+      <div>
+        <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and use it as the storage">
+        <span>OR</span>
+        <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
+      </div>
+      <div>
+        <input type="button" id="kwpass-remove" value="Delete File(s)">
+        <input type="button" id="kwpass-download" value="Download Database">
+      </div>
     </div>
     <input type="radio" name="method" id="none">
     <label for="none">Do not attach to a back-end. Use "<a target="_blank" data-href="faq19">Secure Synced Storage</a>" only.</label>

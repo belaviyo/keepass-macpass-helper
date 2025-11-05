@@ -227,6 +227,12 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       contexts: ['action'],
       parentId: 'extra'
     }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({
+      id: 'lock-kwpass',
+      title: 'Lock Internal Database',
+      contexts: ['action'],
+      parentId: 'extra'
+    }, () => chrome.runtime.lastError);
     if (/Firefox/.test(navigator.userAgent)) {
       chrome.contextMenus.create({
         id: 'open-options',
@@ -457,6 +463,9 @@ This username must exactly correspond to one of the credentials stored in your K
   }
   else if (info.menuItemId === 'lock-secure-synced-storage') {
     chrome.storage.session.remove('ssdb-exported-key');
+  }
+  else if (info.menuItemId === 'lock-kwpass') {
+    chrome.storage.session.remove('kw:password');
   }
 };
 chrome.contextMenus.onClicked.addListener(onCommand);

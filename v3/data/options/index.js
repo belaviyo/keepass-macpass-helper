@@ -246,6 +246,7 @@ document.getElementById('kwpass-file').onclick = () => {
     if (files.length === 1) {
       const file = await read(files[0]);
       await kwpass.prepare();
+      await kwpass.dettach();
       await kwpass.attach(file);
     }
     else if (files.length === 2) {
@@ -260,6 +261,7 @@ document.getElementById('kwpass-file').onclick = () => {
         await read(key)
       ];
       await kwpass.prepare();
+      await kwpass.dettach();
       await kwpass.attach(...args);
     }
     else {
@@ -313,6 +315,36 @@ document.getElementById('kwpass-download').addEventListener('click', async () =>
     }
     else {
       kwpass.prepare().then(next);
+    }
+  }
+});
+
+document.getElementById('kwpass-create').addEventListener('click', async () => {
+  document.getElementById('prompt').showModal();
+  document.querySelector('#prompt input').value = '';
+
+  const password = await new Promise(resolve => {
+    document.querySelector('#prompt button').onclick = e => {
+      e.target.closest('dialog').close();
+      resolve('');
+    };
+    document.querySelector('#prompt form').onsubmit = e => {
+      e.preventDefault();
+      e.target.closest('dialog').close();
+      resolve(document.querySelector('#prompt input').value);
+    };
+  });
+
+  if (password) {
+    try {
+      await kwpass.prepare();
+      await kwpass.dettach();
+      await kwpass.create(password);
+      alert('Database is ready');
+    }
+    catch (e) {
+      console.error(e);
+      alert(e.message);
     }
   }
 });
