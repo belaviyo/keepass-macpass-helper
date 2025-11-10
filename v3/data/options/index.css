@@ -148,22 +148,12 @@ a {
 }
 
 #prompt {
-  position: absolute;
-  left: anchor(center);
-  top: anchor(bottom);
-  transform: translateX(-50%);
-  position-anchor: --password;
-  margin: 2px 0;
-  box-shadow: 0 0 0 1000vw rgba(0, 0, 0, 0.1);
-
+  overflow: visible;
   div {
     display: flex;
     justify-content: flex-end;
     gap: 5px;
   }
-}
-#kwpass-download {
-  anchor-name: --password;
 }
 
 #toast {

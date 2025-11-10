@@ -87,13 +87,13 @@ document.addEventListener('submit', e => {
       else {
         if (prefs.engine === 'kwpass') {
           // find password from session storage or ask from user
-          const prefs = await chrome.storage.session.get({
+          const ps = await chrome.storage.session.get({
             'kw:password': ''
-          });
+          }) || {};
 
           let password;
-          if (prefs['kw:password']) {
-            password = prefs['kw:password'];
+          if (ps['kw:password']) {
+            password = ps['kw:password'];
           }
           else {
             const dialog = document.getElementById('prompt');

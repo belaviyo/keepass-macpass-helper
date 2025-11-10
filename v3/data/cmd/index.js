@@ -238,6 +238,7 @@ async function submit() {
       url: query
     };
     const response = await engine.search(q);
+    console.log(response);
 
     // hide group and title columns if no data available
     document.getElementById('group').setAttribute('width', response.Entries.some(o => o.group) ? '1fr' : '0');

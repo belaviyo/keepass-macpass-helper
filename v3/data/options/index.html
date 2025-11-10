@@ -6,6 +6,18 @@
   <link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
+  <dialog id="prompt">
+    <form>
+      <p>
+        <label for="password-input">Enter Password:</label>
+        <input type="password" id="password-input" required>
+      </p>
+      <div>
+        <button type="button">Cancel</button>
+        <button type="submit">OK</button>
+      </div>
+    </form>
+  </dialog>
   <p class="save">Make sure to press the "Save Options" button!</p>
   <h2 class="heading">Connection</h2>
   <div class="mm1m">
@@ -189,18 +201,6 @@
     <button id="save">Save Options</button>
     <span id="toast"></span>
   </p>
-  <dialog id="prompt">
-    <form>
-      <p>
-        <label for="password-input">Enter Password:</label>
-        <input type="password" id="password-input" required>
-      </p>
-      <div>
-        <button type="button">Cancel</button>
-        <button type="submit">OK</button>
-      </div>
-    </form>
-  </dialog>
 
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
   <script src="/tools/tld.js"></script>

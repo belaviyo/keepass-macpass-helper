@@ -50,7 +50,10 @@ class KeePass extends SimpleStorage {
       },
       body: JSON.stringify(obj),
       signal: controller.signal
-    });
+    }).catch(() => ({
+      ok: false,
+      status: -1
+    }));
     if (r.ok) {
       return r.json();
     }
@@ -59,7 +62,11 @@ class KeePass extends SimpleStorage {
       j = await r.json();
     }
     catch (e) {
-      throw Error('Cannot connect to KeePassHTTP. Either KeePass is not running or communication is broken');
+      if (r.status === 503) {
+        throw Error(`KeePassHTTP Failed (${r.status}). Is a database currently open?`);
+      }
+      throw Error(`KeePassHTTP Failed (${r.status}).` +
+        ` Either KeePass is not running or communication is broken`);
     }
     throw Error(j.Error || 'Unknown Error');
   }
@@ -111,7 +118,7 @@ class KeePass extends SimpleStorage {
       });
     }
     catch (e) {
-      throw Error(`Cannot connect to the database at "${host}"`);
+      throw Error(e.message);
     }
 
     if (r && r.Hash) {
@@ -190,6 +197,10 @@ class KeePass extends SimpleStorage {
         e.Password = await d(e.Password);
         e.uuid = await d(e.Uuid);
         e.from = 'keepass';
+        if (e.Group && e.Group.Name) {
+          e.path = await d(e.Group.Name).then(s => s.split('/'));
+          e.group = e.path.at(-1);
+        }
 
         for (let m = 0; m < (e.StringFields || []).length; m += 1) {
           const o = e.StringFields[m];
