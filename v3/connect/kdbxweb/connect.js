@@ -135,8 +135,8 @@ class KWPASS {
       const group = this.db.getDefaultGroup();
       const entry = this.db.createEntry(group);
       entry.pushHistory();
-      for (const {Key, Value} of stringFields) {
-        entry.fields.set(Key, Value);
+      for (const {key, value} of stringFields) {
+        entry.fields.set(key, value);
       }
       entry.fields.set('Title', name || '');
       entry.fields.set('UserName', login || '');

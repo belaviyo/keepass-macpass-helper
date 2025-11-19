@@ -121,6 +121,8 @@ class KeePass extends SimpleStorage {
       throw Error(e.message);
     }
 
+    this.version = Number((r.Version || '1.8.4.1').replace(/\./g, ''));
+
     if (r && r.Hash) {
       const prefs = await this.read({
         [r.Hash]: {},
@@ -212,7 +214,7 @@ class KeePass extends SimpleStorage {
     return r;
   }
   /* stringFields seems to be ignored, Title (Name) is also ignored */
-  async set({url, submiturl, login, password, uuid, stringFields = []}) {
+  async set({url, submiturl, name, login, password, uuid, stringFields = []}) {
     const iv = this.iv();
     const e = await this.encrypt(iv);
 
@@ -220,6 +222,7 @@ class KeePass extends SimpleStorage {
       'RequestType': 'set-login',
       'Url': await e(url, true),
       'SubmitUrl': await e(submiturl || '', true),
+      'Name': await e(name || '', true), // Supports on KeePassHTTP > 2.1.0.0
       'Login': await e(login || '', true),
       'Password': await e(password || '', true)
     };
@@ -228,16 +231,13 @@ class KeePass extends SimpleStorage {
       obj.Uuid = uuid; // Assuming Uuid is sent unencrypted
     }
 
+    // supported on KeePassHTTP > 2.1.0.0
     if (stringFields.length > 0) {
-      obj.StringFields = [];
-      for (const sf of stringFields) {
-        const encryptedKey = await e(sf.key, true);
-        const encryptedValue = await e(sf.value, true);
-        obj.StringFields.push({
-          Key: encryptedKey,
-          Value: encryptedValue
-        });
+      const o = {};
+      for (const {key, value} of stringFields) {
+        o[await e(key, true)] = await e(value, true);
       }
+      obj.StringFields =o;
     }
 
     obj.Nonce = KeePass.u2b(iv);
@@ -246,7 +246,6 @@ class KeePass extends SimpleStorage {
     if (this.id) {
       obj.Id = this.id;
     }
-
     return this.post(obj, undefined, false);
   }
   // high-level access

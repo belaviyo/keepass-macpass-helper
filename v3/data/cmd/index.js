@@ -238,15 +238,17 @@ async function submit() {
       url: query
     };
     const response = await engine.search(q);
-    console.log(response);
 
     // hide group and title columns if no data available
     document.getElementById('group').setAttribute('width', response.Entries.some(o => o.group) ? '1fr' : '0');
     document.getElementById('title').setAttribute('width', response.Entries.some(o => o.Name) ? '1fr' : '0');
     if (response.Entries.length === 0) {
-      add({
-        Login: 'No credential for this page!'
-      }, true);
+      const {option} = list.add([{
+        name: 'No credential for this page!',
+        part: 'login'
+      }], undefined, undefined, true);
+      option.disabled = true;
+      list.focus();
     }
     else {
       submit.populated = false;

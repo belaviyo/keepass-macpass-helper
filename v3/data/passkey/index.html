@@ -9,12 +9,24 @@
   <h1>Store the following StringField inside KeePass application or Synced Storage.</h1>
   <p class="note">If this data is lost, the newly generated passkey will be unrecoverable, and you won't be able to log in to the site with it.<span id="ssdb-info"><br><br>If you prefer to store it in Secure Storage but the option is disabled, it means your database is not open. Please open the database first, then click the refresh button.</span></p>
   <div id="content">
-    <span>Name</span>
+    <label for="name">Name</label>
     <input type="text" value="KPH: PASSKEY_STORAGE" id="name" title="You can append any string to this key if you have more than one passkeys">
     <input type="button" id="save-name" value="Copy">
-    <span>Value</span>
+    <label for="data">Value</label>
     <textarea readonly id="data" rows="6"></textarea>
     <input type="button" id="save-value" value="Copy">
+    <label for="format">Format</label>
+    <div id="format">
+      <label title="This format is compatible with KeePassXC and can be used across different devices. To use it with KeePassHelper, you need to configure KeePassHTTP to return all string fields – not only those starting with 'KHP: '.">
+        <input type="radio" name="format" value="keepassxc">
+        <span>KeePassXC</span>
+      </label>
+      <label title="This format is only usable by the KeePassHelper extension. However, you don't need to configure KeePassHTTP to return all string fields. You can also store multiple passkeys for each credential using this format.">
+        <input type="radio" name="format" value="json" checked>
+        <span>KeePassHelper (JSON)</span>
+      </label>
+    </div>
+    <span></span>
   </div>
   <div class="info">
     <span>Save in</span>
@@ -38,10 +50,12 @@
       </div>
     </form>
   </dialog>
+
   <script src="/tools/safe.js"></script>
   <script src="/tools/tld.js"></script>
   <script src="/connect/SecureSyncedDB.js"></script>
   <script src="/connect/api.js"></script>
+  <script src="/connect/keepass/keepass.js"></script>
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
   <script src="/connect/kdbxweb/connect.js"></script>
   <script type="text/javascript" src="index.js"></script>
