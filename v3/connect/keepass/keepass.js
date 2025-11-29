@@ -231,13 +231,13 @@ class KeePass extends SimpleStorage {
       obj.Uuid = uuid; // Assuming Uuid is sent unencrypted
     }
 
-    // supported on KeePassHTTP > 2.1.0.0
+    // Supports on KeePassHTTP > 2.1.0.0
     if (stringFields.length > 0) {
-      const o = {};
+      obj.StringFields = {};
+
       for (const {key, value} of stringFields) {
-        o[await e(key, true)] = await e(value, true);
+        obj.StringFields[await e(key, true)] = await e(value, true);
       }
-      obj.StringFields =o;
     }
 
     obj.Nonce = KeePass.u2b(iv);
