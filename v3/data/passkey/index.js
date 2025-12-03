@@ -28,6 +28,20 @@ chrome.storage.local.get({
 }).then(async prefs => {
   await engine.prepare(prefs.engine);
 
+  // update entries
+  engine.search({
+    url: args.get('href')
+  }).then(r => {
+    for (const entry of r.Entries) {
+      const option = document.createElement('option');
+      option.textContent = entry.Name + '(' + entry.Login + ')';
+      option.value = entry.uuid;
+      option.reserved = entry.StringFields.map(o => o.Key);
+
+      document.getElementById('entries').append(option);
+    }
+  });
+
   // ssdb
   if (engine.ssdb) {
     const json = JSON.parse(args.get('data'));
@@ -74,7 +88,7 @@ chrome.storage.local.get({
     // Use KeePassXC compatible format
     if (document.querySelector('input[name=format]:checked').value === 'json') {
       entry.stringFields.push({
-        key: 'KPH: PASSKEY_STORAGE',
+        key: document.getElementById('name').value,
         value: args.get('data')
       });
     }
@@ -84,7 +98,7 @@ chrome.storage.local.get({
           continue;
         }
         entry.stringFields.push({
-          key: ['KPEX_PASSKEY_' + key],
+          key: 'KPEX_PASSKEY_' + key,
           value
         });
       }
@@ -136,6 +150,29 @@ chrome.storage.local.get({
       // KeePassHTTP > 2.1.0.0
       else if (prefs.engine === 'keepass' && engine.core.version && engine.core.version > 2100) {
         target.disabled = true;
+
+        const uuid = document.getElementById('entries').value;
+        // we are updating an entry
+        if (uuid) {
+          const reserved = document.getElementById('entries').selectedOptions[0].reserved;
+          const keys = entry.stringFields.map(o => o.key.replace('KPH: ', ''));
+          const duplicates = reserved.filter(name => keys.includes(name));
+          if (duplicates.length) {
+            throw Error(`This credential already has the following string fields:
+
+` + duplicates.join(', '));
+          }
+          // since this is an update delete all keys in entry
+          for (const name of Object.keys(entry)) {
+            if (name !== 'stringFields') {
+              delete entry[name];
+              console.log(name);
+            }
+          }
+          entry.uuid = uuid;
+        }
+        console.log(entry);
+
         await engine.set(entry);
         target.value = 'Saved';
       }

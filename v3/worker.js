@@ -138,8 +138,8 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
 
       chrome.windows.create({
         url: '/data/passkey/index.html?' + args.toString(),
-        width: 600,
-        height: 500,
+        width: 700,
+        height: 900,
         left: win.left + Math.round((win.width - 400) / 2),
         top: win.top + Math.round((win.height - 300) / 2),
         type: 'popup'

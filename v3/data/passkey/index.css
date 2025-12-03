@@ -1,3 +1,6 @@
+html {
+  color-scheme: dark;
+}
 body {
   font-family: "Helvetica Neue",Helvetica,sans-serif;
   font-size: 14px;
@@ -36,11 +39,21 @@ input[type="button"]:disabled {
 }
 .info {
   display: flex;
-  justify-content: end;
   align-items: center;
+  justify-content: end;
   white-space: nowrap;
-  gap: 5px;
+  gap: 15px;
   margin-block: 10px 5px;
+
+  .keepass {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  #entries {
+    padding: 2px;
+    width: 25vw;
+  }
 }
 .done {
   display: flex;

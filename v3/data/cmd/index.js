@@ -3,6 +3,7 @@
 
 const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
+search.onkeydown = e => e.stopPropagation();
 const psbox = document.getElementById('password-needed');
 psbox.onkeydown = e => e.stopPropagation();
 
