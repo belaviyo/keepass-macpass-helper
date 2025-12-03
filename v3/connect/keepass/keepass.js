@@ -255,7 +255,6 @@ class KeePass extends SimpleStorage {
     if (this.id) {
       obj.Id = this.id;
     }
-    console.log(obj);
     return this.post(obj, undefined, false);
   }
   // high-level access

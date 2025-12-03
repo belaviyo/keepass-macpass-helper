@@ -219,8 +219,6 @@ class KeePassXC extends SimpleStorage {
     });
   }
   async search({url}) {
-    console.log(url);
-
     try {
       await this['test-associate']();
     }

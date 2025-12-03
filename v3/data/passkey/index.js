@@ -166,12 +166,10 @@ chrome.storage.local.get({
           for (const name of Object.keys(entry)) {
             if (name !== 'stringFields') {
               delete entry[name];
-              console.log(name);
             }
           }
           entry.uuid = uuid;
         }
-        console.log(entry);
 
         await engine.set(entry);
         target.value = 'Saved';

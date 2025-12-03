@@ -130,9 +130,32 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       injectImmediately: true
     });
   }
+  else if (request.cmd === 'passkey-public-data') {
+    const {features, pub} = passkey.set.args.get(sender.tab.id);
+    response({pub, features});
+    notify(sender.tab, 'Proceed with passkey generation', '🔏', '#3f51b5');
+  }
   else if (request.cmd === 'passkey-interface') {
+    // clean up
+    try {
+      const {persist} = passkey.set.args.get(sender.tab.id);
+      chrome.tabs.onUpdated.removeListener(persist);
+
+      passkey.args.delete(sender.tab.id);
+    }
+    catch (e) {}
+
+    // show interface
     chrome.windows.getCurrent().then(win => {
       const args = new URLSearchParams();
+
+      const {features, key} = passkey.set.args.get(sender.tab.id);
+
+      if (features['backed-up']) {
+        request.data.FLAGS.push('BS');
+      }
+      request.data.PRIVATE_KEY_PEM = key;
+
       args.set('data', JSON.stringify(request.data, undefined, '  ').replaceAll('\\\\n', '\\n'));
       args.set('href', sender.tab.url);
 
@@ -250,8 +273,6 @@ const onCommand = async (info, tab) => {
   if (info.menuItemId === 'generate-passkey' || info.menuItemId === 'generate-passkey:backed-up') {
     passkey.set(tab.id, {
       'backed-up': info.menuItemId === 'generate-passkey:backed-up'
-    }).then(() => {
-      notify(tab, 'Proceed with passkey generation', '🔏', '#3f51b5');
     }).catch(e => {
       console.warn(e);
       notify(tab, e);
