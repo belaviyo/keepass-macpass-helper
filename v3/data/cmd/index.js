@@ -236,7 +236,8 @@ async function submit() {
 
   try {
     const q = {
-      url: query
+      url: query,
+      names: []
     };
     const response = await engine.search(q);
 

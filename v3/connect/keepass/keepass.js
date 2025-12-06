@@ -34,14 +34,20 @@ class KeePass extends SimpleStorage {
 
       for (const name of names) {
         if (obj[name]) {
-          obj[name] = await e(obj[name], true);
+          if (Array.isArray(obj[name])) {
+            for (let n = 0; n < obj[name].length; n += 1) {
+              obj[name][n] = await e(obj[name][n], true);
+            }
+          }
+          else {
+            obj[name] = await e(obj[name], true);
+          }
         }
         else {
           delete obj[name];
         }
       }
     }
-
     setTimeout(() => controller.abort(), timeout);
     const r = await fetch(this.host, {
       method: 'POST',
@@ -177,16 +183,11 @@ class KeePass extends SimpleStorage {
 
     return r;
   }
-  async logins({url, submiturl, realm}) {
-    const r = await this.post({
-      'RequestType': 'get-logins',
-      'TriggerUnlock': 'true',
-      'SortSelection': 'false',
-      'Url': url,
-      'SubmitUrl': submiturl,
-      'Realm': realm
-    }, undefined, true, ['Url', 'SubmitUrl', 'Realm']);
-    if (r && r.Entries) {
+  async logins({url, submiturl, realm, names = []}) {
+    const Entries = new Map();
+    const resonse = {};
+
+    const convert = async r => {
       const iv = KeePass.s2u(atob(r.Nonce));
 
       const d = await this.decrypt(iv);
@@ -210,8 +211,53 @@ class KeePass extends SimpleStorage {
           o.Value = await d(o.Value);
         }
       }
+    };
+
+    {
+      const r = await this.post({
+        'RequestType': 'get-logins',
+        'TriggerUnlock': 'true',
+        'SortSelection': 'false',
+        'Url': url,
+        'SubmitUrl': submiturl,
+        'Realm': realm
+      }, undefined, true, ['Url', 'SubmitUrl', 'Realm']);
+
+      if (r) {
+        if (r.Entries && r.Success) {
+          await convert(r);
+          for (const Entry of r.Entries) {
+            Entries.set(Entry.Uuid, Entry);
+          }
+          delete r.Entries;
+        }
+        Object.assign(resonse, r);
+      }
     }
-    return r;
+    // search by name
+    if (names.length && this.version > 2100) {
+      const r = await this.post({
+        'RequestType': 'get-logins-by-names',
+        'TriggerUnlock': 'true',
+        'SortSelection': 'false',
+        'Names': names
+      }, undefined, true, ['Names']);
+
+      if (r) {
+        if (r.Entries && r.Success) {
+          await convert(r);
+          for (const Entry of r.Entries) {
+            Entries.set(Entry.Uuid, Entry);
+          }
+          delete r.Entries;
+        }
+        Object.assign(resonse, r);
+      }
+    }
+    resonse.Count = Entries.size;
+    resonse.Entries = Array.from(Entries.values());
+
+    return resonse;
   }
   async set({url, submiturl, name, login, password, uuid, stringFields = []}) {
     const iv = this.iv();

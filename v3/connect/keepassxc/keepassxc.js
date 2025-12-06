@@ -204,7 +204,7 @@ class KeePassXC extends SimpleStorage {
       if (resp.success === 'true') {
         return;
       }
-      throw Error(resp.error || 'Cannot retrieve credentials');
+      throw Error(resp.error || 'Cannot set credential');
     });
   }
   'get-totp'(uuid) {
