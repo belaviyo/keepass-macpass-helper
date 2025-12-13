@@ -219,15 +219,18 @@ function error(e) {
 
 async function submit() {
   let query = search.value = search.value || url;
-  if (query.indexOf('://') === -1) {
+  let url = query;
+  if (query.includes('://')) {
+    // if query is a URL we just search for the URL
+    query = undefined;
+  }
+  else {
     try {
       // try to construct and validate URL from user input
-      new URL('https://' + query);
-      search.value = query = 'https://' + query;
+      url = new URL('https://' + query).href;
     }
     catch (e) {}
   }
-
   list.clear();
 
   [...document.getElementById('toolbar').querySelectorAll('input,button')].forEach(input => {
@@ -236,9 +239,10 @@ async function submit() {
 
   try {
     const q = {
-      url: query,
-      names: []
+      url,
+      query
     };
+    console.log(q);
     const response = await engine.search(q);
 
     // hide group and title columns if no data available

@@ -95,12 +95,21 @@ chrome.storage.local.get({
     else {
       for (const [key, value] of Object.entries(json)) {
         if (key === 'FLAGS') {
-          continue;
+          entry.stringFields.push({
+            key: 'KPEX_PASSKEY_FLAG_BE',
+            value: value.includes('BE') ? 1 : 0
+          });
+          entry.stringFields.push({
+            key: 'KPEX_PASSKEY_FLAG_BS',
+            value: value.includes('BS') ? 1 : 0
+          });
         }
-        entry.stringFields.push({
-          key: 'KPEX_PASSKEY_' + key,
-          value
-        });
+        else {
+          entry.stringFields.push({
+            key: 'KPEX_PASSKEY_' + key,
+            value
+          });
+        }
       }
     }
 

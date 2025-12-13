@@ -183,7 +183,7 @@ class KeePass extends SimpleStorage {
 
     return r;
   }
-  async logins({url, submiturl, realm, names = []}) {
+  async logins({url, submiturl, realm, names = [], query}) {
     const Entries = new Map();
     const resonse = {};
 
@@ -234,24 +234,30 @@ class KeePass extends SimpleStorage {
         Object.assign(resonse, r);
       }
     }
-    // search by name
-    if (names.length && this.version > 2100) {
-      const r = await this.post({
-        'RequestType': 'get-logins-by-names',
-        'TriggerUnlock': 'true',
-        'SortSelection': 'false',
-        'Names': names
-      }, undefined, true, ['Names']);
-
-      if (r) {
-        if (r.Entries && r.Success) {
-          await convert(r);
-          for (const Entry of r.Entries) {
-            Entries.set(Entry.Uuid, Entry);
+    // custom search
+    if (query) {
+      try {
+        const r = await this.post({
+          'RequestType': 'get-logins-custom-search',
+          'TriggerUnlock': 'true',
+          'SortSelection': 'false',
+          'SearchString': query,
+          'SearchInTitles': 'true',
+          'SearchInUrls': 'true'
+        }, undefined, true, ['SearchString']);
+        if (r) {
+          if (r.Entries && r.Success) {
+            await convert(r);
+            for (const Entry of r.Entries) {
+              Entries.set(Entry.Uuid, Entry);
+            }
+            delete r.Entries;
           }
-          delete r.Entries;
+          Object.assign(resonse, r);
         }
-        Object.assign(resonse, r);
+      }
+      catch (e) {
+        console.info(e);
       }
     }
     resonse.Count = Entries.size;
