@@ -242,7 +242,6 @@ async function submit() {
       url,
       query
     };
-    console.log(q);
     const response = await engine.search(q);
 
     // hide group and title columns if no data available
@@ -616,8 +615,14 @@ const copy = content => navigator.clipboard.writeText(content).then(() => {
 document.addEventListener('click', async e => {
   try {
     const target = e.target;
+    // dispatch event still works on disabled elements
+    if (target.disabled) {
+      return;
+    }
+
     const cmd = target.dataset.cmd || '';
-    const alt = e.metaKey || e.ctrlKey;
+    // for mouse click, any modifier counts
+    const alt = e.metaKey || e.ctrlKey || e.shiftKey;
 
     // cache
     if (cmd && (cmd.startsWith('insert-') || cmd.startsWith('copy') || cmd === 'passkey')) {
@@ -677,18 +682,52 @@ document.addEventListener('click', async e => {
             cmd: 'notify',
             message: `Cannot find any login forms on this page!
 
-  For cross-origin login forms, use the options page to permit access`
+For cross-origin login forms, use the options page to permit access`
           });
         }
       }
       // submit
-      if (cmd === 'insert-both' && alt === false && inserted) {
-        await insert.submit();
+      if (cmd === 'insert-both' && inserted) {
+        let type;
+        if (e.detail === 'submit') {
+          type = 'submit';
+        }
+        else if (e.detail === 'no-submit') {
+          type = 'no-submit';
+        }
+        else {
+          if (alt === false) {
+            type = self.keys['insert-both'].click === 'click' ? 'submit' : 'no-submit';
+          }
+          else {
+            type = self.keys['insert-both-no-submit'].click === 'ctrl-click' ? 'no-submit' : 'submit';
+          }
+        }
+
+        if (type === 'submit') {
+          await insert.submit();
+        }
       }
       window.close();
     }
     else if (cmd && cmd.startsWith('copy')) {
-      if (e.detail === 'password' || alt) {
+      let type = 'username';
+      if (e.detail === 'copy') {
+        type = 'username';
+      }
+      else if (e.detail === 'password') {
+        type = 'password';
+      }
+      else {
+        if (alt) {
+          type = self.keys.password.click === 'ctrl-click' ? 'password' : 'username';
+        }
+        else {
+          type = self.keys.copy.click === 'click' ? 'username' : 'password';
+        }
+      }
+
+      if (type === 'password') {
         copy(list.selectedValues.map(a => a[0].password).join('\n'));
       }
       else {
@@ -707,7 +746,7 @@ document.addEventListener('click', async e => {
         else {
           alert(`No string-field entry with either "otp" or "sotp" key is detected.
 
-  To generate one-time password tokens, save a new string-field entry with "KPH: otp" name and SECRET as value.`);
+To generate one-time password tokens, save a new string-field entry with "KPH: otp" name and SECRET as value.`);
         }
       }
       catch (e) {

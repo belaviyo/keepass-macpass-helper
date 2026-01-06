@@ -94,76 +94,139 @@
   <div class="m2">
     <p>To set up a keyboard shortcut for opening the popup window in Chromium browsers, go to "chrome://extensions/shortcuts" in a new tab. The term "Meta" refers to modifier keys like Ctrl, Alt, Command, or their combinations.</p>
     <div data-shortcut="copy">
-      <span>Copy Username (<u>KeyC</u>)</span>
+      <span>Copy Username (
+        <select>
+          <option value="click">Click</option>
+          <option value="ctrl-click">Ctrl + Click</option>
+        </select>
+        on <b>Copy</b> button)
+      </span>
       <div>
-        <label>Shift <input type="checkbox"></label>
-        <label>Meta <input type="checkbox"></label>
-      </div>
-    </div>
-    <div data-shortcut="otp">
-      <span>Copy OTP (<u>KeyO</u>)</span>
-      <div>
+        <input type="text" placeholder="KeyC" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="password">
-      <span>Copy Password (<u>KeyX</u>)</span>
+      <span>Copy Password (
+        <select>
+          <option value="ctrl-click">Ctrl + Click</option>
+          <option value="click">Click</option>
+        </select>
+        on <b>Copy</b> button)
+      </span>
       <div>
+        <input type="text" placeholder="KeyX" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="insert-both">
-      <span>Insert Username and Password, then Submit (<u>KeyB</u>)</span>
+      <span>Insert Username and Password, then Submit (
+        <select>
+          <option value="click">Click</option>
+          <option value="ctrl-click">Ctrl + Click</option>
+        </select>
+        on <b>Both</b> button)
+      </span>
       <div>
+        <input type="text" placeholder="KeyB" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="insert-both-no-submit">
-      <span>Insert Username and Password (<u>KeyB</u>)</span>
+      <span>Insert Username and Password (
+        <select>
+          <option value="ctrl-click">Ctrl + Click</option>
+          <option value="click">Click</option>
+        </select>
+        on <b>Both</b> button)
+      </span>
       <div>
+        <input type="text" placeholder="KeyB" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="insert-login">
-      <span>Insert Username (<u>KeyU</u>)</span>
+      <span>Insert Username</span>
       <div>
+        <input type="text" placeholder="KeyU" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="insert-password">
-      <span>Insert Password (<u>KeyP</u>)</span>
+      <span>Insert Password</span>
       <div>
+        <input type="text" placeholder="KeyP" list="keys" pattern="^\w+$">
+        <label>Shift <input type="checkbox"></label>
+        <label>Meta <input type="checkbox"></label>
+      </div>
+    </div>
+    <div data-shortcut="otp">
+      <span>Copy OTP</span>
+      <div>
+        <input type="text" placeholder="KeyO" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="search">
-      <span>Focus Search (<u>KeyF</u>)</span>
+      <span>Focus Search</span>
       <div>
+        <input type="text" placeholder="KeyF" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="passkey">
-      <span>Use Passkey (<u>KeyK</u>)</span>
+      <span>Use Passkey</span>
       <div>
+        <input type="text" placeholder="KeyK" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
     <div data-shortcut="ssdb">
-      <span>Open Secure Synced Storage (<u>KeyD</u>)</span>
+      <span>Open Secure Synced Storage</span>
       <div>
+        <input type="text" placeholder="KeyD" list="keys" pattern="^\w+$">
         <label>Shift <input type="checkbox"></label>
         <label>Meta <input type="checkbox"></label>
       </div>
     </div>
   </div>
+
+  <datalist id="keys">
+    <option value="KeyA"></option>
+    <option value="KeyB"></option>
+    <option value="KeyC"></option>
+    <option value="KeyD"></option>
+    <option value="KeyE"></option>
+    <option value="KeyF"></option>
+    <option value="KeyG"></option>
+    <option value="KeyH"></option>
+    <option value="KeyI"></option>
+    <option value="KeyJ"></option>
+    <option value="KeyK"></option>
+    <option value="KeyL"></option>
+    <option value="KeyM"></option>
+    <option value="KeyN"></option>
+    <option value="KeyO"></option>
+    <option value="KeyP"></option>
+    <option value="KeyQ"></option>
+    <option value="KeyR"></option>
+    <option value="KeyS"></option>
+    <option value="KeyT"></option>
+    <option value="KeyU"></option>
+    <option value="KeyV"></option>
+    <option value="KeyW"></option>
+    <option value="KeyX"></option>
+    <option value="KeyY"></option>
+    <option value="KeyZ"></option>
+  </datalist>
 
   <h2>Secure Synced Storage</h2>
   <div>

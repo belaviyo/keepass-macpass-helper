@@ -4,7 +4,8 @@
 const KEYS = {
   'copy': {
     code: 'KeyC',
-    meta: ['meta']
+    meta: ['meta'],
+    click: 'click'
   },
   'otp': {
     code: 'KeyO',
@@ -12,15 +13,18 @@ const KEYS = {
   },
   'password': {
     code: 'KeyX',
-    meta: ['meta']
+    meta: ['meta'],
+    click: 'ctrl-click'
   },
   'insert-both': {
     code: 'KeyB',
-    meta: ['meta', 'shift']
+    meta: ['meta', 'shift'],
+    click: 'click'
   },
   'insert-both-no-submit': {
     code: 'KeyB',
-    meta: ['meta']
+    meta: ['meta'],
+    click: 'ctrl-click'
   },
   'insert-login': {
     code: 'KeyU',
@@ -44,14 +48,14 @@ const KEYS = {
   }
 };
 
-const toast = (msg, callback = () => {}) => {
+const toast = (msg, callback = () => {}, timeout = 2000) => {
   const e = document.getElementById('toast');
   e.textContent = msg;
   window.clearTimeout(toast.id);
   toast.id = setTimeout(() => {
     e.textContent = '';
     callback();
-  }, 2000);
+  }, timeout);
 };
 
 if (/Firefox/.test(navigator.userAgent)) {
@@ -115,9 +119,16 @@ function restore() {
     document.getElementById('sort.direction').value = prefs.sort.direction;
 
     for (const [name, o] of Object.entries(prefs.keys)) {
-      const [shift, meta] = document.querySelectorAll(`[data-shortcut="${name}"] label input`);
+      const parent = document.querySelector(`[data-shortcut="${name}"]`);
+      const [shift, meta] = parent.querySelectorAll('label input');
       shift.checked = o.meta.includes('shift');
       meta.checked = o.meta.includes('meta');
+      parent.querySelector('input[type=text]').value = o.code;
+
+      const select = parent.querySelector('select');
+      if (select) {
+        select.value = o.click;
+      }
     }
   });
 }
@@ -129,14 +140,29 @@ async function save() {
   const ps = await chrome.storage.local.get({
     keys: KEYS
   });
+  const validKeys = [...document.getElementById('keys').options].map(o => o.value);
   for (const name of Object.keys(ps.keys)) {
-    const [shift, meta] = document.querySelectorAll(`[data-shortcut="${name}"] label input`);
+    const parent = document.querySelector(`[data-shortcut="${name}"]`);
+    const [shift, meta] = parent.querySelectorAll('label input');
+    const code = parent.querySelector('input[type=text]').value;
+
+    if (code !== '' && validKeys.includes(code) === false) {
+      const msg = 'Invalid key code for ' + name + '. Please select a value from the suggestion list (e.g., "KeyC")'
+      return toast(msg, undefined, 10000);
+    }
+
     ps.keys[name].meta = [];
     if (shift.checked) {
       ps.keys[name].meta.push('shift');
     }
     if (meta.checked || ps.keys[name].meta.length === 0) {
       ps.keys[name].meta.push('meta');
+    }
+    ps.keys[name].code = code;
+
+    const select = parent.querySelector('select');
+    if (select) {
+      ps.keys[name].click = select.value;
     }
   }
 
@@ -165,6 +191,28 @@ async function save() {
 
 document.addEventListener('DOMContentLoaded', restore);
 document.getElementById('save').addEventListener('click', save);
+
+document.addEventListener('change', e => {
+  const select = e.target;
+  if (select.tagName === 'SELECT' && select.closest('.m2')) {
+    const parent = select.closest('[data-shortcut]');
+    const name = parent.dataset.shortcut;
+    let partnerName;
+
+    if (name === 'copy') partnerName = 'password';
+    else if (name === 'password') partnerName = 'copy';
+    else if (name === 'insert-both') partnerName = 'insert-both-no-submit';
+    else if (name === 'insert-both-no-submit') partnerName = 'insert-both';
+
+    if (partnerName) {
+      const partnerSelect = document.querySelector(`[data-shortcut="${partnerName}"] select`);
+      if (partnerSelect) {
+        partnerSelect.value = select.value === 'click' ? 'ctrl-click' : 'click';
+      }
+    }
+  }
+});
+
 document.getElementById('example').addEventListener('click', () => {
   document.getElementById('json').value = JSON.stringify([{
     'url': 'https://github.com/login',
