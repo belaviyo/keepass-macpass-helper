@@ -127,7 +127,7 @@ function restore() {
 
       const select = parent.querySelector('select');
       if (select) {
-        select.value = o.click;
+        select.value = 'click' in o ? o.click : KEYS[name].click;
       }
     }
   });
@@ -147,7 +147,7 @@ async function save() {
     const code = parent.querySelector('input[type=text]').value;
 
     if (code !== '' && validKeys.includes(code) === false) {
-      const msg = 'Invalid key code for ' + name + '. Please select a value from the suggestion list (e.g., "KeyC")'
+      const msg = 'Invalid key code for ' + name + '. Please select a value from the suggestion list (e.g., "KeyC")';
       return toast(msg, undefined, 10000);
     }
 

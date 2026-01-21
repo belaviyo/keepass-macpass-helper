@@ -167,7 +167,7 @@ a {
 
 #toast {
   position: fixed;
-  top: 10px;
+  bottom: 10px;
   right: 10px;
   border: solid 1px;
   padding: 10px;

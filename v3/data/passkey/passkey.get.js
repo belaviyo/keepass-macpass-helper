@@ -143,7 +143,7 @@ passkey.get = async data => {
         return buffer.buffer;
       };
 
-      const createPublicKeyCredential = (publicKey, response, id, rawId) => {
+      const createPublicKeyCredential = (publicKey, response = {}, id, rawId) => {
         const publicKeyCredential = {
           authenticatorAttachment: 'platform',
           id,
@@ -155,6 +155,21 @@ passkey.get = async data => {
           },
           getClientExtensionResults() {
             return publicKey?.response?.clientExtensionResults || {};
+          },
+          toJSON() {
+            const bufferToBase64URL = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
+              .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+            return {
+              type: this.type,
+              id: this.id,
+              rawId: this.rawId && bufferToBase64URL(this.rawId),
+              authenticatorAttachment: this.authenticatorAttachment,
+              response: Object.fromEntries(
+                Object.entries(this.response).map(([k, v]) => [k, v instanceof ArrayBuffer ? bufferToBase64URL(v) : v])
+              ),
+              clientExtensionResults: this.getClientExtensionResults()
+            };
           }
         };
         Object.setPrototypeOf(publicKeyCredential, PublicKeyCredential.prototype);
