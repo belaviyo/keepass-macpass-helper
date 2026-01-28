@@ -17,7 +17,7 @@ const args = new URLSearchParams(location.search);
 document.addEventListener('click', e => {
   const target = e.target;
   const cmd = target.dataset.cmd;
-  console.log(cmd);
+
   if (cmd === 'cancel') {
     chrome.runtime.sendMessage({cmd: 'close-me'});
   }
