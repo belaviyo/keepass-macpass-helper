@@ -8,8 +8,11 @@
 <body>
   <form action="#" autocomplete="off">
     <div>
-      <span>Title</span>
-      <input type="text" name="name" autocomplete="new-password" style="grid-column: 2/5;" placeholder="Title might get ignored" value="New Credential">
+      <div class="contents">
+        <span>Title</span>
+        <input type="text" name="name" autocomplete="new-password" style="grid-column: 2/4;" placeholder="Title might get ignored" value="New Credential">
+        <input type="button" data-cmd="update-title" value="Title" title="Use the page title as the title for the new credential.">
+      </div>
       <div class="contents">
         <span>URL</span>
         <input type="text" name="url">

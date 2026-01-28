@@ -13,7 +13,9 @@ for (const e of document.querySelectorAll('dialog.kphelper')) {
   iframe.onload = () => iframe.contentWindow.postMessage({
     pairs: window.pairs
   }, '*');
-  iframe.src = chrome.runtime.getURL('/data/save/index.html') +
-    '?url=' + encodeURIComponent(location.href);
+  const args = new URLSearchParams();
+  args.set('url', location.href);
+  args.set('title', document.title);
+  iframe.src = chrome.runtime.getURL('/data/save/index.html?') + args.toString();
   dialog.showModal();
 }

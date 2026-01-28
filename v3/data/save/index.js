@@ -17,7 +17,7 @@ const args = new URLSearchParams(location.search);
 document.addEventListener('click', e => {
   const target = e.target;
   const cmd = target.dataset.cmd;
-
+  console.log(cmd);
   if (cmd === 'cancel') {
     chrome.runtime.sendMessage({cmd: 'close-me'});
   }
@@ -46,6 +46,10 @@ document.addEventListener('click', e => {
       console.error(e);
       alert(e.message);
     }
+  }
+  else if (cmd === 'update-title') {
+    const input = target.parentElement.querySelector('input[type="text"]');
+    input.value = args.get('title');
   }
 });
 
