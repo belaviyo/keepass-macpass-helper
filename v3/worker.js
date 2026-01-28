@@ -130,15 +130,10 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       injectImmediately: true
     });
   }
-  else if (request.cmd === 'passkey-public-data') {
-    const {features, pub} = passkey.set.args.get(sender.tab.id);
-    response({pub, features});
-    notify(sender.tab, 'Proceed with passkey generation', '🔏', '#3f51b5');
-  }
   else if (request.cmd === 'passkey-interface') {
+    const {persist, features, key} = passkey.set.args.get(sender.tab.id);
     // clean up
     try {
-      const {persist} = passkey.set.args.get(sender.tab.id);
       chrome.tabs.onUpdated.removeListener(persist);
 
       passkey.args.delete(sender.tab.id);
@@ -148,8 +143,6 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     // show interface
     chrome.windows.getCurrent().then(win => {
       const args = new URLSearchParams();
-
-      const {features, key} = passkey.set.args.get(sender.tab.id);
 
       if (features['backed-up']) {
         request.data.FLAGS.push('BS');
