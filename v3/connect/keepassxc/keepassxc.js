@@ -121,30 +121,39 @@ class KeePassXC extends SimpleStorage {
   }
   // public methods
   async 'test-associate'() {
-    const resp = await this.databasehash();
-    if (!resp.hash) {
+    // resolve if already connected
+    if (this.connected) {
+      return;
+    }
+    const resp1 = await this.databasehash();
+    if (!resp1.hash) {
       throw Error('Requesting database info from KeePassXC failed');
     }
-    this.db = resp;
+    this.db = resp1;
 
-    const prefs = await this.read({
-      ['xc-' + this.db.hash]: {}
-    });
-    if (prefs['xc-' + this.db.hash]) {
-      this.key = prefs['xc-' + this.db.hash];
-      const resp = await this.securePost(Object.assign({
-        'action': 'test-associate'
-      }, this.key));
-      if (resp && resp.success === 'true') {
-        return;
-      }
-      else {
-        throw Error('cannot associate/2');
-      }
-    }
-    else {
+    // check all existing hashes
+    const prefs = await this.read(null);
+    if (!prefs['xc-' + this.db.hash]) {
       throw Error('cannot associate/1');
     }
+
+    const resp2 = await this.securePost(Object.assign({
+      'action': 'test-associate'
+    }, prefs['xc-' + this.db.hash]));
+    if (!resp2 || resp2.success !== 'true') {
+      throw Error('cannot associate/2');
+    }
+
+    // all existing KeePassXC associated keys
+    this.keys = [];
+    for (const key of Object.keys(prefs).filter(name => name.startsWith('xc-') && prefs[name]?.id)) {
+      this.keys.push(prefs[key]);
+    }
+    if (this.keys.length === 0) {
+      throw Error('cannot associate/3');
+    }
+
+    this.connected = true;
   }
   async associate() {
     const idKey = this.btoa(nacl.box.keyPair().publicKey);
@@ -178,7 +187,7 @@ class KeePassXC extends SimpleStorage {
   'get-logins'(url) {
     return this.securePost({
       'action': 'get-logins',
-      'keys': [this.key],
+      'keys': this.keys,
       url
     }).then(resp => {
       if (resp.errorCode === '15') { // no match
