@@ -602,7 +602,20 @@ insert.submit = () => chrome.scripting.executeScript({
   }
 });
 
-const copy = content => navigator.clipboard.writeText(content).then(() => {
+const copy = content => navigator.clipboard.writeText(content).catch(e => {
+  console.info('[clipboard]', e);
+
+  const textarea = document.createElement('textarea');
+  textarea.value = content;
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  setTimeout(() => document.body.removeChild(textarea));
+  document.execCommand('copy');
+}).then(() => {
   chrome.runtime.sendMessage({
     cmd: 'notify',
     message: 'Done',
@@ -946,7 +959,8 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
             tabId: tab.id,
             allFrames: true
           },
-          files: ['/data/helper.js', '/data/cmd/inject.js']
+          files: ['/data/helper.js', '/data/cmd/inject.js'],
+          injectImmediately: true
         }),
         new Promise(resolve => setTimeout(() => resolve(false), 2000))
       ]);
@@ -957,7 +971,8 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
             tabId: tab.id,
             allFrames: false
           },
-          files: ['/data/helper.js', '/data/cmd/inject.js']
+          files: ['/data/helper.js', '/data/cmd/inject.js'],
+          injectImmediately: true
         });
       }
 
