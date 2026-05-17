@@ -30,8 +30,8 @@
     <input type="text" id="xc-native-id">
     <input type="button" value="Generate Manifest" id="keepassxc-manifest">
     <input type="radio" name="method" id="kwpass">
-    <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (writes to internal database)</label>
-    <div style="grid-column: 3/5; text-align: end;" class="fl">
+    <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (Writes to an internal database)</label>
+    <div class="fld">
       <div>
         <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and use it as the storage">
         <span>OR</span>
@@ -40,6 +40,10 @@
       <div>
         <input type="button" id="kwpass-remove" value="Delete File(s)">
         <input type="button" id="kwpass-download" value="Download Database">
+      </div>
+      <div class="m1" id="kwpass-overwrite-container">
+        <input type="checkbox" id="kwpass-overwrite">
+        <label for="kwpass-overwrite">Write changes back to the local file</label>
       </div>
     </div>
     <input type="radio" name="method" id="none">

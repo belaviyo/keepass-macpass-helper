@@ -856,6 +856,7 @@ To generate one-time password tokens, save a new string-field entry with "KPH: o
             }
           }
         }
+
         location.reload();
       }
     }
@@ -903,14 +904,17 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
 (async () => {
   // prepare the engine engine
   const prefs = await storage.remote({
-    engine: 'keepass'
+    'engine': 'keepass',
+    'kwpass-overwrite': false
   });
 
   try {
     if (prefs.engine === 'keepass') {
       await access();
     }
-    await engine.prepare(prefs.engine);
+    await engine.prepare(prefs.engine, {
+      'kwpass-overwrite': prefs['kwpass-overwrite']
+    });
     await engine.connected(prefs.engine);
 
     if (prefs.engine === 'kwpass') {

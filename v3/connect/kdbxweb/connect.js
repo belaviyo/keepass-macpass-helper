@@ -19,19 +19,29 @@ kdbxweb.CryptoEngine.setArgon2Impl((password, salt, memory, iterations, length, 
 class KWFILE {
   open(name = 'database') {
     return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open(name, 1);
+      const request = indexedDB.open(name, 2); // Updated version
       request.onerror = reject;
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
       };
       request.onupgradeneeded = () => {
-        request.result.createObjectStore('files', {
-          autoIncrement: true
-        });
+        const db = request.result;
+
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files', {
+            autoIncrement: true
+          });
+        }
+
+        // Create handles object store for storing file handles with same keys
+        if (!db.objectStoreNames.contains('handles')) {
+          db.createObjectStore('handles');
+        }
       };
     });
   }
+
   read() {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction('files', 'readonly');
@@ -47,26 +57,153 @@ class KWFILE {
       transaction.oncomplete = () => resolve(files);
     });
   }
-  write(bytes) {
+
+  write(bytes, handle = null) { // Added optional handle parameter
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction('files', 'readwrite');
-      transaction.oncomplete = resolve;
+      const transaction = this.db.transaction(['files', 'handles'], 'readwrite');
+
+      // Store the file with its data
+      const fileStore = transaction.objectStore('files');
+      const fileRequest = fileStore.add(bytes);
+
+      fileRequest.onsuccess = () => {
+        const fileId = fileRequest.result;
+
+        // If a handle was provided, store it with the same key
+        if (handle !== null) {
+          const handleStore = transaction.objectStore('handles');
+          handleStore.add(handle, fileId);
+        }
+
+        resolve();
+      };
+
+      fileRequest.onerror = e => reject(Error('write, ' + e.target.error));
       transaction.onerror = e => reject(Error('write, ' + e.target.error));
-      transaction.objectStore('files').add(bytes);
     });
   }
+  // edit content based on the current stored index not keyPath.
+  // "overwrite" controls whether the extension overwrites the original file or not
+  edit(index, newBytes, overwrite = false) {
+    return new Promise((resolve, reject) => {
+      // Helper function to get all file keys
+      const getAllFileKeys = () => {
+        return new Promise((resolveKeys, rejectKeys) => {
+          const transaction = this.db.transaction('files', 'readonly');
+          const keys = [];
+          transaction.objectStore('files').openKeyCursor().onsuccess = e => {
+            const cursor = e.target.result;
+            if (cursor) {
+              keys.push(cursor.key);
+              cursor.continue();
+            }
+          };
+          transaction.onerror = e => rejectKeys(Error('getAllFileKeys, ' + e.target.error));
+          transaction.oncomplete = () => resolveKeys(keys);
+        });
+      };
+
+      getAllFileKeys().then(keys => {
+        if (index < 0 || index >= keys.length) {
+          reject(Error(`Index ${index} out of range. Only ${keys.length} files exist.`));
+          return;
+        }
+
+        const fileId = keys[index];
+        const transaction = this.db.transaction('files', 'readwrite');
+        const fileStore = transaction.objectStore('files');
+        const putRequest = fileStore.put(newBytes, fileId);
+
+        transaction.oncomplete = async () => {
+          if (overwrite) {
+            const handle = await this.handle(fileId);
+            if (handle) {
+              const permission = await handle.queryPermission({mode: 'readwrite'});
+
+              if (permission === 'denied') {
+                return reject(Error('Write failed. Download latest database from Options page and reattach.'));
+              }
+              else if (permission === 'prompt') {
+                const result = await handle.requestPermission({mode: 'readwrite'});
+                if (result === 'denied') {
+                  return reject(Error('Write operation cancelled by user.'));
+                }
+              }
+
+              // Create a writable stream
+              const writable = await handle.createWritable();
+              await writable.write(newBytes);
+              await writable.close();
+              resolve();
+            }
+            else {
+              resolve();
+            }
+          }
+          else {
+            resolve();
+          }
+        };
+        putRequest.onerror = e => reject(Error('edit, ' + e.target.error));
+        transaction.onerror = e => reject(Error('edit, ' + e.target.error));
+      }).catch(reject);
+    });
+  }
+
   clear() {
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction('files', 'readwrite');
-      const req = transaction.objectStore('files').clear();
-      req.onsuccess = resolve;
-      req.onerror = e => {
-        reject(Error('read, ' + e.target.error));
+      const transaction = this.db.transaction(['files', 'handles'], 'readwrite');
+
+      // Clear both stores
+      const fileClear = transaction.objectStore('files').clear();
+      const handleClear = transaction.objectStore('handles').clear();
+
+      let completed = 0;
+      fileClear.onsuccess = handleClear.onsuccess = () => {
+        completed += 1;
+        if (completed === 2) {
+          resolve();
+        }
       };
+      fileClear.onerror = e => reject(Error('clear, ' + e.target.error));
+      handleClear.onerror = e => reject(Error('clear, ' + e.target.error));
+    });
+  }
+
+  // retrieve a handle by file ID (used by read if needed)
+  handle(keypath = null) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction('handles', 'readonly');
+      const store = transaction.objectStore('handles');
+
+      // If keypath is provided, get that specific handle
+      if (keypath) {
+        const request = store.get(keypath);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = e => reject(Error('getHandle, ' + e.target.error));
+      }
+      // Get the first available handle
+      else {
+        const request = store.openCursor();
+        request.onsuccess = e => {
+          const cursor = e.target.result;
+          if (cursor) {
+            resolve(cursor.value);
+          }
+          else {
+            resolve(null); // No handles available
+          }
+        };
+        request.onerror = e => reject(Error('getHandle, ' + e.target.error));
+      }
     });
   }
 }
+
 class KWPASS {
+  constructor(overwrite = false) {
+    this.overwrite = overwrite;
+  }
   prepare() {
     this.file = new KWFILE();
     return this.file.open();
@@ -145,8 +282,8 @@ class KWPASS {
       entry.times.update();
 
       const ab = await this.db.save();
-      await this.dettach(true);
-      return this.attach(new Uint8Array(ab), this.key);
+      // only edit file (index = 0) not key (index = 1)
+      await this.file.edit(0, new Uint8Array(ab), this.overwrite);
     }
     catch (e) {
       throw Error('Is database unlocked? ' + e.message);
@@ -195,8 +332,8 @@ class KWPASS {
     }
 
     const ab = await this.db.save();
-    await this.dettach(true);
-    return this.attach(new Uint8Array(ab), this.key);
+
+    await this.file.edit(0, new Uint8Array(ab), this.overwrite);
   }
   /* create a blank database */
   async create(password) {
@@ -205,10 +342,10 @@ class KWPASS {
     const ab = await this.db.save();
     this.attach(new Uint8Array(ab));
   }
-  async attach(fileBytes, keyBytes) {
-    await this.file.write(fileBytes);
+  async attach(fileBytes, keyBytes, fileHandle, keyHandle) {
+    await this.file.write(fileBytes, fileHandle);
     if (keyBytes) {
-      await this.file.write(keyBytes);
+      await this.file.write(keyBytes, keyHandle);
     }
   }
   async dettach(silent) {

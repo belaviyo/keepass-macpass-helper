@@ -24,9 +24,12 @@ document.getElementById('refresh').onclick = () => {
 };
 
 chrome.storage.local.get({
-  engine: 'keepass'
+  'engine': 'keepass',
+  'kwpass-overwrite': false
 }).then(async prefs => {
-  await engine.prepare(prefs.engine);
+  await engine.prepare(prefs.engine, {
+    'kwpass-overwrite': prefs['kwpass-overwrite']
+  });
 
   // update entries
   engine.search({

@@ -45,7 +45,7 @@ engine.hasSSDB = () => new Promise(resolve => chrome.storage.session.get({
   'ssdb-exported-key': ''
 }, prefs => resolve(!!prefs['ssdb-exported-key'])));
 
-engine.prepare = type => {
+engine.prepare = (type, opts = {}) => {
   engine.type = type;
   if (type === 'keepass') {
     engine.core = new KeePass();
@@ -54,7 +54,7 @@ engine.prepare = type => {
     engine.core = new KeePassXC();
   }
   else if (type === 'kwpass') {
-    engine.core = new KWPASS();
+    engine.core = new KWPASS(opts['kwpass-overwrite']);
   }
   else if (type === 'none') {
     engine.core = new class {

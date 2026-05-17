@@ -48,6 +48,14 @@ const KEYS = {
   }
 };
 
+const kwpass = new KWPASS();
+kwpass.prepare().then(() => kwpass.file.handle()).then(handle => {
+  if (!handle) {
+    document.getElementById('kwpass-overwrite').checked = false;
+    document.getElementById('kwpass-overwrite-container').classList.add('disabled');
+  }
+});
+
 const toast = (msg, callback = () => {}, timeout = 2000) => {
   const e = document.getElementById('toast');
   e.textContent = msg;
@@ -92,7 +100,8 @@ function restore() {
       'key': 'Login',
       'direction': 'az'
     },
-    'keys': KEYS
+    'keys': KEYS,
+    'kwpass-overwrite': false
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
     // make sure we have access to the native client
@@ -117,6 +126,7 @@ function restore() {
     document.getElementById('sort.active').checked = prefs.sort.active;
     document.getElementById('sort.key').value = prefs.sort.key;
     document.getElementById('sort.direction').value = prefs.sort.direction;
+    document.getElementById('kwpass-overwrite').checked = prefs['kwpass-overwrite'];
 
     for (const [name, o] of Object.entries(prefs.keys)) {
       const parent = document.querySelector(`[data-shortcut="${name}"]`);
@@ -183,7 +193,8 @@ async function save() {
       'active': document.getElementById('sort.active').checked,
       'key': document.getElementById('sort.key').value,
       'direction': document.getElementById('sort.direction').value
-    }
+    },
+    'kwpass-overwrite': document.getElementById('kwpass-overwrite').checked
   }, () => {
     toast('Options saved');
   });
@@ -304,50 +315,55 @@ chrome.permissions.contains({
   origins: ['<all_urls>']
 }, granted => granted && document.getElementById('permission').classList.add('hidden'));
 
-const kwpass = new KWPASS();
-
-document.getElementById('kwpass-file').onclick = () => {
+document.getElementById('kwpass-file').onclick = async () => {
   const read = file => new Promise(resolve => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(new Uint8Array(reader.result));
     reader.readAsArrayBuffer(file);
   });
-  const open = () => new Promise(resolve => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.onchange = () => resolve(input.files);
-    input.click();
-  });
 
-  open().then(async files => {
-    if (files.length === 1) {
-      const file = await read(files[0]);
+  try {
+    const handles = await window.showOpenFilePicker({
+      multiple: true
+    });
+
+    if (handles.length === 1) {
+      const file = await handles[0].getFile();
+
+      const bytes = await read(file);
       await kwpass.prepare();
       await kwpass.dettach();
-      await kwpass.attach(file);
+      await kwpass.attach(bytes, undefined, handles[0]);
+      document.getElementById('kwpass-overwrite-container').classList.remove('disabled');
     }
-    else if (files.length === 2) {
-      const key = [...files].filter(f => f.name.includes('.key')).shift();
-      if (!key) {
+    else if (handles.length === 2) {
+      const keyHandle = [...handles].filter(f => f.name.includes('.key')).shift();
+      if (!keyHandle) {
         throw Error('Cannot detect the key file (*.key*)');
       }
-      const file = [...files].filter(f => f !== key).shift();
+      const fileHandle = [...handles].filter(f => f !== keyHandle).shift();
 
       const args = [
-        await read(file),
-        await read(key)
+        await read(await fileHandle.getFile()),
+        await read(await keyHandle.getFile()),
+        fileHandle,
+        keyHandle
       ];
       await kwpass.prepare();
       await kwpass.dettach();
       await kwpass.attach(...args);
+      document.getElementById('kwpass-overwrite-container').classList.remove('disabled');
     }
     else {
       throw Error('Please provide the database file and key file (optional)');
     }
     toast('Database is stored');
     chrome.storage.session.remove('kw:password');
-  }).catch(e => toast(e.message));
+  }
+  catch (e) {
+    console.error(e);
+    toast(e.message);
+  }
 };
 document.getElementById('kwpass-remove').addEventListener('click', () => {
   const next = () => kwpass.dettach().then(() => {

@@ -69,7 +69,7 @@ a {
 }
 .mm1m {
   display: grid;
-  grid-template-columns: min-content min-content 1fr min-content;
+  grid-template-columns: min-content minmax(20ch, min-content) 1fr min-content;
   grid-gap: 20px 5px;
   align-items: center;
 }
@@ -103,6 +103,14 @@ a {
   flex-flow: wrap;
   gap: 5px;
   align-items: center;
+}
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: end;
+  grid-column: 3/5;
+  text-align: end;
 }
 .note {
   background-color: rgba(0, 0, 0, 0.05);
@@ -175,4 +183,14 @@ a {
 }
 #toast:empty {
   display: none;
+}
+
+label[for="none"],
+label[for="kwpass-overwrite"] {
+  white-space: break-spaces;
+  text-align: left;
+}
+
+#kwpass-overwrite-container.disabled {
+  pointer-events: none;
 }
