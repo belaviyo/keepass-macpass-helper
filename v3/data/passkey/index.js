@@ -32,6 +32,15 @@ chrome.storage.local.get({
   });
 
   // update entries
+  // for kwpass, we need to first open the database
+  if (prefs.engine === 'kwpass') {
+    const ps = await chrome.storage.session.get({
+      'kw:password': ''
+    });
+    if (ps['kw:password']) {
+      await engine.core.open(ps['kw:password']);
+    }
+  }
   engine.search({
     url: args.get('href')
   }).then(r => {
@@ -43,7 +52,7 @@ chrome.storage.local.get({
 
       document.getElementById('entries').append(option);
     }
-  });
+  }).catch(e => console.info('Cannot get entries', e));
 
   // ssdb
   if (engine.ssdb) {
@@ -53,6 +62,7 @@ chrome.storage.local.get({
     document.getElementById('ssdb').onclick = async () => {
       document.getElementById('ssdb').disabled = true;
       try {
+        document.getElementById('ssdb').value = 'Saving...';
         const uuid = (await engine.ssdb.convert(args.get('href'))).at(0);
         await engine.ssdb.append(uuid, {
           'Url': args.get('href'),
@@ -151,6 +161,7 @@ chrome.storage.local.get({
         }
 
         if (password) {
+          target.value = 'Saving...';
           await engine.core.open(password);
           await engine.set(entry);
           target.value = 'Saved';
@@ -183,6 +194,7 @@ chrome.storage.local.get({
           entry.uuid = uuid;
         }
 
+        target.value = 'Saving...';
         await engine.set(entry);
         target.value = 'Saved';
       }

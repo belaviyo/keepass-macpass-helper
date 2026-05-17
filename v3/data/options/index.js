@@ -55,6 +55,26 @@ kwpass.prepare().then(() => kwpass.file.handle()).then(handle => {
     document.getElementById('kwpass-overwrite-container').classList.add('disabled');
   }
 });
+// make sure we have write permission
+document.getElementById('kwpass-overwrite').onchange = async e => {
+  if (e.target.checked) {
+    await kwpass.prepare();
+    const handle = await kwpass.file.handle();
+
+    const permission = await handle.queryPermission({mode: 'readwrite'});
+    if (permission === 'denied') {
+      toast('No permission to write to local dataset. Saving changes to internal database only.', undefined, 10000);
+      e.target.checked = false;
+    }
+    else if (permission === 'prompt') {
+      const result = await handle.requestPermission({mode: 'readwrite'});
+      if (result !== 'granted') {
+        toast('No permission to write to local dataset. Saving changes to internal database only.', undefined, 10000);
+        e.target.checked = false;
+      }
+    }
+  }
+};
 
 const toast = (msg, callback = () => {}, timeout = 2000) => {
   const e = document.getElementById('toast');

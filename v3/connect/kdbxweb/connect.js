@@ -87,21 +87,20 @@ class KWFILE {
   edit(index, newBytes, overwrite = false) {
     return new Promise((resolve, reject) => {
       // Helper function to get all file keys
-      const getAllFileKeys = () => {
-        return new Promise((resolveKeys, rejectKeys) => {
-          const transaction = this.db.transaction('files', 'readonly');
-          const keys = [];
-          transaction.objectStore('files').openKeyCursor().onsuccess = e => {
-            const cursor = e.target.result;
-            if (cursor) {
-              keys.push(cursor.key);
-              cursor.continue();
-            }
-          };
-          transaction.onerror = e => rejectKeys(Error('getAllFileKeys, ' + e.target.error));
-          transaction.oncomplete = () => resolveKeys(keys);
-        });
-      };
+      const getAllFileKeys = () => new Promise((resolveKeys, rejectKeys) => {
+        const transaction = this.db.transaction('files', 'readonly');
+        const keys = [];
+        transaction.objectStore('files').openKeyCursor().onsuccess = e => {
+          const cursor = e.target.result;
+          if (cursor) {
+            keys.push(cursor.key);
+            cursor.continue();
+          }
+        };
+        transaction.onerror = e => rejectKeys(Error('getAllFileKeys, ' + e.target.error));
+        transaction.oncomplete = () => resolveKeys(keys);
+      });
+
 
       getAllFileKeys().then(keys => {
         if (index < 0 || index >= keys.length) {
@@ -116,28 +115,36 @@ class KWFILE {
 
         transaction.oncomplete = async () => {
           if (overwrite) {
-            const handle = await this.handle(fileId);
-            if (handle) {
-              const permission = await handle.queryPermission({mode: 'readwrite'});
-
-              if (permission === 'denied') {
-                return reject(Error('Write failed. Download latest database from Options page and reattach.'));
-              }
-              else if (permission === 'prompt') {
-                const result = await handle.requestPermission({mode: 'readwrite'});
-                if (result === 'denied') {
-                  return reject(Error('Write operation cancelled by user.'));
+            try {
+              const handle = await this.handle(fileId);
+              if (handle) {
+                const permission = await handle.queryPermission({mode: 'readwrite'});
+                if (permission === 'denied') {
+                  throw Error('Write failed. Download latest database from Options page and reattach.');
                 }
-              }
+                else if (permission === 'prompt') {
+                  const result = await handle.requestPermission({mode: 'readwrite'});
+                  if (result === 'denied') {
+                    throw Error('Write operation cancelled by user.');
+                  }
+                }
 
-              // Create a writable stream
-              const writable = await handle.createWritable();
-              await writable.write(newBytes);
-              await writable.close();
-              resolve();
+                // Create a writable stream
+                const writable = await handle.createWritable();
+                await writable.write(newBytes);
+                await writable.close();
+                resolve();
+              }
+              else {
+                resolve();
+              }
             }
-            else {
-              resolve();
+            catch (e) {
+              reject(Error(`The internal database has been updated, but I can't write to the local file.
+Go to the options page and toggle the "Write changes back to the local file" setting to re-grant write permission.
+
+--
+` + e.message));
             }
           }
           else {
@@ -286,7 +293,7 @@ class KWPASS {
       await this.file.edit(0, new Uint8Array(ab), this.overwrite);
     }
     catch (e) {
-      throw Error('Is database unlocked? ' + e.message);
+      throw Error('Is database unlocked?\n\n' + e.message);
     }
   }
   async open(password) {
