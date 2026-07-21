@@ -1,0 +1,79 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "keepasshelper-credential-request",
+        "description": "Request username and/or password credentials from the user for a specific website or service",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cmd": {
+              "type": "string",
+              "enum": ["ask-for-credential"],
+              "description": "Must be 'ask-for-credential'"
+            },
+            "href": {
+              "type": "string",
+              "description": "The target website URL or domain or a query for which credentials are needed (e.g., 'github.com', 'https://example.com', 'my stored credential')",
+              "optional": true
+            },
+            "instruction": {
+              "type": "string",
+              "description": "User-facing instructions describing what credentials are needed and why",
+              "optional": true
+            }
+          },
+          "required": ["cmd"]
+        },
+        "outputSchema": {
+          "type": "array",
+          "description": "Array of one or more command objects or error objects returned from the credential request",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "description": "Command object for inserting credentials into the page",
+                "properties": {
+                  "cmd": {
+                    "type": "string",
+                    "enum": ["insert.username", "insert.password", "insert.submit", "insert.fields"],
+                    "description": "Command identifier for the insert action"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["username", "password", "submit", "stringFields"],
+                    "description": "Type of credential data being inserted"
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "The credential value (username, password, or field data). Required for 'username', 'password', and 'stringFields' types. Optional for 'submit' type."
+                  }
+                },
+                "required": ["cmd", "type"]
+              },
+              {
+                "type": "object",
+                "description": "Error object if the credential request failed",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["error"],
+                    "description": "Indicates this is an error object"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Human-readable error message describing what went wrong"
+                  }
+                },
+                "required": ["type", "message"]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

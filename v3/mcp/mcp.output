@@ -1,0 +1,8 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    { "cmd": "insert.username", "type": "username", "value": "john_doe" },
+    { "type": "error", "message": "Password not available for this account" }
+  ]
+}

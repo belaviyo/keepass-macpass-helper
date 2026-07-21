@@ -178,6 +178,16 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
   }
 });
 // External Access
+chrome.runtime.onMessageExternal.addListener((request, sender, response) => {
+  if (request.cmd === 'mcp.json') {
+    fetch('mcp/mcp.json').then(r => r.json()).then(response);
+    return true;
+  }
+  else if (request.cmd === 'mcp.output') {
+    fetch('mcp/mcp.output').then(r => r.text()).then(response);
+    return true;
+  }
+});
 chrome.runtime.onConnectExternal.addListener(eport => {
   eport.onMessage.addListener(async request => {
     if (request.cmd === 'ask-for-credential') {
