@@ -177,7 +177,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     return true;
   }
 });
-// External Access
+// MCP support
 chrome.runtime.onMessageExternal.addListener((request, sender, response) => {
   if (request.cmd === 'mcp.json') {
     fetch('mcp/mcp.json').then(r => r.json()).then(response);
@@ -188,8 +188,11 @@ chrome.runtime.onMessageExternal.addListener((request, sender, response) => {
     return true;
   }
 });
+// External Access
 chrome.runtime.onConnectExternal.addListener(eport => {
   eport.onMessage.addListener(async request => {
+    console.log(request);
+
     if (request.cmd === 'ask-for-credential') {
       const args = new URLSearchParams();
       args.set('mode', 'detached');

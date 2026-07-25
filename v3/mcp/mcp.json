@@ -1,10 +1,9 @@
 {
   "jsonrpc": "2.0",
-  "id": 1,
   "result": {
     "tools": [
       {
-        "name": "keepasshelper-credential-request",
+        "name": "keepasshelper_credential_request",
         "description": "Request username and/or password credentials from the user for a specific website or service",
         "inputSchema": {
           "type": "object",
