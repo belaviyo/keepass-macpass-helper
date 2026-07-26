@@ -187,12 +187,15 @@ chrome.runtime.onMessageExternal.addListener((request, sender, response) => {
     fetch('mcp/mcp.output').then(r => r.text()).then(response);
     return true;
   }
+  else {
+    response({
+      error: 'unknown-request'
+    });
+  }
 });
 // External Access
 chrome.runtime.onConnectExternal.addListener(eport => {
   eport.onMessage.addListener(async request => {
-    console.log(request);
-
     if (request.cmd === 'ask-for-credential') {
       const args = new URLSearchParams();
       args.set('mode', 'detached');
