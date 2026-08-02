@@ -213,12 +213,16 @@ chrome.runtime.onConnectExternal.addListener(eport => {
       }
 
       // listen for port connection for 5 seconds
+      const msgs = [];
       const observe = iport => {
         chrome.runtime.onConnect.removeListener(observe);
         iport.onDisconnect.addListener(() => {
+          if (!request.stream && msgs.length) {
+            eport.postMessage(msgs);
+          }
           eport.disconnect();
         });
-        iport.onMessage.addListener(request => eport.postMessage(request));
+        iport.onMessage.addListener(msg => request.stream ? eport.postMessage(msg) : msgs.push(msg));
       };
       chrome.runtime.onConnect.addListener(observe);
 
