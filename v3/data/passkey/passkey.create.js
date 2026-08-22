@@ -146,6 +146,21 @@ const injectm = o => {
       },
       getClientExtensionResults() {
         return publicKey?.response?.clientExtensionResults || {};
+      },
+      // https://fido2.andersaberg.com/passwordless#heroFoot
+      toJSON() {
+        return {
+          id: this.id,
+          rawId: base64.encode(this.rawId),
+          response: {
+            clientDataJSON: base64.encode(this.response.clientDataJSON),
+            attestationObject: base64.encode(this.response.attestationObject),
+            transports: typeof this.response.getTransports === 'function' ? this.response.getTransports() : ['internal']
+          },
+          type: this.type,
+          authenticatorAttachment: this.authenticatorAttachment,
+          clientExtensionResults: this.getClientExtensionResults()
+        };
       }
     };
     Object.setPrototypeOf(publicKeyCredential, PublicKeyCredential.prototype);
