@@ -919,7 +919,7 @@ To generate one-time password tokens, save a new string-field entry with "KPH: o
       }
       catch (e) {
         console.warn(e);
-        alert(e.message);
+        alert(e.message || 'Unknown Error');
       }
     }
     else if (cmd === 'options-page') {
