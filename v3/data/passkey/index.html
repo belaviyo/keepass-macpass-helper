@@ -14,7 +14,11 @@
     <input type="button" id="save-name" value="Copy">
     <label for="data">Value</label>
     <textarea readonly id="data" rows="6"></textarea>
-    <input type="button" id="save-value" value="Copy">
+    <div class="one">
+      <input type="button" id="save-value" value="Copy">
+      <input type="button" id="encrypt" value="Encrypt">
+      <input type="button" id="decrypt" value="Decrypt" disabled>
+    </div>
     <label for="format">Format</label>
     <div id="format">
       <label title="This format is compatible with KeePassXC and can be used across different devices. To use it with KeePassHelper, you need to configure KeePassHTTP to return all string fields – not only those starting with 'KHP: '.">
@@ -65,6 +69,6 @@
   <script src="/connect/keepass/keepass.js"></script>
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
   <script src="/connect/kdbxweb/connect.js"></script>
-  <script type="text/javascript" src="index.js"></script>
+  <script type="module" src="index.mjs"></script>
 </body>
 </html>

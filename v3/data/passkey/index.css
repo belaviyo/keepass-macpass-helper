@@ -61,7 +61,11 @@ input[type="button"]:disabled {
   align-items: center;
   justify-content: end;
 }
-
+.one {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 textarea {
   white-space: pre;
   height: 100%;

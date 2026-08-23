@@ -88,8 +88,8 @@ const timebased = {
   }
 };
 
-const decrypt = async sotp => {
-  psbox.querySelector('span').textContent = 'Enter password to decrypt the secure OTP';
+const decrypt = async (data, message = 'Enter password to decrypt the secure OTP') => {
+  psbox.querySelector('span').textContent = message;
   psbox.classList.remove('hidden');
   psbox.querySelector('input').select();
   psbox.querySelector('input').focus();
@@ -102,7 +102,7 @@ const decrypt = async sotp => {
 
   const safe = new Safe();
   await safe.open(password);
-  return safe.decrypt(sotp);
+  return safe.decrypt(data);
 };
 
 const storage = {
@@ -859,6 +859,7 @@ To generate one-time password tokens, save a new string-field entry with "KPH: o
       try {
         const checked = list.selectedValues[0][0];
         const data = checked.stringFields.filter(o => o.Key.startsWith('PASSKEY_STORAGE'));
+
         // Append KeePassXC style passkey;
         if (checked.stringFields.some(o => o.Key === 'KPEX_PASSKEY_PRIVATE_KEY_PEM')) {
           try {
@@ -899,6 +900,11 @@ To generate one-time password tokens, save a new string-field entry with "KPH: o
           if (!selectedData) {
             return;
           }
+        }
+
+        // encrypted data?
+        if (selectedData.Value.startsWith('data:')) {
+          selectedData.Value = await decrypt(selectedData.Value, 'Enter password to decrypt the passkey');
         }
 
         const json = JSON.parse(selectedData.Value);

@@ -11,16 +11,27 @@ document.getElementById('cancel').addEventListener('click', () => {
   chrome.runtime.sendMessage({cmd: 'close-me'});
 });
 
-document.addEventListener('submit', e => {
-  e.preventDefault();
-  const data = document.getElementById('data').value;
-  const passphrase = document.getElementById('passphrase').value;
+document.addEventListener('submit', async e => {
   const result = document.getElementById('result');
+  try {
+    e.preventDefault();
+    const data = document.getElementById('data').value;
+    const passphrase = document.getElementById('passphrase').value;
 
-  const safe = new Safe();
-  safe.open(passphrase).then(() => {
-    return safe[e.target.dataset.action](data).then(s => result.value = s);
-  }).catch(e => result.value = e.message || 'Operation was unsuccessful');
+    const safe = new Safe();
+    await safe.open(passphrase);
+    const s = await safe[e.target.dataset.action](data);
+    if (e.target.dataset.action === 'encrypt') {
+      result.value = 'data:application/octet-binary;base64,' + s;
+    }
+    else {
+      result.value = s;
+    }
+  }
+  catch (e) {
+    console.error(e);
+    result.value = e.message || 'Operation was unsuccessful';
+  }
 });
 
 document.addEventListener('DOMContentLoaded', () => setTimeout(() => {

@@ -1,4 +1,9 @@
-/* global engine */
+/* global engine, Safe */
+
+import {prompt} from '/data/prompt.mjs';
+
+console.log(prompt);
+
 const args = new URLSearchParams(location.search);
 
 const copy = content => navigator.clipboard.writeText(content).catch(e => {
@@ -72,7 +77,7 @@ chrome.storage.local.get({
           'Password': '',
           'StringFields': [{
             Key: 'PASSKEY_STORAGE',
-            Value: args.get('data')
+            Value: document.getElementById('data').value // the user might want to store the encrypted data
           }]
         });
         document.getElementById('ssdb').value = 'Saved';
@@ -102,7 +107,7 @@ chrome.storage.local.get({
     if (document.querySelector('input[name=format]:checked').value === 'json') {
       entry.stringFields.push({
         key: document.getElementById('name').value,
-        value: args.get('data')
+        value: document.getElementById('data').value // the user might want to store the encrypted data
       });
     }
     else {
@@ -220,7 +225,49 @@ This extension cannot insert or update string fields automatically.`;
       alert(e.message);
     }
   };
+}).catch(e => {
+  document.getElementById('keepass').disabled = true;
+  console.error(e);
 });
+
+// Encrypt
+document.getElementById('encrypt').onclick = async e => {
+  const data = args.get('data');
+  const password = await prompt('Enter password for encryption', undefined, {
+    password: true
+  });
+  if (password) {
+    const safe = new Safe();
+    await safe.open(password);
+    document.getElementById('data').value = 'data:application/octet-binary;base64,' + await safe.encrypt(data);
+    e.target.disabled = true;
+    document.getElementById('decrypt').disabled = false;
+  }
+};
+document.getElementById('decrypt').onclick = async e => {
+  const data = document.getElementById('data').value;
+  try {
+    if (data.startsWith('data:application/octet-binary;base64,')) {
+      const password = await prompt('Enter password for encryption', undefined, {
+        password: true
+      });
+      if (password) {
+        const safe = new Safe();
+        await safe.open(password);
+        document.getElementById('data').value = 'data:application/octet-binary;base64,' + await safe.decrypt(data);
+        e.target.disabled = true;
+        document.getElementById('encrypt').disabled = false;
+      }
+    }
+    else {
+      throw Error('This data is not encrypted');
+    }
+  }
+  catch (e) {
+    console.error(e);
+    alert(e.message || 'Wrong Password?');
+  }
+};
 
 // Persist
 document.getElementById('format').addEventListener('change', e => {
