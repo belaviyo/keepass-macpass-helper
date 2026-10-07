@@ -268,6 +268,13 @@
     <option value="KeyZ"></option>
   </datalist>
 
+  <h2 class="heading">Remote Frames</h2>
+  <p class="desc">When a login form is inside a cross-origin iframe (e.g. https://www.aliexpress.com/), the extension needs host permission for all URLs to reach its fields. Grant "Access Permission" to enable filling credentials in remote frames; "Remove Permission" revokes it at any time.</p>
+  <p class="fl">
+    <button id="all-frames-access">Access Permission</button>
+    <button id="all-frames-remove" disabled>Remove Permission</button>
+  </p>
+
   <h2 class="heading">Misc</h2>
   <div class="om disabled">
     <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials (not available)</label>
@@ -287,7 +294,6 @@
   </div>
 
   <p class="fl">
-    <button id="all-frames" title="Grant permissions needed for accessing cross-origin iframe elements in the active tab. This is useful if a login dialog is not on the same origin as the website itself (e.g.: https://www.aliexpress.com/)" value="direct">Access Remote Frames Permission</button>
     <button id="usage">YouTube Preview</button>
     <button id="rate">Rate Me</button>
   </p>

@@ -401,43 +401,26 @@ document.getElementById('keepassxc-check').addEventListener('click', async () =>
   }
 });
 
-const cc = (target, content, value) => {
-  target.disabled = true;
-  target.textContent = 'Done!';
-  clearTimeout(cc.id);
-  cc.id = setTimeout(() => {
-    target.textContent = content;
-    target.value = value;
-    target.disabled = false;
-  }, 2000);
+const access = document.getElementById('all-frames-access');
+const revoke = document.getElementById('all-frames-remove');
+const toggle = granted => {
+  access.disabled = granted;
+  revoke.disabled = !granted;
 };
-document.getElementById('all-frames').addEventListener('click', e => {
-  if (e.target.value === 'reverse') {
-    chrome.permissions.remove({
-      origins: ['<all_urls>']
-    });
-    cc(e.target, 'Access Remote Frames Permission', 'direct');
-  }
-  else {
-    chrome.permissions.request({
-      origins: ['<all_urls>']
-    }).then(granted => {
-      if (granted) {
-        cc(e.target, 'Revoke Remote Frames Permission', 'reverse');
-      }
-    });
-  }
+access.addEventListener('click', () => {
+  chrome.permissions.request({
+    origins: ['<all_urls>']
+  }).then(granted => granted && toggle(true));
 });
-// hide granted permissions
+revoke.addEventListener('click', () => {
+  chrome.permissions.remove({
+    origins: ['<all_urls>']
+  }).then(() => toggle(false));
+});
+// reflect the current state
 chrome.permissions.contains({
   origins: ['<all_urls>']
-}, granted => {
-  if (granted) {
-    const button = document.getElementById('all-frames');
-    button.textContent = 'Revoke Remote Frames Permission';
-    button.value = 'reverse';
-  }
-});
+}, toggle);
 chrome.permissions.contains({
   permissions: ['webNavigation'],
   origins: ['<all_urls>']
