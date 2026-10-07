@@ -89,6 +89,10 @@ const renderFiles = async () => {
   catch (e) {
     console.error(e);
   }
+  // let the background know about the internal database state
+  chrome.runtime.sendMessage({
+    cmd: 'kwpass-update'
+  }).catch(() => {});
 };
 
 kwpass.prepare().then(renderFiles).catch(console.error);
