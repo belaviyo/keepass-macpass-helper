@@ -8,36 +8,88 @@ const MODES = {
   'none': 'Secure Synced Storage only'
 };
 
-// kwpass is only usable when the internal database has at least one attached file
-const kwpassReady = () => new Promise(resolve => {
-  const request = indexedDB.open('database', 2);
+// list the stored internal databases ([{key, name, active}]); mirrors the meta
+// resolution of connect.js (KWPASS.resolveMeta) including its legacy positional
+// fallback (first stored file = the database, second = its key file)
+const kwpassDBs = async () => {
+  const entries = await new Promise(resolve => {
+    const request = indexedDB.open('database', 2);
 
-  request.onerror = () => resolve(false);
-  request.onupgradeneeded = () => {
-    // mimic KWFILE.open to keep the shape consistent; an empty db means not ready
-    const db = request.result;
-    if (!db.objectStoreNames.contains('files')) {
-      db.createObjectStore('files', {
-        autoIncrement: true
-      });
-    }
-    if (!db.objectStoreNames.contains('handles')) {
-      db.createObjectStore('handles');
-    }
-  };
-  request.onsuccess = () => {
-    const db = request.result;
-    const count = db.transaction('files', 'readonly').objectStore('files').count();
-    count.onsuccess = () => {
-      resolve(count.result > 0);
-      db.close();
+    request.onerror = () => resolve([]);
+    request.onupgradeneeded = () => {
+      // mimic KWFILE.open to keep the shape consistent; an empty db means no databases
+      const db = request.result;
+      if (!db.objectStoreNames.contains('files')) {
+        db.createObjectStore('files', {
+          autoIncrement: true
+        });
+      }
+      if (!db.objectStoreNames.contains('handles')) {
+        db.createObjectStore('handles');
+      }
     };
-    count.onerror = () => {
-      resolve(false);
-      db.close();
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['files', 'handles'], 'readonly');
+      const keys = [];
+      const names = {};
+      transaction.objectStore('files').openKeyCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          keys.push(cursor.key);
+          cursor.continue();
+        }
+      };
+      transaction.objectStore('handles').openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          names[String(cursor.key)] = cursor.value?.name;
+          cursor.continue();
+        }
+      };
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(keys.map(key => ({
+          key,
+          name: names[String(key)]
+        })));
+      };
+      transaction.onerror = () => {
+        db.close();
+        resolve([]);
+      };
     };
-  };
-});
+  });
+
+  if (entries.length === 0) {
+    return [];
+  }
+  const prefs = await chrome.storage.local.get({
+    'kwpass-meta': null
+  });
+  const stored = prefs['kwpass-meta'];
+
+  const files = {};
+  entries.forEach((entry, index) => {
+    const key = String(entry.key);
+    const o = stored?.files?.[key];
+    files[key] = {
+      type: o?.type === 'database' || o?.type === 'key' ? o.type : (index === 0 ? 'database' : 'key'),
+      name: o?.name || entry.name || (index === 0 ? 'Database' : 'Key file')
+    };
+  });
+
+  const firstDb = Object.keys(files).find(key => files[key].type === 'database');
+  const active = stored?.active && files[stored.active]?.type === 'database' ?
+    stored.active : (firstDb || null);
+
+  return Object.entries(files)
+    .filter(([, o]) => o.type === 'database')
+    .map(([key, o]) => ({key, name: o.name, active: key === active}));
+};
+
+// kwpass is only usable when the internal storage has at least one database
+const kwpassReady = async () => (await kwpassDBs()).length > 0;
 
 // native messaging support is required by the KeePassXC engine
 const keepassxcReady = () => typeof chrome.runtime.sendNativeMessage !== 'undefined';
@@ -47,6 +99,61 @@ const modeReady = {
   keepassxc: keepassxcReady,
   kwpass: kwpassReady,
   none: () => true // always usable
+};
+
+// the radio list of the stored databases; only meaningful for the Local File mode
+const dbItems = new Set();
+const doUpdateDatabases = async () => {
+  const prefs = await chrome.storage.local.get({
+    engine: 'keepass'
+  });
+  const dbs = await kwpassDBs();
+
+  // hide the submenu entirely unless the Local File mode is active with a database attached
+  chrome.contextMenus.update('kwpass-dbs', {
+    visible: prefs.engine === 'kwpass' && dbs.length > 0
+  }, () => chrome.runtime.lastError);
+
+  const seen = new Set();
+  for (const db of dbs) {
+    const id = 'kwpass-db:' + db.key;
+    seen.add(id);
+    const props = {
+      type: 'radio',
+      title: db.name,
+      checked: db.active
+    };
+    if (dbItems.has(id)) {
+      chrome.contextMenus.update(id, props, () => chrome.runtime.lastError);
+    }
+    else {
+      dbItems.add(id);
+      chrome.contextMenus.create({
+        ...props,
+        id,
+        parentId: 'kwpass-dbs',
+        contexts: ['action']
+      }, () => {
+        // forget failed creations (e.g. parent menu not ready yet) so the next refresh retries
+        if (chrome.runtime.lastError) {
+          dbItems.delete(id);
+        }
+      });
+    }
+  }
+  // drop menu items of deleted databases
+  for (const id of dbItems) {
+    if (!seen.has(id)) {
+      dbItems.delete(id);
+      chrome.contextMenus.remove(id, () => chrome.runtime.lastError);
+    }
+  }
+};
+// serialize the updates; concurrent refreshes would create the same item twice
+let dbUpdate = Promise.resolve();
+const updateDatabases = () => {
+  dbUpdate = dbUpdate.then(doUpdateDatabases).catch(e => console.warn(e));
+  return dbUpdate;
 };
 
 const updateModes = async () => {
@@ -60,6 +167,8 @@ const updateModes = async () => {
       enabled: await modeReady[id]()
     }, () => chrome.runtime.lastError);
   }
+  // keep the database radio list in sync as well
+  await updateDatabases();
 };
 
 {
@@ -90,6 +199,17 @@ const updateModes = async () => {
         enabled: id === 'keepassxc' ? keepassxcReady() : true
       }, () => chrome.runtime.lastError);
     }
+
+    // radio list of the internal databases (active one is checked)
+    chrome.contextMenus.create({
+      id: 'kwpass-dbs',
+      title: 'Local File Database',
+      contexts: ['action'],
+      visible: false
+    }, () => {
+      chrome.runtime.lastError;
+      updateDatabases();
+    });
 
     chrome.contextMenus.create({
       id: 'generate-password',
@@ -185,6 +305,23 @@ const onCommand = async (info, tab) => {
     chrome.storage.local.set({
       engine: info.menuItemId
     });
+  }
+  else if (String(info.menuItemId).startsWith('kwpass-db:')) {
+    // switch the active internal database
+    const key = String(info.menuItemId).split(':')[1] || '';
+    const prefs = await chrome.storage.local.get({
+      'kwpass-meta': null
+    });
+    const meta = prefs['kwpass-meta'] || {
+      active: null,
+      files: {}
+    };
+    meta.active = key;
+    await chrome.storage.local.set({
+      'kwpass-meta': meta
+    });
+    // the cached password belongs to the previous database
+    chrome.storage.session.remove('kw:password');
   }
   else if (info.menuItemId === 'generate-passkey' || info.menuItemId === 'generate-passkey:backed-up') {
     tab = tab || await current();

@@ -120,7 +120,8 @@ a {
   margin: 0;
   font-size: 1em;
 }
-#kwpass-files {
+#kwpass-databases,
+#kwpass-keys {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -132,10 +133,31 @@ a {
   align-items: center;
   gap: 5px;
 }
+.file-entry > label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  min-width: 0;
+}
 .file-entry span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.file-entry .key-select {
+  margin-left: auto;
+  flex: none;
+}
+.file-entry .used-by {
+  color: #777;
+}
+.file-entry input[type=checkbox].remove {
+  flex: none;
+}
+#kwpass-keys .empty {
+  margin: 0;
+  color: #777;
 }
 .warn {
   margin: 0;

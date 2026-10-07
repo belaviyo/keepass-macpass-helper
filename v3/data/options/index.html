@@ -52,24 +52,27 @@
       <p class="warn" id="kwpass-warn">⚠ No database is created or selected yet. Create a blank database in the "Internal database" section or attach one in the "External file(s)" section below.</p>
       <div class="section">
         <h3>Internal database</h3>
-        <p class="desc">The extension always uses this internal copy of a database stored in the browser. The external file provided below is only used as the source, or for the optional write-back sync.</p>
-        <div id="kwpass-files"></div>
+        <p class="desc">The extension keeps an internal copy of every database you add. Select the active one and, optionally, assign a key file to it. Changes are kept in the internal copies unless write-back sync is enabled below.</p>
+        <h3>Databases</h3>
+        <div id="kwpass-databases"></div>
+        <h3>Key files</h3>
+        <div id="kwpass-keys"></div>
         <div class="panel-actions">
-          <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and use it as the storage">
-          <input type="button" id="kwpass-download" value="Download Database">
-          <input type="button" id="kwpass-remove" value="Delete File(s)">
+          <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and add it to the storage">
+          <input type="button" id="kwpass-download" value="Download Database" title="Download the active database">
+          <input type="button" id="kwpass-remove" value="Delete File(s)" title="Delete the checked file(s)">
         </div>
       </div>
       <div class="section">
         <h3>External file(s)</h3>
-        <p class="desc">Pick your existing database file and, optionally, its key file (*.key*). A copy is stored internally; changes are kept in the internal copy unless write-back sync is enabled below.</p>
+        <p class="desc">Pick your existing database file(s) and, optionally, their key file(s) (*.key*). Copies are stored internally; the external files are only used as the source, or for the optional write-back sync.</p>
         <div class="m1" id="kwpass-overwrite-container">
           <input type="checkbox" id="kwpass-overwrite">
           <label for="kwpass-overwrite">Sync changes back to the selected external file (experimental)</label>
         </div>
         <div class="panel-actions">
-          <input type="button" id="kwpass-db" value="Select Database">
-          <input type="button" id="kwpass-key" value="Select Key File">
+          <input type="button" id="kwpass-db" value="Select Database" title="Add one or more database files to the internal storage">
+          <input type="button" id="kwpass-key" value="Select Key File" title="Add one or more key files to the internal storage">
         </div>
       </div>
     </div>

@@ -54,32 +54,95 @@ const read = file => new Promise(resolve => {
   reader.onloadend = () => resolve(new Uint8Array(reader.result));
   reader.readAsArrayBuffer(file);
 });
-// refresh the file list, the empty-storage warning and the write-back checkbox state
+// refresh the file lists, the empty-storage warning and the write-back checkbox state
 const renderFiles = async () => {
   if (!kwpass.file) {
     return;
   }
   try {
+    const meta = await kwpass.resolveMeta();
     const entries = await kwpass.file.list();
-    const box = document.getElementById('kwpass-files');
-    box.replaceChildren();
+    const databases = [];
+    const keys = [];
+    for (const entry of entries) {
+      const o = meta.files[String(entry.key)] || {};
+      const name = o.name || entry.handle?.name || 'File';
+      (o.type === 'database' ? databases : keys).push({...entry, name, o});
+    }
+
+    const dbBox = document.getElementById('kwpass-databases');
+    const keyBox = document.getElementById('kwpass-keys');
+    dbBox.replaceChildren();
+    keyBox.replaceChildren();
     // fresh render clears selections; "Delete File(s)" stays disabled until a row is checked
     document.getElementById('kwpass-remove').disabled = true;
-    entries.forEach((entry, index) => {
-      const label = document.createElement('label');
-      label.className = 'file-entry';
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.dataset.key = entry.key;
+
+    for (const entry of databases) {
+      const row = document.createElement('div');
+      row.className = 'file-entry';
+
+      const pick = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'kwpass-active';
+      radio.dataset.key = String(entry.key);
+      radio.checked = meta.active === String(entry.key);
       const span = document.createElement('span');
-      span.textContent = (entry.handle?.name || (index === 0 ? 'Database' : 'Key file')) +
-        ' (' + Math.round(entry.bytes.length / 1024) + ' KB)';
-      label.append(input, span);
-      box.append(label);
-    });
-    document.getElementById('kwpass-warn').classList.toggle('show', entries.length === 0);
+      span.textContent = entry.name + ' (' + Math.round(entry.bytes.length / 1024) + ' KB)';
+      pick.append(radio, span);
+
+      const keyLabel = document.createElement('label');
+      keyLabel.className = 'key-select';
+      keyLabel.textContent = 'key:';
+      const select = document.createElement('select');
+      select.dataset.key = String(entry.key);
+      select.append(new Option('(none)', ''));
+      for (const k of keys) {
+        select.append(new Option(k.name, String(k.key)));
+      }
+      select.value = entry.o.key || '';
+      keyLabel.append(select);
+
+      const remove = document.createElement('input');
+      remove.type = 'checkbox';
+      remove.className = 'remove';
+      remove.dataset.key = String(entry.key);
+
+      row.append(pick, keyLabel, remove);
+      dbBox.append(row);
+    }
+
+    for (const entry of keys) {
+      const row = document.createElement('div');
+      row.className = 'file-entry';
+
+      const span = document.createElement('span');
+      span.textContent = entry.name + ' (' + Math.round(entry.bytes.length / 1024) + ' KB)';
+
+      const usedBy = databases.filter(d => d.o.key === String(entry.key)).map(d => d.name);
+      const use = document.createElement('span');
+      use.className = 'used-by';
+      use.textContent = usedBy.length ? 'used by: ' + usedBy.join(', ') : 'not in use';
+
+      const remove = document.createElement('input');
+      remove.type = 'checkbox';
+      remove.className = 'remove';
+      remove.dataset.key = String(entry.key);
+
+      row.append(span, use, remove);
+      keyBox.append(row);
+    }
+
+    if (databases.length && keys.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'No key files are stored.';
+      keyBox.append(p);
+    }
+
+    document.getElementById('kwpass-warn').classList.toggle('show', databases.length === 0);
     // "Select Key File" needs an existing database
-    document.getElementById('kwpass-key').disabled = entries.length < 1;
+    document.getElementById('kwpass-key').disabled = databases.length < 1;
     const hasHandle = entries.some(e => e.handle);
     document.getElementById('kwpass-overwrite-container').classList.toggle('disabled', !hasHandle);
     if (!hasHandle) {
@@ -96,12 +159,24 @@ const renderFiles = async () => {
 };
 
 kwpass.prepare().then(renderFiles).catch(console.error);
+// the context menu can switch the active database while this page is open
+chrome.storage.onChanged.addListener((ps, area) => {
+  if (area === 'local' && ps['kwpass-meta']) {
+    renderFiles();
+  }
+});
 // make sure we have write permission
 document.getElementById('kwpass-overwrite').onchange = async e => {
   if (e.target.checked) {
     await kwpass.prepare();
-    const handle = await kwpass.file.handle();
+    const meta = await kwpass.resolveMeta();
+    const handle = meta.active ? await kwpass.file.handle(Number(meta.active)) : null;
 
+    if (!handle) {
+      toast('No external file is attached to the active database. Saving changes to the internal database only.', undefined, 10000);
+      e.target.checked = false;
+      return;
+    }
     const permission = await handle.queryPermission({mode: 'readwrite'});
     if (permission === 'denied') {
       toast('No permission to write to local dataset. Saving changes to internal database only.', undefined, 10000);
@@ -271,8 +346,8 @@ async function save() {
 
   // make sure a database is attached when "Local File" mode is selected
   if (document.getElementById('kwpass').checked && kwpass.file) {
-    const files = await kwpass.file.read();
-    if (files.length < 1) {
+    const meta = await kwpass.resolveMeta();
+    if (!meta.active) {
       toast('Warning: "Local File" mode is selected but no database is created or selected yet', undefined, 10000);
     }
   }
@@ -426,92 +501,109 @@ chrome.permissions.contains({
   origins: ['<all_urls>']
 }, granted => granted && document.getElementById('permission').classList.add('hidden'));
 
-// replace the internal database with a newly picked database file
+// add one or more database files to the internal storage
 document.getElementById('kwpass-db').addEventListener('click', async () => {
   try {
-    const [handle] = await window.showOpenFilePicker({
-      multiple: false
+    const before = (await kwpass.resolveMeta()).active;
+    const handles = await window.showOpenFilePicker({
+      multiple: true
     });
-    const bytes = await read(await handle.getFile());
-
-    // keep the attached key file?
-    const existing = await kwpass.file.list();
-    const keyEntry = existing.length > 1 ? existing[1] : null;
-    const keep = keyEntry ?
-      confirm(`Keep the currently attached key file (${keyEntry.handle?.name || 'no name'})? OK to keep, Cancel to remove it together with the old database.`) :
-      false;
-
-    await kwpass.prepare();
-    await kwpass.dettach();
-    await kwpass.attach(
-      bytes,
-      keep ? keyEntry.bytes : undefined,
-      handle,
-      keep ? keyEntry.handle : undefined
-    );
+    for (const handle of handles) {
+      const bytes = await read(await handle.getFile());
+      const {db} = await kwpass.attach(bytes, null, handle, null);
+      await kwpass.patchMeta(meta => {
+        meta.files[String(db)] = {
+          type: 'database',
+          name: handle.name,
+          key: null
+        };
+      });
+    }
     renderFiles();
-    toast('Database is stored');
-    chrome.storage.session.remove('kw:password');
+    toast(handles.length === 1 ? 'Database is stored' : handles.length + ' databases are stored');
+    // the cached password belongs to the previous database
+    if ((await kwpass.resolveMeta()).active !== before) {
+      chrome.storage.session.remove('kw:password');
+    }
   }
   catch (e) {
     console.error(e);
-    if (e.message !== 'ABORTED') {
+    if (e.name !== 'AbortError') {
       toast(e.message);
     }
   }
 });
 
-// replace the attached key file
+// add one or more key files to the internal storage
 document.getElementById('kwpass-key').addEventListener('click', async () => {
   try {
-    const existing = await kwpass.file.list();
-    if (existing.length < 1) {
+    const meta = await kwpass.resolveMeta();
+    if (Object.values(meta.files).some(o => o.type === 'database') === false) {
       return toast('Select a database first');
     }
-    const [handle] = await window.showOpenFilePicker({
-      multiple: false
+    const handles = await window.showOpenFilePicker({
+      multiple: true
     });
-    const bytes = await read(await handle.getFile());
-    // entries behind the first one (the database) are old key files
-    const keys = existing.slice(1).map(e => e.key);
-    if (keys.length) {
-      await kwpass.file.remove(keys);
+    for (const handle of handles) {
+      const bytes = await read(await handle.getFile());
+      const key = await kwpass.file.write(bytes, handle);
+      await kwpass.patchMeta(m => {
+        m.files[String(key)] = {
+          type: 'key',
+          name: handle.name
+        };
+      });
     }
-    await kwpass.file.write(bytes, handle);
     renderFiles();
-    toast('Key file is stored');
+    toast(handles.length === 1 ? 'Key file is stored' : handles.length + ' key files are stored');
   }
   catch (e) {
     console.error(e);
-    toast(e.message);
+    if (e.name !== 'AbortError') {
+      toast(e.message);
+    }
   }
 });
 
-// enable/disable the delete button based on checked rows
-document.getElementById('kwpass-files').addEventListener('change', () => {
-  const checked = [...document.querySelectorAll('#kwpass-files input:checked')].length;
-  document.getElementById('kwpass-remove').disabled = checked === 0;
+// active database switch, key assignment and delete selection
+document.querySelector('.panel[data-engine="kwpass"]').addEventListener('change', async e => {
+  const target = e.target;
+  // enable/disable the delete button based on checked rows
+  if (target.classList.contains('remove')) {
+    const checked = document.querySelectorAll('#kwpass-databases .remove:checked, #kwpass-keys .remove:checked').length;
+    document.getElementById('kwpass-remove').disabled = checked === 0;
+  }
+  // switch the active database
+  else if (target.name === 'kwpass-active') {
+    await kwpass.patchMeta(meta => {
+      meta.active = target.dataset.key;
+    });
+    // the cached password belongs to the previous database
+    chrome.storage.session.remove('kw:password');
+  }
+  // assign a key file to a database
+  else if (target.tagName === 'SELECT') {
+    await kwpass.patchMeta(meta => {
+      meta.files[target.dataset.key].key = target.value || null;
+    });
+    // the cached password belongs to the previous key assignment
+    chrome.storage.session.remove('kw:password');
+  }
 });
 
 // delete the checked files from the internal storage
 document.getElementById('kwpass-remove').addEventListener('click', async () => {
-  const checks = [...document.querySelectorAll('#kwpass-files input:checked')];
+  const checks = [...document.querySelectorAll('#kwpass-databases .remove:checked, #kwpass-keys .remove:checked')];
   if (checks.length === 0) {
     return toast('No file is selected');
   }
   try {
-    const entries = await kwpass.file.list();
-    const selected = checks.map(c => c.dataset.key);
-    // the first entry is the database; key files are positional (behind it)
-    const dbSelected = selected.includes(String(entries[0].key));
-    const keys = dbSelected ?
-      entries.map(e => e.key) :
-      entries.filter(e => selected.includes(String(e.key))).map(e => e.key);
-    if (confirm(dbSelected ?
-      'Deleting the database also removes its key file(s). Continue?' :
-      'Delete the selected file(s)?')) {
-      await kwpass.file.remove(keys);
-      if (keys.length === entries.length) {
+    if (confirm('Delete the selected file(s)?')) {
+      await kwpass.file.remove(checks.map(c => Number(c.dataset.key)));
+      // drop deleted files from the meta and re-point the active database
+      await kwpass.patchMeta(() => {});
+      const remaining = await kwpass.file.read();
+      if (remaining.length === 0) {
         chrome.runtime.sendMessage({cmd: 'kwpass-remove'});
       }
       renderFiles();
@@ -541,16 +633,11 @@ document.getElementById('kwpass-download').addEventListener('click', async () =>
   });
 
   if (password) {
-    const next = () => kwpass.open(password).then(() => kwpass.export()).catch(e => {
+    // always re-open so the active database is exported (not a previously opened one)
+    kwpass.prepare().then(() => kwpass.open(password)).then(() => kwpass.export()).catch(e => {
       toast('[Error] ' + e.message);
       console.warn(e);
     });
-    if (kwpass.db) {
-      next();
-    }
-    else {
-      kwpass.prepare().then(next);
-    }
   }
 });
 
@@ -572,11 +659,15 @@ document.getElementById('kwpass-create').addEventListener('click', async () => {
 
   if (password) {
     try {
+      const before = (await kwpass.resolveMeta()).active;
       await kwpass.prepare();
-      await kwpass.dettach();
       await kwpass.create(password);
       renderFiles();
       toast('Database is ready');
+      // the cached password belongs to the previous database
+      if ((await kwpass.resolveMeta()).active !== before) {
+        chrome.storage.session.remove('kw:password');
+      }
     }
     catch (e) {
       console.error(e);

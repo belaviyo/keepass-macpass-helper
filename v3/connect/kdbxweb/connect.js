@@ -16,6 +16,24 @@ kdbxweb.CryptoEngine.setArgon2Impl((password, salt, memory, iterations, length, 
   });
 });
 
+/* multi-database metadata stored in chrome.storage.local:
+   {active: <fileKey>|null, files: {[fileKey]: {type, name, key}}}
+   - fileKey is the IndexedDB auto-increment key of the "files" store (as string)
+   - type is either 'database' or 'key'
+   - "key" of a database entry is the fileKey of its assigned key file */
+const KWMETA = {
+  read() {
+    return new Promise(resolve => chrome.storage.local.get({
+      'kwpass-meta': null
+    }, prefs => resolve(prefs['kwpass-meta'])));
+  },
+  write(meta) {
+    return new Promise(resolve => chrome.storage.local.set({
+      'kwpass-meta': meta
+    }, resolve));
+  }
+};
+
 class KWFILE {
   open(name = 'database') {
     return new Promise((resolve, reject) => {
@@ -75,85 +93,71 @@ class KWFILE {
           handleStore.add(handle, fileId);
         }
 
-        resolve();
+        resolve(fileId);
       };
 
       fileRequest.onerror = e => reject(Error('write, ' + e.target.error));
       transaction.onerror = e => reject(Error('write, ' + e.target.error));
     });
   }
-  // edit content based on the current stored index not keyPath.
+  // update a stored file by its IndexedDB key ("key" of the files store).
   // "overwrite" controls whether the extension overwrites the original file or not
-  edit(index, newBytes, overwrite = false) {
+  edit(key, newBytes, overwrite = false) {
     return new Promise((resolve, reject) => {
-      // Helper function to get all file keys
-      const getAllFileKeys = () => new Promise((resolveKeys, rejectKeys) => {
-        const transaction = this.db.transaction('files', 'readonly');
-        const keys = [];
-        transaction.objectStore('files').openKeyCursor().onsuccess = e => {
-          const cursor = e.target.result;
-          if (cursor) {
-            keys.push(cursor.key);
-            cursor.continue();
-          }
-        };
-        transaction.onerror = e => rejectKeys(Error('getAllFileKeys, ' + e.target.error));
-        transaction.oncomplete = () => resolveKeys(keys);
-      });
+      const fileId = Number(key);
+      const transaction = this.db.transaction('files', 'readwrite');
+      const fileStore = transaction.objectStore('files');
+      const getRequest = fileStore.get(fileId);
 
-
-      getAllFileKeys().then(keys => {
-        if (index < 0 || index >= keys.length) {
-          reject(Error(`Index ${index} out of range. Only ${keys.length} files exist.`));
+      // make sure the key exists; put() would silently create a new entry
+      getRequest.onsuccess = () => {
+        if (getRequest.result === undefined) {
+          reject(Error(`File ${fileId} does not exist.`));
           return;
         }
+        fileStore.put(newBytes, fileId);
+      };
 
-        const fileId = keys[index];
-        const transaction = this.db.transaction('files', 'readwrite');
-        const fileStore = transaction.objectStore('files');
-        const putRequest = fileStore.put(newBytes, fileId);
-
-        transaction.oncomplete = async () => {
-          if (overwrite) {
-            try {
-              const handle = await this.handle(fileId);
-              if (handle) {
-                const permission = await handle.queryPermission({mode: 'readwrite'});
-                if (permission === 'denied') {
-                  throw Error('Write failed. Download latest database from Options page and reattach.');
-                }
-                else if (permission === 'prompt') {
-                  const result = await handle.requestPermission({mode: 'readwrite'});
-                  if (result === 'denied') {
-                    throw Error('Write operation cancelled by user.');
-                  }
-                }
-
-                // Create a writable stream
-                const writable = await handle.createWritable();
-                await writable.write(newBytes);
-                await writable.close();
-                resolve();
+      transaction.oncomplete = async () => {
+        if (overwrite) {
+          try {
+            const handle = await this.handle(fileId);
+            if (handle) {
+              const permission = await handle.queryPermission({mode: 'readwrite'});
+              if (permission === 'denied') {
+                throw Error('Write failed. Download latest database from Options page and reattach.');
               }
-              else {
-                resolve();
+              else if (permission === 'prompt') {
+                const result = await handle.requestPermission({mode: 'readwrite'});
+                if (result === 'denied') {
+                  throw Error('Write operation cancelled by user.');
+                }
               }
+
+              // Create a writable stream
+              const writable = await handle.createWritable();
+              await writable.write(newBytes);
+              await writable.close();
+              resolve();
             }
-            catch (e) {
-              reject(Error(`The internal database has been updated, but I can't write to the local file.
+            else {
+              resolve();
+            }
+          }
+          catch (e) {
+            reject(Error(`The internal database has been updated, but I can't write to the local file.
 Go to the options page and toggle the "Write changes back to the local file" setting to re-grant write permission.
 
 --
 ` + e.message));
-            }
           }
-          else {
-            resolve();
-          }
-        };
-        putRequest.onerror = e => reject(Error('edit, ' + e.target.error));
-        transaction.onerror = e => reject(Error('edit, ' + e.target.error));
-      }).catch(reject);
+        }
+        else {
+          resolve();
+        }
+      };
+      getRequest.onerror = e => reject(Error('edit, ' + e.target.error));
+      transaction.onerror = e => reject(Error('edit, ' + e.target.error));
     });
   }
 
@@ -199,6 +203,30 @@ Go to the options page and toggle the "Write changes back to the local file" set
         entry.handle = await this.handle(entry.key);
       }
       return entries;
+    });
+  }
+
+  // lightweight listing ({key, handle}) without the file bytes — used by meta resolution
+  entries() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction('files', 'readonly');
+      const entries = [];
+      transaction.objectStore('files').openKeyCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          entries.push({
+            key: cursor.key
+          });
+          cursor.continue();
+        }
+      };
+      transaction.onerror = e => reject(Error('entries, ' + e.target.error));
+      transaction.oncomplete = async () => {
+        for (const entry of entries) {
+          entry.handle = await this.handle(entry.key);
+        }
+        resolve(entries);
+      };
     });
   }
 
@@ -254,6 +282,75 @@ class KWPASS {
   prepare() {
     this.file = new KWFILE();
     return this.file.open();
+  }
+  /* resolve the current meta: stored user selections merged over the legacy
+     positional layout (first stored file = the database, second = its key file),
+     so that installations from before multiple databases was supported keep working.
+     Dangling references (removed files) are dropped on the way */
+  async resolveMeta() {
+    const entries = await this.file.entries();
+    if (entries.length === 0) {
+      return {active: null, files: {}};
+    }
+    const stored = await KWMETA.read();
+
+    const files = {};
+    entries.forEach((entry, index) => {
+      const key = String(entry.key);
+      const o = stored?.files?.[key];
+      files[key] = {
+        type: o?.type === 'database' || o?.type === 'key' ? o.type : (index === 0 ? 'database' : 'key'),
+        name: o?.name || entry.handle?.name || (index === 0 ? 'Database' : 'Key file'),
+        key: null
+      };
+      // legacy layout: the second file is the key file of the first (database) one
+      if (index === 1 && files[String(entries[0].key)].type === 'database') {
+        files[String(entries[0].key)].key = key;
+      }
+    });
+
+    // stored selections win over the positional defaults
+    for (const [key, o] of Object.entries(stored?.files || {})) {
+      if (!files[key]) { // the file is gone
+        continue;
+      }
+      if (o.key === null) {
+        files[key].key = null;
+      }
+      else if (o.key) {
+        files[key].key = files[o.key] ? o.key : null;
+      }
+    }
+
+    const firstDb = entries.map(e => String(e.key)).find(key => files[key].type === 'database');
+    const active = stored?.active && files[stored.active]?.type === 'database' ?
+      stored.active : (firstDb || null);
+
+    return {active, files};
+  }
+  /* apply a mutation to the resolved meta and persist the result;
+     returns whatever the mutator returns */
+  async patchMeta(mutator) {
+    const meta = await this.resolveMeta();
+    const result = mutator(meta);
+    await KWMETA.write(meta);
+    return result;
+  }
+  /* the active database entry and its assigned key file entry (bytes included) */
+  async active() {
+    const meta = await this.resolveMeta();
+    if (!meta.active) {
+      throw Error('No database. Use options page to add a database');
+    }
+    const entries = await this.file.list();
+    const dbEntry = entries.find(e => String(e.key) === meta.active);
+    if (!dbEntry) {
+      throw Error('No database. Use options page to add a database');
+    }
+    const assigned = meta.files[meta.active]?.key;
+    const keyEntry = assigned ? entries.find(e => String(e.key) === assigned) : null;
+
+    return {meta, db: dbEntry, key: keyEntry || null};
   }
   search({url, submiturl, login, password}, clean = true) {
     const {hostname} = new URL(url || submiturl);
@@ -329,8 +426,8 @@ class KWPASS {
       entry.times.update();
 
       const ab = await this.db.save();
-      // only edit file (index = 0) not key (index = 1)
-      await this.file.edit(0, new Uint8Array(ab), this.overwrite);
+      // only edit the active database file, not its assigned key file
+      await this.file.edit(this.dbKey, new Uint8Array(ab), this.overwrite);
     }
     catch (e) {
       throw Error('Is database unlocked?\n\n' + e.message);
@@ -339,15 +436,13 @@ class KWPASS {
   async open(password) {
     password = kdbxweb.ProtectedValue.fromString(password);
 
-    const files = await this.file.read();
-    this.key = files[1];
+    const {db, key} = await this.active();
+    this.key = key?.bytes;
+    this.dbKey = db.key;
 
-    if (files.length < 1) {
-      throw Error('No database. Use options page to add a database');
-    }
-    const credentials = new kdbxweb.Credentials(password, files[1]);
-    return kdbxweb.Kdbx.load(files[0].buffer, credentials).then(db => {
-      this.db = db;
+    const credentials = new kdbxweb.Credentials(password, key?.bytes);
+    return kdbxweb.Kdbx.load(db.bytes.buffer, credentials).then(instance => {
+      this.db = instance;
     }).catch(e => {
       console.warn(e);
       throw Error('Cannot open database; ' + e.message);
@@ -380,20 +475,34 @@ class KWPASS {
 
     const ab = await this.db.save();
 
-    await this.file.edit(0, new Uint8Array(ab), this.overwrite);
+    await this.file.edit(this.dbKey, new Uint8Array(ab), this.overwrite);
   }
-  /* create a blank database */
+  /* create a blank database, add it to the internal storage and activate it
+     when there is no active database yet */
   async create(password) {
     const credentials = new kdbxweb.Credentials(kdbxweb.ProtectedValue.fromString(password));
     this.db = kdbxweb.Kdbx.create(credentials, 'KeePassHelper Database');
     const ab = await this.db.save();
-    this.attach(new Uint8Array(ab));
+    const {db: fileKey} = await this.attach(new Uint8Array(ab));
+    this.dbKey = fileKey;
+
+    await this.patchMeta(meta => {
+      meta.files[String(fileKey)] = {
+        type: 'database',
+        name: this.db.meta.name || 'Database',
+        key: null
+      };
+      if (!meta.active) {
+        meta.active = String(fileKey);
+      }
+    });
   }
-  async attach(fileBytes, keyBytes, fileHandle, keyHandle) {
-    await this.file.write(fileBytes, fileHandle);
-    if (keyBytes) {
-      await this.file.write(keyBytes, keyHandle);
-    }
+  /* add a database and optionally its key file to the internal storage;
+     returns the new IndexedDB file keys (meta registration is up to the caller) */
+  async attach(fileBytes, keyBytes = null, fileHandle = null, keyHandle = null) {
+    const db = await this.file.write(fileBytes, fileHandle);
+    const key = keyBytes ? await this.file.write(keyBytes, keyHandle) : null;
+    return {db, key};
   }
   async dettach(silent) {
     if (silent !== true) {
@@ -406,7 +515,11 @@ Any new credentials saved in this database will be lost. Are you sure you want t
         }
       }
     }
-    return this.file.clear();
+    await this.file.clear();
+    await KWMETA.write({
+      active: null,
+      files: {}
+    });
   }
   async export() {
     this.db.upgrade(); // upgrade the db to latest version (currently KDBX4)
