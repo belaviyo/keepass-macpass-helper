@@ -20,44 +20,80 @@
   </dialog>
   <p class="save">Make sure to press the "Save Options" button!</p>
   <h2 class="heading">Connection</h2>
-  <div class="mm1m">
-    <input type="radio" name="method" id="keepass">
-    <label for="keepass"><a data-href="faq2" target="_blank">KeePassHTTP</a> host</label>
-    <input type="text" id="host">
-    <input type="button" id="check" value="Check" title="Check permission access and port availability">
-    <input type="radio" name="method" id="keepassxc">
-    <label for="keepassxc"><a data-href="faq16" target="_blank">Native Messaging</a> (KeePassXC)</label>
-    <input type="text" id="xc-native-id">
-    <input type="button" value="Generate Manifest" id="keepassxc-manifest">
-    <input type="radio" name="method" id="kwpass">
-    <label for="kwpass"><a target="_blank" data-href="faq17">Local File</a> (Writes to an internal database)</label>
-    <div class="fld">
-      <div>
-        <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and use it as the storage">
-        <span>OR</span>
-        <input type="button" id="kwpass-file" value="Choose File(s)" title="Provide the database file and key file (*.key*)(optional)">
-      </div>
-      <div>
-        <input type="button" id="kwpass-remove" value="Delete File(s)">
-        <input type="button" id="kwpass-download" value="Download Database">
-      </div>
-      <div class="m1" id="kwpass-overwrite-container">
-        <input type="checkbox" id="kwpass-overwrite">
-        <label for="kwpass-overwrite">Write changes back to the local file (experimental)</label>
+  <div class="connection">
+    <div class="tabs">
+      <button type="button" class="tab" data-tab="keepass"><span>KeePassHTTP</span></button>
+      <button type="button" class="tab" data-tab="keepassxc"><span>KeePassXC</span></button>
+      <button type="button" class="tab" data-tab="kwpass"><span>Local File</span></button>
+      <button type="button" class="tab" data-tab="none"><span>Secure Synced Storage</span></button>
+    </div>
+    <div class="panel" data-engine="keepass">
+      <label class="pick"><input type="radio" name="method" id="keepass"> Use KeePassHTTP</label>
+      <p class="desc">Connects to the KeePass desktop application over <a data-href="faq2" target="_blank">KeePassHTTP</a>. The KeePassHTTP plugin must be installed in KeePass, and the database has to be open and unlocked for requests to work.</p>
+      <input type="text" id="host">
+      <div class="panel-actions">
+        <span class="result" id="keepass-result"></span>
+        <input type="button" id="check" value="Check Integration" title="Check permission access and port availability">
       </div>
     </div>
-    <input type="radio" name="method" id="none">
-    <label for="none">Do not attach to a back-end. Use "<a target="_blank" data-href="faq19">Secure Synced Storage</a>" only.</label>
+    <div class="panel" data-engine="keepassxc">
+      <label class="pick"><input type="radio" name="method" id="keepassxc"> Use KeePassXC</label>
+      <p class="desc">Connects to <a data-href="faq16" target="_blank">KeePassXC</a> using native messaging. Enable "Browser Integration" in the KeePassXC preferences, press the "Generate Manifest" button below, and place the generated JSON file in the correct <a target="_blank" data-href="faq17">native messaging host directory</a> for your browser.</p>
+      <input type="text" id="xc-native-id">
+      <div class="panel-actions">
+        <span class="result" id="keepassxc-result"></span>
+        <input type="button" value="Generate Manifest" id="keepassxc-manifest">
+        <input type="button" id="keepassxc-check" value="Check Integration" title="Check connectivity to the native client and association with KeePassXC">
+      </div>
+    </div>
+    <div class="panel" data-engine="kwpass">
+      <label class="pick"><input type="radio" name="method" id="kwpass"> Use Local File</label>
+      <p class="desc"><a target="_blank" data-href="faq17">Local File</a> mode reads a KDBX3/KDBX4 database directly. The extension keeps an internal copy and asks for the database password when first used.</p>
+      <p class="warn" id="kwpass-warn">⚠ No database is created or selected yet. Create a blank database in the "Internal database" section or attach one in the "External file(s)" section below.</p>
+      <div class="section">
+        <h3>Internal database</h3>
+        <p class="desc">The extension always uses this internal copy of a database stored in the browser. The external file provided below is only used as the source, or for the optional write-back sync.</p>
+        <div id="kwpass-files"></div>
+        <div class="panel-actions">
+          <input type="button" id="kwpass-create" value="Create new Database" title="Create a blank database and use it as the storage">
+          <input type="button" id="kwpass-download" value="Download Database">
+          <input type="button" id="kwpass-remove" value="Delete File(s)">
+        </div>
+      </div>
+      <div class="section">
+        <h3>External file(s)</h3>
+        <p class="desc">Pick your existing database file and, optionally, its key file (*.key*). A copy is stored internally; changes are kept in the internal copy unless write-back sync is enabled below.</p>
+        <div class="m1" id="kwpass-overwrite-container">
+          <input type="checkbox" id="kwpass-overwrite">
+          <label for="kwpass-overwrite">Sync changes back to the selected external file (experimental)</label>
+        </div>
+        <div class="panel-actions">
+          <input type="button" id="kwpass-db" value="Select Database">
+          <input type="button" id="kwpass-key" value="Select Key File">
+        </div>
+      </div>
+    </div>
+    <div class="panel" data-engine="none">
+      <label class="pick"><input type="radio" name="method" id="none"> Use Secure Synced Storage only</label>
+      <p class="desc">Skips all back-end databases and relies on "<a target="_blank" data-href="faq19">Secure Synced Storage</a>" only. Credentials are stored encrypted in the browser's synced storage, so they are available on all synced devices even without a password manager installed. The synced storage is separate from the KeePass databases — it works on top of any connection type.</p>
+      <div class="panel-actions">
+        <button id="ssdb-lock">Lock</button>
+        <button id="ssdb-import">Import</button>
+        <button id="ssdb-export">Export</button>
+        <button id="ssdb-clear">Delete all Credentials</button>
+      </div>
+    </div>
   </div>
   <h2 class="heading">Password Generation</h2>
+  <p class="desc">The generated password combines "Main length" random characters from pool <b>Main characters</b> and "Extra length" random characters from pool <b>Extra characters</b>, then shuffles them. Set "Extra length" to 0 for no extra characters. Used by the "Generate Password" context-menu item; the result is copied to the clipboard.</p>
   <div class="m1">
-    <label for="charset-1">Characters (1)</label>
+    <label for="charset-1">Main characters</label>
     <input type="text" id="charset-1">
-    <label for="length-1">Length (1)</label>
+    <label for="length-1">Main length</label>
     <input type="number" id="length-1" min=3>
-    <label for="charset-2">Characters (2)</label>
+    <label for="charset-2">Extra characters</label>
     <input type="text" id="charset-2">
-    <label for="length-2">Length (2)</label>
+    <label for="length-2">Extra length</label>
     <input type="number" id="length-2" min=0>
   </div>
   <h2 class="heading">Sorting</h2>
@@ -232,13 +268,6 @@
     <option value="KeyZ"></option>
   </datalist>
 
-  <h2>Secure Synced Storage</h2>
-  <div>
-    <button id="ssdb-lock">Lock</button> -
-    <button id="ssdb-import">Import</button>
-    <button id="ssdb-export">Export</button> -
-    <button id="ssdb-clear">Delete all Credentials</button>
-  </div>
   <h2 class="heading">Misc</h2>
   <div class="om disabled">
     <label for="embedded" style="flex: 1">Use an embedded iframe to display credentials (not available)</label>
@@ -272,6 +301,9 @@
   <script src="/connect/kdbxweb/kdbxweb.js"></script>
   <script src="/tools/tld.js"></script>
   <script src="/connect/kdbxweb/connect.js"></script>
+  <script src="/connect/keepassxc/nacl-fast.min.js"></script>
+  <script src="/connect/api.js"></script>
+  <script src="/connect/keepassxc/keepassxc.js"></script>
   <script src="index.js"></script>
 </body>
 </html>

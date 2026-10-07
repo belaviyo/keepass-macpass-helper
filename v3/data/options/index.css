@@ -67,24 +67,114 @@ a {
   margin: 10px 0;
   font-size: 1em;
 }
-.mm1m {
-  display: grid;
-  grid-template-columns: min-content minmax(20ch, min-content) 1fr min-content;
-  grid-gap: 20px 5px;
-  align-items: center;
+.tabs {
+  display: flex;
+  flex-flow: wrap;
+  gap: 5px;
 }
-.m1 {
-  display: grid;
-  grid-template-columns: min-content 1fr;
-  grid-gap: 5px;
+.tab {
+  font: inherit;
+  display: inline-flex;
   align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: #444;
+  border: solid 1px #d4d4d4;
+  padding: 5px 10px;
+  background-image: linear-gradient(rgb(237, 237, 237), rgb(237, 237, 237) 38%, rgb(222, 222, 222));
+  box-shadow: rgba(0, 0, 0, 0.08) 0 1px 0, rgba(255, 255, 255, 0.75) 0 1px 2px inset;
+  text-shadow: rgb(240, 240, 240) 0 1px 0;
+  user-select: none;
+}
+.tab.active {
+  background-image: linear-gradient(#dfdfdf, #d0d0d0);
+  box-shadow: rgba(0, 0, 0, 0.15) 0 1px 3px inset;
+  font-weight: bold;
+}
+.tab.selected::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #6aab21;
+  margin-right: 1px;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  border-bottom: dashed 1px #e8e8e8;
+  padding-bottom: 5px;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: solid 1px #e8e8e8;
+  padding: 8px;
+}
+.section h3 {
+  margin: 0;
+  font-size: 1em;
+}
+#kwpass-files {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 160px;
+  overflow: auto;
+}
+.file-entry {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.file-entry span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.warn {
+  margin: 0;
+  display: none;
+  border: solid 1px #e5e5b7;
+  background: #ffffc8;
+  color: #5f5f4b;
+  padding: 8px;
+}
+.warn.show {
+  display: block;
+}
+.panel {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  border: solid 1px #d4d4d4;
+  padding: 10px;
+  min-height: 150px;
+}
+.panel.show {
+  display: flex;
+}
+.panel .desc {
+  margin: 0;
+}
+.panel-actions {
+  display: flex;
+  flex-flow: wrap;
+  gap: 5px;
+  margin-top: auto;
+  justify-content: flex-end;
 }
 
 @media screen and (min-width: 600px) {
-  .mm1m label {
+  .m1 label {
     white-space: nowrap;
   }
-  .m1 label {
+  .tab span {
     white-space: nowrap;
   }
 }
@@ -104,13 +194,11 @@ a {
   gap: 5px;
   align-items: center;
 }
-.fld {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: end;
-  grid-column: 3/5;
-  text-align: end;
+.m1 {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  grid-gap: 5px;
+  align-items: center;
 }
 .note {
   background-color: rgba(0, 0, 0, 0.05);
@@ -185,7 +273,17 @@ a {
   display: none;
 }
 
-label[for="none"],
+.result {
+  align-self: center;
+  color: #3a3;
+}
+.result.bad {
+  color: #b43;
+}
+.result:empty {
+  display: none;
+}
+
 label[for="kwpass-overwrite"] {
   white-space: break-spaces;
   text-align: left;

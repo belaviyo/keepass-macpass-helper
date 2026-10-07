@@ -177,6 +177,46 @@ Go to the options page and toggle the "Write changes back to the local file" set
     });
   }
 
+  // entry: {key, bytes, handle} — used by the options page renderer
+  list() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction('files', 'readonly');
+      const entries = [];
+      transaction.objectStore('files').openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          entries.push({
+            key: cursor.key,
+            bytes: cursor.value
+          });
+          cursor.continue();
+        }
+      };
+      transaction.onerror = e => reject(Error('list, ' + e.target.error));
+      transaction.oncomplete = () => resolve(entries);
+    }).then(async entries => {
+      for (const entry of entries) {
+        entry.handle = await this.handle(entry.key);
+      }
+      return entries;
+    });
+  }
+
+  // remove individual entries from both stores by keys
+  remove(keys) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['files', 'handles'], 'readwrite');
+      const fileStore = transaction.objectStore('files');
+      const handleStore = transaction.objectStore('handles');
+      for (const key of keys) {
+        fileStore.delete(key);
+        handleStore.delete(key);
+      }
+      transaction.oncomplete = resolve;
+      transaction.onerror = e => reject(Error('remove, ' + e.target.error));
+    });
+  }
+
   // retrieve a handle by file ID (used by read if needed)
   handle(keypath = null) {
     return new Promise((resolve, reject) => {
