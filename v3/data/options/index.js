@@ -266,7 +266,8 @@ function restore() {
       'direction': 'az'
     },
     'keys': KEYS,
-    'kwpass-overwrite': false
+    'kwpass-overwrite': false,
+    'passkey-support-hosts': ''
   }, prefs => {
     document.getElementById(prefs.engine).checked = true;
     // make sure we have access to the native client
@@ -295,6 +296,7 @@ function restore() {
     document.getElementById('sort.key').value = prefs.sort.key;
     document.getElementById('sort.direction').value = prefs.sort.direction;
     document.getElementById('kwpass-overwrite').checked = prefs['kwpass-overwrite'];
+    document.getElementById('passkey-support-hosts').value = prefs['passkey-support-hosts'];
 
     for (const [name, o] of Object.entries(prefs.keys)) {
       const parent = document.querySelector(`[data-shortcut="${name}"]`);
@@ -311,69 +313,98 @@ function restore() {
   });
 }
 
-async function save() {
+function save() {
   localStorage.setItem('cmd-style', document.getElementById('cmd-style').value);
   localStorage.setItem('save-dialog-style', document.getElementById('save-dialog-style').value);
 
-  const ps = await chrome.storage.local.get({
-    keys: KEYS
-  });
-  const validKeys = [...document.getElementById('keys').options].map(o => o.value);
-  for (const name of Object.keys(ps.keys)) {
-    const parent = document.querySelector(`[data-shortcut="${name}"]`);
-    const [shift, meta] = parent.querySelectorAll('label input');
-    const code = parent.querySelector('input[type=text]').value;
+  // PassKey Support hosts: the permission request must run in the user-gesture
+  // context of the click (before any await), so it happens first; already
+  // granted origins do not re-trigger the prompt
+  const hosts = [...new Set(document.getElementById('passkey-support-hosts').value
+    .split(',').map(s => s.trim().replace(/^https?:\/\//, '').split('/')[0])
+    .filter(s => s))];
 
-    if (code !== '' && validKeys.includes(code) === false) {
-      const msg = 'Invalid key code for ' + name + '. Please select a value from the suggestion list (e.g., "KeyC")';
-      return toast(msg, undefined, 10000);
+  const proceed = async granted => {
+    const ps = await chrome.storage.local.get({
+      keys: KEYS
+    });
+    const validKeys = [...document.getElementById('keys').options].map(o => o.value);
+    for (const name of Object.keys(ps.keys)) {
+      const parent = document.querySelector(`[data-shortcut="${name}"]`);
+      const [shift, meta] = parent.querySelectorAll('label input');
+      const code = parent.querySelector('input[type=text]').value;
+
+      if (code !== '' && validKeys.includes(code) === false) {
+        const msg = 'Invalid key code for ' + name + '. Please select a value from the suggestion list (e.g., "KeyC")';
+        return toast(msg, undefined, 10000);
+      }
+
+      ps.keys[name].meta = [];
+      if (shift.checked) {
+        ps.keys[name].meta.push('shift');
+      }
+      if (meta.checked || ps.keys[name].meta.length === 0) {
+        ps.keys[name].meta.push('meta');
+      }
+      ps.keys[name].code = code;
+
+      const select = parent.querySelector('select');
+      if (select) {
+        ps.keys[name].click = select.value;
+      }
     }
 
-    ps.keys[name].meta = [];
-    if (shift.checked) {
-      ps.keys[name].meta.push('shift');
+    // make sure a database is attached when "Local File" mode is selected
+    if (document.getElementById('kwpass').checked && kwpass.file) {
+      const meta = await kwpass.resolveMeta();
+      if (!meta.active) {
+        toast('Warning: "Local File" mode is selected but no database is created or selected yet', undefined, 10000);
+      }
     }
-    if (meta.checked || ps.keys[name].meta.length === 0) {
-      ps.keys[name].meta.push('meta');
-    }
-    ps.keys[name].code = code;
 
-    const select = parent.querySelector('select');
-    if (select) {
-      ps.keys[name].click = select.value;
-    }
+    const prefs = {
+      'keys': ps.keys,
+      'host': document.getElementById('host').value,
+      'format': document.getElementById('format').value,
+      'charset-1': document.getElementById('charset-1').value,
+      'length-1': Math.max(document.getElementById('length-1').value, 3),
+      'charset-2': document.getElementById('charset-2').value,
+      'length-2': Math.max(document.getElementById('length-2').value, 0),
+      'auto-login': document.getElementById('auto-login').checked,
+      'auto-submit': document.getElementById('auto-submit').checked,
+      'faqs': document.getElementById('faqs').checked,
+      'engine': document.querySelector('[name="method"]:checked').id,
+      'xc-native-id': document.getElementById('xc-native-id').value,
+      'sort': {
+        'active': document.getElementById('sort.active').checked,
+        'key': document.getElementById('sort.key').value,
+        'direction': document.getElementById('sort.direction').value
+      },
+      'kwpass-overwrite': document.getElementById('kwpass-overwrite').checked
+    };
+
+    chrome.storage.local.set(prefs, () => {
+      // on a denied request keep the previous list; storing ungranted hosts
+      // would break the whole registration once the pref changed
+      if (granted) {
+        chrome.storage.local.set({
+          'passkey-support-hosts': hosts.join(', ')
+        }, () => toast('Options saved'));
+      }
+      else {
+        toast('Options saved. Host permission is required by PassKey Support; the host list was not saved', undefined, 10000);
+      }
+    });
+  };
+
+  if (hosts.length === 0) {
+    proceed(true);
   }
-
-  // make sure a database is attached when "Local File" mode is selected
-  if (document.getElementById('kwpass').checked && kwpass.file) {
-    const meta = await kwpass.resolveMeta();
-    if (!meta.active) {
-      toast('Warning: "Local File" mode is selected but no database is created or selected yet', undefined, 10000);
-    }
+  else {
+    chrome.permissions.request({
+      origins: hosts.flatMap(h => ['*://' + h + '/*', '*://*.' + h + '/*'])
+    }, granted => proceed(Boolean(granted)));
   }
-
-  chrome.storage.local.set({
-    'keys': ps.keys,
-    'host': document.getElementById('host').value,
-    'format': document.getElementById('format').value,
-    'charset-1': document.getElementById('charset-1').value,
-    'length-1': Math.max(document.getElementById('length-1').value, 3),
-    'charset-2': document.getElementById('charset-2').value,
-    'length-2': Math.max(document.getElementById('length-2').value, 0),
-    'auto-login': document.getElementById('auto-login').checked,
-    'auto-submit': document.getElementById('auto-submit').checked,
-    'faqs': document.getElementById('faqs').checked,
-    'engine': document.querySelector('[name="method"]:checked').id,
-    'xc-native-id': document.getElementById('xc-native-id').value,
-    'sort': {
-      'active': document.getElementById('sort.active').checked,
-      'key': document.getElementById('sort.key').value,
-      'direction': document.getElementById('sort.direction').value
-    },
-    'kwpass-overwrite': document.getElementById('kwpass-overwrite').checked
-  }, () => {
-    toast('Options saved');
-  });
 }
 
 document.addEventListener('DOMContentLoaded', restore);

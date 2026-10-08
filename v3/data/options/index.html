@@ -99,6 +99,12 @@
     <label for="length-2">Extra length</label>
     <input type="number" id="length-2" min=0>
   </div>
+  <h2 class="heading">PassKey Support (Beta)</h2>
+  <p class="desc">Adds passkey support to the <b>PublicKeyCredential</b> API for old browsers that do not fully support native passkeys. Without it, some websites may report that this browser does not support passkeys. Provide a comma-separated list of hostnames (each host matches itself and its subdomains). To add the current site quickly, use the "Passkey Generation (Beta) → Add PassKey Support to this Site" item in the context menu of the action button.</p>
+  <div class="m1">
+    <label for="passkey-support-hosts">Hosts</label>
+    <input type="text" id="passkey-support-hosts" placeholder="example.com, login.example.org">
+  </div>
   <h2 class="heading">Sorting</h2>
   <div class="om">
     <label for="sort.active">Sort results</label>

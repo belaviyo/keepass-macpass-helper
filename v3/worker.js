@@ -4,6 +4,7 @@ if (typeof importScripts !== 'undefined') {
   self.importScripts('/data/passkey/passkey.support.js');
   self.importScripts('/data/passkey/passkey.create.js');
   self.importScripts('/context.js');
+  self.importScripts('/data/passkey/passkey.register.js');
 }
 
 const current = () => chrome.tabs.query({
