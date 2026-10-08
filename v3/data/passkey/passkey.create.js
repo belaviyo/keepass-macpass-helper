@@ -274,17 +274,6 @@ const injectm = o => {
       });
     }
   });
-
-  const isConditionalMediationAvailable = async () => false;
-  const isUserVerifyingPlatformAuthenticatorAvailable = async () => true;
-  if (window.PublicKeyCredential) {
-    Object.defineProperty(window.PublicKeyCredential, 'isConditionalMediationAvailable', {
-      value: isConditionalMediationAvailable
-    });
-    Object.defineProperty(window.PublicKeyCredential, 'isUserVerifyingPlatformAuthenticatorAvailable', {
-      value: isUserVerifyingPlatformAuthenticatorAvailable
-    });
-  }
 };
 
 const injecti = () => {
@@ -356,6 +345,16 @@ ${exportedAsBase64.match(/.{1,64}/g).join('\n')}
           target,
           func: injecti
         });
+        // replay the plan captured during the first injection (same tab, same browser)
+        const plan = passkey.set.args.get(tabId)?.plan;
+        if (plan && (plan.uv || plan.conditionalMediation || plan.caps)) {
+          await chrome.scripting.executeScript({
+            target,
+            world: 'MAIN',
+            func: passkeySupport.injects,
+            args: [plan]
+          });
+        }
         await chrome.scripting.executeScript({
           target,
           world: 'MAIN',
@@ -394,6 +393,23 @@ ${e.message}`, '!', '#fa903e');
     target,
     func: injecti
   });
+  // evaluate which PublicKeyCredential overrides are needed and inject those
+  const [plan] = (await chrome.scripting.executeScript({
+    target,
+    world: 'MAIN',
+    func: passkeySupport.evaluate
+  })).map(r => r?.result ?? null);
+  // persist the plan so re-injections (persist) can replay it without re-evaluating
+  passkey.set.args.get(tabId).plan = plan;
+  const needs = plan && (plan.uv || plan.conditionalMediation || plan.caps);
+  if (needs) {
+    await chrome.scripting.executeScript({
+      target,
+      world: 'MAIN',
+      func: passkeySupport.injects,
+      args: [plan]
+    });
+  }
   await chrome.scripting.executeScript({
     target,
     world: 'MAIN',

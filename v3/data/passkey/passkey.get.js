@@ -12,6 +12,23 @@ passkey.get = async data => {
     allFrames: true
   };
 
+  // evaluate which PublicKeyCredential overrides are needed and inject those
+  const [plan] = (await chrome.scripting.executeScript({
+    target,
+    world: 'MAIN',
+    func: passkeySupport.evaluate
+  })).map(r => r?.result ?? null);
+
+  const needs = plan && (plan.uv || plan.conditionalMediation || plan.caps);
+  if (needs) {
+    await chrome.scripting.executeScript({
+      target,
+      world: 'MAIN',
+      func: passkeySupport.injects,
+      args: [plan]
+    });
+  }
+
   // only share the private key inside protect context
   await chrome.scripting.executeScript({
     target,
